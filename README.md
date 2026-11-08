@@ -7,6 +7,10 @@ Veridex reports evidence and a traffic-light score; it never calls a shop a scam
 Chrome (Manifest V3) and Firefox, from one source. Vanilla TypeScript, no UI framework, no remote code, no
 third-party requests: the extension talks to the Veridex API and nothing else.
 
+**Install:** Veridex is distributed from its own server as a signed, reproducible CRX with automatic updates, not
+through Google's or Mozilla's store. See [INSTALL.md](INSTALL.md) (Brave, Chromium and Chrome on Linux;
+ungoogled-chromium; Windows and macOS) or <https://veridex.kroshtan.com/extension>.
+
 ## How it works
 
 ```
@@ -75,8 +79,10 @@ Load unpacked:
 To use a local backend, open the extension's settings and set the API base to e.g. `http://localhost:8080`
 (the browser asks for access to that address).
 
-`make build` writes `dist/veridex-chrome-<version>.zip` and `dist/veridex-firefox-<version>.zip` for the stores;
-the version comes from `package.json`.
+`make build` writes three builds: `dist/chrome` (the store variant, zipped as `dist/veridex-chrome-<version>.zip`),
+`dist/chrome-selfhosted` (with the update URL and public key, signed into a CRX by `make release`) and
+`dist/firefox` (built, not published). The version comes from `package.json`. `make release` produces the signed
+self-hosted release in `dist/release/` (see [INSTALL.md](INSTALL.md#for-maintainers-making-a-release)).
 
 ## Parity with the backend
 
