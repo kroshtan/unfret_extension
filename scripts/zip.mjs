@@ -28,7 +28,8 @@ function files(dir) {
 const DOS_TIME = 0;
 const DOS_DATE = ((2026 - 1980) << 9) | (1 << 5) | 1;
 
-export function zipDirectory(dir, target) {
+/** The deterministic ZIP of a directory, as bytes. */
+export function zipBuffer(dir) {
   const locals = [];
   const centrals = [];
   let offset = 0;
@@ -76,5 +77,9 @@ export function zipDirectory(dir, target) {
   end.writeUInt16LE(centrals.length / 2, 10);
   end.writeUInt32LE(centralSize, 12);
   end.writeUInt32LE(offset, 16);
-  writeFileSync(target, Buffer.concat([...locals, ...centrals, end]));
+  return Buffer.concat([...locals, ...centrals, end]);
+}
+
+export function zipDirectory(dir, target) {
+  writeFileSync(target, zipBuffer(dir));
 }
