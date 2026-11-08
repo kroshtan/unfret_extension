@@ -64,6 +64,7 @@ function manifest(browser) {
         strict_min_version: "140.0",
         data_collection_permissions: { required: ["websiteContent", "browsingActivity"] },
       },
+      gecko_android: { strict_min_version: "142.0" },
     },
   };
 }
