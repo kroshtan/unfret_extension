@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Veridex</title>
+    <link rel="stylesheet" href="../shared/ui.css" />
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header class="bar">
+      <h1>Veridex</h1>
+      <a id="options" href="#" class="link">Settings</a>
+    </header>
+
+    <section id="account" class="card" aria-label="Account">
+      <p id="account-status">Not signed in.</p>
+      <p id="credits" class="muted" hidden></p>
+      <div class="row">
+        <button id="sign-in" type="button" class="secondary">Sign in with a Solana wallet</button>
+        <button id="buy" type="button" class="secondary" hidden>Buy checks</button>
+      </div>
+    </section>
+
+    <section class="card" aria-label="This page">
+      <button id="analyse" type="button" class="primary" disabled>Analyse this page</button>
+      <p id="hint" class="muted">One check per analysis. Nothing is sent until you click.</p>
+    </section>
+
+    <section id="progress" class="card" aria-live="polite" aria-label="Progress" hidden>
+      <p id="progress-status"></p>
+      <ul id="steps" class="steps"></ul>
+    </section>
+
+    <section id="result" class="card" aria-live="polite" aria-label="Result" hidden>
+      <div class="score-row">
+        <span id="score" class="score" role="img"></span>
+        <p id="explanation"></p>
+      </div>
+      <h2 id="flags-heading" hidden>What we found</h2>
+      <ul id="flags" class="flags"></ul>
+      <p id="meta" class="muted small"></p>
+    </section>
+
+    <section id="error" class="card error" role="alert" hidden>
+      <p id="error-message"></p>
+      <div class="row">
+        <button id="error-sign-in" type="button" class="secondary" hidden>Sign in again</button>
+        <button id="error-buy" type="button" class="secondary" hidden>Buy checks</button>
+      </div>
+    </section>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
