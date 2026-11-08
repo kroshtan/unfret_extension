@@ -1,20 +1,36 @@
 /** The toolbar badge for a tab's analysis state: the score in a traffic-light colour once known. */
 
+import type { AnalysisResult } from "../api/client.js";
 import type { TabState } from "../shared/messages.js";
 
 export const GREEN = "#1e7d32";
 export const AMBER = "#b26a00";
 export const RED = "#c62828";
 export const GREY = "#5f6368";
+/** The neutral accent of the marketplace icon hint: "Veridex can check this", not a warning. */
+export const ACCENT = "#3b5bdb";
 
-/** The traffic light for a 0–100 reliability score (100 = reliable); -1 means "not a product page". */
-export function light(score: number): "green" | "amber" | "red" | "none" {
-  if (score < 0) return "none";
-  if (score >= 70) return "green";
-  if (score >= 40) return "amber";
+/** The traffic light for a result: the verdict band when the server sent one, else the same score thresholds. */
+export function light(result: Pick<AnalysisResult, "score" | "verdict">): "green" | "amber" | "red" | "none" {
+  if (result.score < 0) return "none";
+  const band =
+    result.verdict?.band ??
+    (result.score >= 80
+      ? "reliable"
+      : result.score >= 50
+        ? "concerns"
+        : result.score >= 25
+          ? "careful"
+          : "junk_or_scam");
+  if (band === "reliable") return "green";
+  if (band === "concerns") return "amber";
   return "red";
 }
 
+/**
+ * The badge for a state. Red is only ever a low result: account, credit and network problems clear the badge
+ * (the popup explains them), so a red badge never means "something went wrong on our side".
+ */
 export function badgeFor(state: TabState): { text: string; color: string } | null {
   switch (state.status) {
     case "extracting":
@@ -22,11 +38,11 @@ export function badgeFor(state: TabState): { text: string; color: string } | nul
       return { text: "…", color: GREY };
     case "done": {
       const score = state.result.score;
-      const colour = { green: GREEN, amber: AMBER, red: RED, none: GREY }[light(score)];
+      const colour = { green: GREEN, amber: AMBER, red: RED, none: GREY }[light(state.result)];
       return { text: score < 0 ? "–" : String(score), color: colour };
     }
     case "error":
-      return { text: "!", color: RED };
+      return { text: "", color: GREY };
     case "idle":
       return null;
   }

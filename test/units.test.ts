@@ -5,7 +5,7 @@ import { badgeFor, light } from "../src/background/badge.js";
 import { acceptSessionMessage } from "../src/content/relay.js";
 import { parseCount, parseDate, parseNumber, parsePrice, parseRating } from "../src/extract/parse.js";
 import { pyJsonLength } from "../src/extract/pyjson.js";
-import { checksText, flagName, scoreLabel } from "../src/popup/view.js";
+import { checksText } from "../src/popup/view.js";
 import { DEFAULT_API_BASE, isDevBase, normaliseApiBase, parseSession } from "../src/shared/settings.js";
 import { isAnalysable, isMarketplaceProduct } from "../src/shared/sites.js";
 
@@ -174,20 +174,28 @@ describe("sites", () => {
 });
 
 describe("presentation", () => {
-  it("names flags and scores", () => {
-    expect(flagName("listing.discount_pct")).toBe("Discount");
-    expect(flagName("reviews.some_new_signal")).toBe("Some new signal");
-    expect(scoreLabel(-1)).toBe("Not assessed");
-    expect(scoreLabel(82)).toBe("Score 82 out of 100: few risk signals");
-    expect(checksText(1)).toBe("1 check left");
+  it("counts checks in the user's language", () => {
+    expect(checksText(1, "en")).toBe("1 check left");
+    expect(checksText(4, "en")).toBe("4 checks left");
+    expect(checksText(4, "nl")).toBe("Nog 4 checks");
   });
 
-  it("colours the badge like a traffic light", () => {
-    expect([light(85), light(55), light(10), light(-1)]).toEqual(["green", "amber", "red", "none"]);
+  it("colours the badge like a traffic light, red only for low results", () => {
+    const at = (score: number): ReturnType<typeof light> => light({ score });
+    expect([at(85), at(60), at(30), at(10), at(-1)]).toEqual(["green", "amber", "red", "red", "none"]);
+    expect(
+      light({
+        score: 85,
+        verdict: { band: "concerns", label: "", headline: "", reasons: [], positives: [] },
+      }),
+    ).toBe("amber");
     expect(badgeFor({ status: "done", findings: [], result: { score: 18, explanation: "" } })).toEqual({
       text: "18",
       color: "#c62828",
     });
     expect(badgeFor({ status: "idle" })).toBeNull();
+    // Account, credit and network problems aren't a red "!": the badge clears and the popup explains.
+    const error = { status: "error", message: "x", needsSignIn: true, needsCredits: false } as const;
+    expect(badgeFor(error)).toEqual({ text: "", color: "#5f6368" });
   });
 });

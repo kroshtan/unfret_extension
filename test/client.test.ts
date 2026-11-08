@@ -36,15 +36,23 @@ describe("VeridexApi against a mock server", () => {
   it("streams progress, then the result (step and finding events, CRLF, comments)", async () => {
     const events = await collect(new VeridexApi(api.url, "good"));
 
-    expect(events.map((e) => e.kind)).toEqual(["page_type", "finding", "finding", "result"]);
-    expect(events[1]).toEqual({
+    expect(events.map((e) => e.kind)).toEqual(["page_type", "step", "finding", "finding", "result"]);
+    expect(events[1]).toEqual({ kind: "step", skill: "listing" }); // ticks the checklist even without findings
+    expect(events[2]).toEqual({
       kind: "finding",
       finding: { skill: "listing", type: "discount", evidence: "85% off." },
     });
-    expect(events[2]).toMatchObject({ finding: { skill: "reviews", evidence: "4,800 reviews in 6 weeks." } });
+    expect(events[3]).toMatchObject({ finding: { skill: "reviews", evidence: "4,800 reviews in 6 weeks." } });
     const last = events.at(-1);
     expect(last?.kind === "result" && last.result.assessment?.model_version).toBe("v1-test");
     expect(api.requests.at(-1)?.body).toMatchObject({ url: "https://www.amazon.com/dp/B0TEST1234" });
+  });
+
+  it("asks for the verdict in the user's language", async () => {
+    await new VeridexApi(api.url, "good", undefined, "nl").credits();
+    expect(api.requests.at(-1)?.language).toBe("nl");
+    await collect(new VeridexApi(api.url, "good", undefined, "en"));
+    expect(api.requests.at(-1)?.language).toBe("en");
   });
 
   it("maps 401 to sign in again", async () => {

@@ -4,6 +4,7 @@
  */
 
 import type { PageFacts } from "../shared/facts.js";
+import { uiLanguage } from "../shared/i18n.js";
 import { readEvents } from "./sse.js";
 
 export class ApiError extends Error {
@@ -66,6 +67,36 @@ export interface Flag {
   type: string;
   evidence: string;
   weight: number;
+  /** Human label from the server, in the requested language (never show `type`). */
+  label?: string;
+  /** "context" flags describe the page (e.g. "Marketplace listing") and are shown neutrally. */
+  kind?: "signal" | "context";
+  severity?: "high" | "medium" | "low";
+}
+
+export interface VerdictReason {
+  type: string;
+  title: string;
+  detail: string;
+  severity: "high" | "medium" | "low";
+}
+
+export interface VerdictPositive {
+  type: string;
+  title: string;
+  detail: string;
+}
+
+export type Band = "reliable" | "concerns" | "careful" | "junk_or_scam";
+
+/** The shopper-facing verdict, in the language asked for with Accept-Language. */
+export interface Verdict {
+  band: Band;
+  label: string;
+  headline: string;
+  reasons: VerdictReason[];
+  positives: VerdictPositive[];
+  language?: string;
 }
 
 export interface AnalysisResult {
@@ -73,6 +104,9 @@ export interface AnalysisResult {
   explanation: string;
   assessment?: { risk_score: number; confidence: number; flags: Flag[]; model_version: string };
   balance_lamports?: number;
+  /** False when no check was used (a page that couldn't be analysed, or a recent result from the cache). */
+  charged?: boolean;
+  verdict?: Verdict;
 }
 
 export interface Finding {
@@ -91,6 +125,7 @@ export interface AnalyzeBody {
 
 export type StreamEvent =
   | { kind: "page_type"; pageType: string }
+  | { kind: "step"; skill: string }
   | { kind: "finding"; finding: Finding }
   | { kind: "result"; result: AnalysisResult };
 
@@ -136,12 +171,15 @@ export class VeridexApi {
     private readonly base: string,
     private readonly token?: string,
     private readonly fetcher: FetchLike = (input, init) => fetch(input, init),
+    private readonly language: string = uiLanguage(),
   ) {}
 
   private headers(json: boolean): Record<string, string> {
     return {
       ...(json ? { "Content-Type": "application/json" } : {}),
       ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
+      // The verdict comes back in this language (nl or en).
+      "Accept-Language": this.language,
     };
   }
 
@@ -207,6 +245,10 @@ export class VeridexApi {
       if (event === "page_type" && typeof parsed.page_type === "string") {
         yield { kind: "page_type", pageType: parsed.page_type };
       } else if (event === "finding" || event === "step") {
+        if (event === "step" && typeof parsed.skill === "string") {
+          if (typeof parsed.page_type === "string") yield { kind: "page_type", pageType: parsed.page_type };
+          yield { kind: "step", skill: parsed.skill };
+        }
         for (const finding of asFindings(parsed)) yield { kind: "finding", finding };
       } else if (event === "result") {
         yield { kind: "result", result: parsed as unknown as AnalysisResult };

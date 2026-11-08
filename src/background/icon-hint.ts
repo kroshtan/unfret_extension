@@ -1,11 +1,11 @@
 /**
- * The marketplace hint: on supported marketplace product pages the toolbar icon gets a small marker, set by the
- * browser through `declarativeContent` rules. The extension never sees those pages (no host permission); the browser
+ * The marketplace hint: on supported marketplace product pages the toolbar icon gets a small neutral marker ("Veridex
+ * can check this", not a warning), set by the browser through `declarativeContent` rules. The extension never sees those pages (no host permission); the browser
  * matches the URL and swaps the icon, and reverts it when the page no longer matches. Firefox has no
  * `declarativeContent`, so there the hint is simply absent.
  */
 
-import { AMBER } from "./badge.js";
+import { ACCENT } from "./badge.js";
 import { marketplaceUrlPatterns } from "../shared/sites.js";
 
 const SIZES = [16, 32] as const;
@@ -26,7 +26,7 @@ async function markedIcon(size: number): Promise<ImageData> {
   ctx.fill();
   ctx.beginPath();
   ctx.arc(c, c, r, 0, 2 * Math.PI);
-  ctx.fillStyle = AMBER;
+  ctx.fillStyle = ACCENT;
   ctx.fill();
   return ctx.getImageData(0, 0, size, size);
 }

@@ -29,8 +29,13 @@ The extension makes no other network requests: no analytics, no trackers, no thi
 
 ## What is stored
 
-In your browser: your session (token, wallet address, expiry) and your settings. Analysis results are kept only
-in memory while the browser runs and are never written to disk.
+In your browser: your session (token, wallet address, expiry), whether your last sign-in expired, and your
+settings. Analysis results are kept only in memory (the browser's session storage, so a result survives the
+extension's background process going to sleep); they are cleared when you leave the page or close the browser and
+are never written to disk.
+
+The extension asks Veridex for results in your browser's language (Dutch or English). That language is the only
+other thing it sends.
 
 On the server: your wallet address and its credit balance. The server does not keep the addresses or contents of
 the pages you analyse, and does not link what you analysed to your wallet. (See the Veridex privacy statement for

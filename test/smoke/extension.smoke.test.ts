@@ -33,13 +33,17 @@ const CONNECT_PAGE = `<!doctype html><title>connect</title><script>
 
 const temp: string[] = [];
 
-async function launch(extension: string): Promise<{ context: BrowserContext; worker: Worker }> {
+async function launch(
+  extension: string,
+  language = "en-US",
+): Promise<{ context: BrowserContext; worker: Worker }> {
   const userData = mkdtempSync(join(tmpdir(), "veridex-smoke-"));
   temp.push(userData);
   const context = await chromium.launchPersistentContext(userData, {
     channel: "chromium",
     headless: true,
-    args: [`--disable-extensions-except=${extension}`, `--load-extension=${extension}`],
+    locale: language,
+    args: [`--disable-extensions-except=${extension}`, `--load-extension=${extension}`, `--lang=${language}`],
   });
   await context.route("https://www.amazon.com/**", (route) =>
     route.fulfill({ contentType: "text/html", body: fixture("amazon-com.html") }),
@@ -76,6 +80,8 @@ async function newestTabId(worker: Worker): Promise<number> {
 let api: MockApi;
 let plain: { context: BrowserContext; worker: Worker };
 let granted: { context: BrowserContext; worker: Worker };
+/** The Amazon tab analysed in the English run (later tests open popup pages, so not the newest tab). */
+let analysedTab = -1;
 
 beforeAll(async () => {
   api = await startMockApi();
@@ -178,6 +184,7 @@ describe("with the access a click grants (activeTab)", () => {
       { base: api.url, address: ADDRESS },
     );
     const tabId = await newestTabId(granted.worker);
+    analysedTab = tabId;
     const extensionId = new URL(granted.worker.url()).host;
     const popup = await granted.context.newPage();
     await popup.goto(`chrome-extension://${extensionId}/popup/popup.html`);
@@ -207,5 +214,98 @@ describe("with the access a click grants (activeTab)", () => {
     expect(await granted.worker.evaluate((id) => chrome.action.getBadgeText({ tabId: id }), tabId)).toBe(
       "18",
     );
+  });
+
+  it("keeps the result when the service worker sleeps, and shows it as a shopper reads it (English)", async () => {
+    const tabId = analysedTab;
+    const stored = await granted.worker.evaluate(
+      async (id) => (await chrome.storage.session.get(`tab:${id}`))[`tab:${id}`] as TabState | undefined,
+      tabId,
+    );
+    expect(stored?.status).toBe("done"); // survives the worker stopping (session storage: memory only)
+    expect(stored?.status === "done" && stored.steps).toContain("listing");
+    expect(api.requests.find((r) => r.path === "/v1/analyze/stream")?.language).toBe("en");
+
+    const view = await renderedPopup(granted, tabId);
+    expect(view.label).toBe("Likely junk or a scam");
+    expect(view.headings).toEqual(["What we noticed"]);
+    expect(view.reasons).toEqual(["Suspicious number of reviews"]);
+    expect(view.text).not.toMatch(/listing\.|=\s*\d/u);
+  });
+});
+
+/** Open the popup as a page for `tabId` and read what a shopper sees. */
+async function renderedPopup(
+  browser: { context: BrowserContext; worker: Worker },
+  tabId: number,
+): Promise<{
+  lang: string;
+  label: string;
+  headings: string[];
+  reasons: string[];
+  text: string;
+  analyse: string;
+}> {
+  const extensionId = new URL(browser.worker.url()).host;
+  const page = await browser.context.newPage();
+  await page.goto(`chrome-extension://${extensionId}/popup/popup.html?tab=${tabId}`);
+  await page.waitForSelector("#result-body .verdict .label");
+  const view = await page.evaluate(() => ({
+    lang: document.documentElement.lang,
+    label: document.querySelector("#result-body .verdict .label")?.textContent ?? "",
+    headings: [...document.querySelectorAll("#result-body h2")].map((h) => h.textContent),
+    reasons: [...document.querySelectorAll("#result-body .reasons strong")].map((s) => s.textContent),
+    text: document.querySelector("#result-body")?.textContent ?? "",
+    analyse: document.querySelector("#analyse")?.textContent ?? "",
+  }));
+  await page.close();
+  return view;
+}
+
+describe("in Dutch", () => {
+  let dutch: { context: BrowserContext; worker: Worker };
+
+  beforeAll(async () => {
+    dutch = await launch(grantedCopy(), "nl");
+  }, 180_000);
+
+  afterAll(async () => {
+    await dutch.context.close();
+  });
+
+  it("asks for and shows the verdict in Dutch", async () => {
+    await dutch.worker.evaluate(
+      ({ base, address }) =>
+        chrome.storage.local.set({
+          apiBase: base,
+          session: { token: `good-token-${"x".repeat(20)}`, address, expiresAt: "2999-01-01T00:00:00.000Z" },
+        }),
+      { base: api.url, address: ADDRESS },
+    );
+    const page = await dutch.context.newPage();
+    await page.goto(AMAZON_URL);
+    const tabId = await newestTabId(dutch.worker);
+    const extensionId = new URL(dutch.worker.url()).host;
+    const popup = await dutch.context.newPage();
+    await popup.goto(`chrome-extension://${extensionId}/popup/popup.html`);
+    const state = await popup.evaluate(
+      (id) =>
+        new Promise<TabState>((resolve) => {
+          const port = chrome.runtime.connect({ name: "veridex-analysis" });
+          port.onMessage.addListener((update: { tabId: number; state: TabState }) => {
+            if (update.tabId === id && ["done", "error"].includes(update.state.status)) resolve(update.state);
+          });
+          port.postMessage({ type: "analyze", tabId: id });
+        }),
+      tabId,
+    );
+    expect(state.status === "error" ? state.message : state.status).toBe("done");
+    expect(api.requests.filter((r) => r.path === "/v1/analyze/stream").at(-1)?.language).toBe("nl");
+
+    const view = await renderedPopup(dutch, tabId);
+    expect(view.lang).toBe("nl");
+    expect(view.label).toBe("Waarschijnlijk rommel of oplichting");
+    expect(view.headings).toEqual(["Wat ons opviel"]);
+    expect(view.reasons).toEqual(["Verdacht veel reviews"]);
   });
 });

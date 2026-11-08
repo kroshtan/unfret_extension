@@ -6,7 +6,8 @@
  * - runs an analysis only when the user asks, for the active tab (activeTab, granted by that click): injects the
  *   extractor, streams the result. It holds no standing access to any shop.
  *
- * Results live in memory per tab for the popup to show; nothing about pages is ever written to storage.
+ * Results live in memory per tab for the popup to show, mirrored to `chrome.storage.session` (memory only, cleared
+ * when the browser closes) so they survive the service worker sleeping. Nothing about pages is written to disk.
  */
 
 import { ApiError, VeridexApi } from "../api/client.js";
@@ -17,6 +18,7 @@ import {
   type PopupRequest,
   type TabState,
 } from "../shared/messages.js";
+import { t } from "../shared/i18n.js";
 import { isDevBase, loadSettings, parseSession, saveSession } from "../shared/settings.js";
 import { isAnalysable } from "../shared/sites.js";
 import { badgeFor } from "./badge.js";
@@ -27,8 +29,38 @@ const DEV_RELAY_ID = "veridex-connect-dev";
 const states = new Map<number, TabState>();
 const watchers = new Map<number, Set<chrome.runtime.Port>>();
 
+const stateKey = (tabId: number): string => `tab:${tabId}`;
+
+function persist(tabId: number, state: TabState | undefined): void {
+  try {
+    if (state === undefined || state.status === "idle") void chrome.storage.session.remove(stateKey(tabId));
+    else void chrome.storage.session.set({ [stateKey(tabId)]: state });
+  } catch {
+    // no session storage: the result simply doesn't outlive this worker
+  }
+}
+
+/** A tab's state: from memory, or from session storage after the service worker slept. */
+async function stateOf(tabId: number): Promise<TabState> {
+  const known = states.get(tabId);
+  if (known) return known;
+  try {
+    const stored = (await chrome.storage.session.get(stateKey(tabId)))[stateKey(tabId)] as
+      TabState | undefined;
+    // An analysis that was running when the worker stopped can't resume: show nothing rather than a stuck spinner.
+    if (stored && (stored.status === "done" || stored.status === "error")) {
+      states.set(tabId, stored);
+      return stored;
+    }
+  } catch {
+    // no session storage
+  }
+  return { status: "idle" };
+}
+
 function setState(tabId: number, state: TabState): void {
   states.set(tabId, state);
+  persist(tabId, state);
   const update: BackgroundUpdate = { type: "state", tabId, state };
   for (const port of watchers.get(tabId) ?? []) {
     try {
@@ -77,11 +109,13 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
   if (changeInfo.status !== "loading") return;
   states.delete(tabId);
+  persist(tabId, undefined);
   void chrome.action.setBadgeText({ tabId, text: "" });
 });
 
 chrome.tabs.onRemoved.addListener((tabId) => {
   states.delete(tabId);
+  persist(tabId, undefined);
   watchers.delete(tabId);
 });
 
@@ -92,7 +126,12 @@ async function analyse(tabId: number): Promise<void> {
   if (current?.status === "extracting" || current?.status === "analysing") return;
   const { apiBase, session } = await loadSettings();
   if (!session) {
-    setState(tabId, { status: "error", message: "Sign in first.", needsSignIn: true, needsCredits: false });
+    setState(tabId, {
+      status: "error",
+      message: t("error_sign_in_first"),
+      needsSignIn: true,
+      needsCredits: false,
+    });
     return;
   }
   const tab = await chrome.tabs.get(tabId);
@@ -100,9 +139,7 @@ async function analyse(tabId: number): Promise<void> {
     setState(tabId, {
       status: "error",
       // No URL means no access yet: activeTab is granted by clicking the toolbar button on that page.
-      message: tab.url
-        ? "This page can't be analysed."
-        : "Click the Veridex button on the page you want to analyse, then try again.",
+      message: tab.url ? t("error_cant_analyse") : t("error_click_first"),
       needsSignIn: false,
       needsCredits: false,
     });
@@ -112,11 +149,12 @@ async function analyse(tabId: number): Promise<void> {
   try {
     const { facts, text } = await extractFromTab(tabId);
     const api = new VeridexApi(apiBase, session.token);
-    let state: Extract<TabState, { status: "analysing" }> = { status: "analysing", findings: [] };
+    let state: Extract<TabState, { status: "analysing" }> = { status: "analysing", findings: [], steps: [] };
     setState(tabId, state);
     const body = { url: facts.url, page_facts: facts, ...(text ? { page_content: text } : {}) };
     for await (const event of api.analyze(body)) {
       if (event.kind === "page_type") state = { ...state, pageType: event.pageType };
+      else if (event.kind === "step") state = { ...state, steps: [...(state.steps ?? []), event.skill] };
       else if (event.kind === "finding") state = { ...state, findings: [...state.findings, event.finding] };
       else {
         setState(tabId, { ...state, status: "done", result: event.result });
@@ -126,16 +164,22 @@ async function analyse(tabId: number): Promise<void> {
     }
   } catch (error) {
     const apiError = error instanceof ApiError ? error : null;
+    // The server's English detail isn't shown: every case gets plain text in the user's language.
     const message = apiError?.serviceOff
-      ? "Veridex checks aren't available on the server right now. Please try again later."
-      : error instanceof Error
-        ? error.message
-        : "Analysis failed.";
+      ? t("error_service_off")
+      : apiError?.needsSignIn
+        ? t("session_expired")
+        : apiError?.needsCredits
+          ? t("error_no_checks")
+          : apiError
+            ? t("error_failed")
+            : t("offline");
     setState(tabId, {
       status: "error",
       message,
       needsSignIn: apiError?.needsSignIn ?? false,
       needsCredits: apiError?.needsCredits ?? false,
+      refunded: apiError !== null && !apiError.needsSignIn && !apiError.needsCredits,
     });
   }
 }
@@ -148,12 +192,10 @@ chrome.runtime.onConnect.addListener((port) => {
     set.add(port);
     watchers.set(message.tabId, set);
     watched.add(message.tabId);
-    port.postMessage({
-      type: "state",
-      tabId: message.tabId,
-      state: states.get(message.tabId) ?? { status: "idle" },
-    } satisfies BackgroundUpdate);
-    if (message.type === "analyze") void analyse(message.tabId);
+    void stateOf(message.tabId).then((state) => {
+      port.postMessage({ type: "state", tabId: message.tabId, state } satisfies BackgroundUpdate);
+      if (message.type === "analyze") void analyse(message.tabId);
+    });
   });
   port.onDisconnect.addListener(() => {
     for (const tabId of watched) watchers.get(tabId)?.delete(port);

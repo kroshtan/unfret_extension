@@ -9,7 +9,7 @@ import type { AddressInfo } from "node:net";
 
 export interface MockApi {
   url: string;
-  requests: { path: string; auth: string; body: unknown }[];
+  requests: { path: string; auth: string; body: unknown; language?: string }[];
   /**
    * Phone pairing behaviour. `POST /v1/auth/pair` returns `id`; polls of "pair-ok" answer 202 `pendingPolls` times,
    * then the session once, then 404. "pair-expired" → 410, "pair-gone" → 404, "pair-flaky" → 503 once, then the
@@ -23,6 +23,39 @@ export const PAIRED_SESSION = {
   token: "paired-session-token-0123456789",
   address: "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin",
   expires_at: "2099-01-01T00:00:00Z",
+};
+
+/** The verdict the mock analysis returns, in the language asked for with Accept-Language. */
+export const ENGLISH_VERDICT = {
+  band: "junk_or_scam",
+  label: "Likely junk or a scam",
+  headline: "Thousands of reviews on a six-week-old listing and an inflated discount.",
+  reasons: [
+    {
+      type: "review_velocity",
+      title: "Suspicious number of reviews",
+      detail: "4,800 ratings for a product that's only been listed for 6 weeks.",
+      severity: "high",
+    },
+  ],
+  positives: [],
+  language: "en",
+};
+
+export const DUTCH_VERDICT = {
+  band: "junk_or_scam",
+  label: "Waarschijnlijk rommel of oplichting",
+  headline: "Duizenden reviews voor een product van zes weken oud en een opgeblazen korting.",
+  reasons: [
+    {
+      type: "review_velocity",
+      title: "Verdacht veel reviews",
+      detail: "4.800 beoordelingen voor een product dat pas 6 weken te koop staat.",
+      severity: "high",
+    },
+  ],
+  positives: [],
+  language: "nl",
 };
 
 function json(res: ServerResponse, status: number, body: unknown): void {
@@ -56,7 +89,8 @@ export async function startMockApi(): Promise<MockApi> {
         return;
       }
       const body = req.method === "POST" ? await readBody(req) : null;
-      requests.push({ path, auth, body });
+      const language = req.headers["accept-language"];
+      requests.push({ path, auth, body, ...(typeof language === "string" ? { language } : {}) });
       if (token === "expired") {
         json(res, 401, { detail: "Sign in again.", error_code: "UNAUTHORIZED" });
         return;
@@ -149,6 +183,8 @@ export async function startMockApi(): Promise<MockApi> {
                 flags: [{ type: "listing.discount_pct", evidence: "85% off.", weight: 1.2 }],
               },
               balance_lamports: 6_000_000,
+              charged: true,
+              verdict: language?.startsWith("nl") ? DUTCH_VERDICT : ENGLISH_VERDICT,
             }) +
             "\n\n",
         );

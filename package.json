@@ -1,6 +1,6 @@
 {
   "name": "veridex-extension",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Veridex: risk signals for product listings and web shops, in your browser.",
   "private": true,
   "license": "MIT",

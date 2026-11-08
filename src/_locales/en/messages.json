@@ -1,0 +1,254 @@
+{
+  "ext_description": {
+    "message": "Spot junk, dropshipping and scams on product pages before you buy.",
+    "description": "Extension description in the store and the extensions page."
+  },
+  "settings": {
+    "message": "Settings",
+    "description": "Link to the settings page."
+  },
+  "account_label": {
+    "message": "Account",
+    "description": "Accessible name of the account section."
+  },
+  "not_signed_in": {
+    "message": "Not signed in. Sign in with your Solana wallet to use your checks.",
+    "description": "Account status when signed out."
+  },
+  "session_expired": {
+    "message": "Your sign-in expired; your checks are still there. Sign in again to use them.",
+    "description": "Account status after the session expired."
+  },
+  "signed_in_as": {
+    "message": "Signed in as $1",
+    "description": "$1 is a shortened wallet address."
+  },
+  "signed_in_until": {
+    "message": "Signed in until $1",
+    "description": "$1 is a date."
+  },
+  "sign_in_wallet": {
+    "message": "Sign in with a Solana wallet",
+    "description": "Button."
+  },
+  "sign_in_phone": {
+    "message": "Sign in with phone",
+    "description": "Button."
+  },
+  "sign_out": {
+    "message": "Sign out",
+    "description": "Button."
+  },
+  "buy_checks": {
+    "message": "Buy checks",
+    "description": "Button."
+  },
+  "checks_left_one": {
+    "message": "1 check left",
+    "description": "Credits line."
+  },
+  "checks_left": {
+    "message": "$1 checks left",
+    "description": "Credits line; $1 is a number."
+  },
+  "phone_heading": {
+    "message": "Sign in with your phone",
+    "description": "Heading."
+  },
+  "phone_help": {
+    "message": "Scan this with your phone and open the page in your wallet app (Phantom, Solflare…). If your camera opens a browser instead, the page offers to open itself in your wallet.",
+    "description": "Phone sign-in instructions."
+  },
+  "phone_qr_label": {
+    "message": "QR code to sign in on your phone",
+    "description": "Alt text."
+  },
+  "phone_same_code": {
+    "message": "Check that your phone shows the same code:",
+    "description": "Above the confirmation code."
+  },
+  "phone_preparing": {
+    "message": "Preparing…",
+    "description": "Status."
+  },
+  "phone_waiting": {
+    "message": "Waiting for your phone…",
+    "description": "Status."
+  },
+  "phone_expired": {
+    "message": "This sign-in request expired.",
+    "description": "Status."
+  },
+  "phone_unavailable": {
+    "message": "Sign-in isn't available yet.",
+    "description": "Status."
+  },
+  "phone_too_many": {
+    "message": "Too many attempts; wait a few minutes.",
+    "description": "Status."
+  },
+  "offline": {
+    "message": "Couldn't reach Veridex. Check your connection.",
+    "description": "Network error."
+  },
+  "try_again": {
+    "message": "Try again",
+    "description": "Button."
+  },
+  "cancel": {
+    "message": "Cancel",
+    "description": "Button."
+  },
+  "page_label": {
+    "message": "This page",
+    "description": "Accessible name of the analyse section."
+  },
+  "analyse": {
+    "message": "Analyse this page",
+    "description": "Main button."
+  },
+  "analysing": {
+    "message": "Checking…",
+    "description": "Main button while busy."
+  },
+  "buy_to_analyse": {
+    "message": "Buy checks to analyse",
+    "description": "Main button with no checks left."
+  },
+  "hint_ready": {
+    "message": "One check per analysis. Nothing is sent until you click.",
+    "description": "Hint under the main button."
+  },
+  "hint_not_analysable": {
+    "message": "This page can't be analysed.",
+    "description": "Hint under the main button."
+  },
+  "hint_sign_in": {
+    "message": "Sign in to analyse this page.",
+    "description": "Hint."
+  },
+  "hint_no_checks": {
+    "message": "You have no checks left.",
+    "description": "Hint."
+  },
+  "progress_label": {
+    "message": "Progress",
+    "description": "Accessible name of the progress section."
+  },
+  "progress_reading": {
+    "message": "Reading the page…",
+    "description": "Progress status."
+  },
+  "progress_checking": {
+    "message": "Checking… this usually takes 10–30 seconds.",
+    "description": "Progress status."
+  },
+  "step_reviews": {
+    "message": "Reviews",
+    "description": "Progress checklist item."
+  },
+  "step_seller": {
+    "message": "Seller",
+    "description": "Progress checklist item."
+  },
+  "step_price": {
+    "message": "Price",
+    "description": "Progress checklist item."
+  },
+  "step_code": {
+    "message": "Page code",
+    "description": "Progress checklist item."
+  },
+  "step_company": {
+    "message": "Company details",
+    "description": "Progress checklist item."
+  },
+  "step_done": {
+    "message": "$1: done",
+    "description": "Screen reader text for a finished checklist item."
+  },
+  "result_label": {
+    "message": "Result",
+    "description": "Accessible name of the result section."
+  },
+  "concerns_heading": {
+    "message": "What we noticed",
+    "description": "Heading above the reasons."
+  },
+  "good_heading": {
+    "message": "What looks good",
+    "description": "Heading above the positives."
+  },
+  "details_show": {
+    "message": "Show details",
+    "description": "Disclosure."
+  },
+  "details_signals": {
+    "message": "Signals",
+    "description": "Details heading."
+  },
+  "details_context": {
+    "message": "About this page",
+    "description": "Details heading for neutral context."
+  },
+  "details_meta": {
+    "message": "Model $1 · confidence $2%",
+    "description": "$1 model version, $2 percent."
+  },
+  "no_check_used": {
+    "message": "No check was used.",
+    "description": "After a page that couldn't be analysed."
+  },
+  "cache_hit": {
+    "message": "Checked recently: no check was used.",
+    "description": "After a result served from the cache."
+  },
+  "not_assessed": {
+    "message": "Not assessed",
+    "description": "Score label for -1."
+  },
+  "band_reliable": {
+    "message": "Looks reliable",
+    "description": "Fallback band label."
+  },
+  "band_concerns": {
+    "message": "Some concerns",
+    "description": "Fallback band label."
+  },
+  "band_careful": {
+    "message": "Be careful",
+    "description": "Fallback band label."
+  },
+  "band_junk_or_scam": {
+    "message": "Likely junk or a scam",
+    "description": "Fallback band label."
+  },
+  "error_sign_in_first": {
+    "message": "Sign in first.",
+    "description": "Error."
+  },
+  "error_cant_analyse": {
+    "message": "This page can't be analysed.",
+    "description": "Error."
+  },
+  "error_click_first": {
+    "message": "Click the Veridex button on the page you want to analyse, then try again.",
+    "description": "Error."
+  },
+  "error_service_off": {
+    "message": "Veridex checks aren't available right now. Please try again later.",
+    "description": "Error."
+  },
+  "error_failed": {
+    "message": "The check failed. No check was used.",
+    "description": "Error."
+  },
+  "error_no_checks": {
+    "message": "You have no checks left.",
+    "description": "Error when the balance is too low."
+  },
+  "sign_in_again": {
+    "message": "Sign in again",
+    "description": "Button."
+  }
+}
