@@ -12,7 +12,7 @@
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
     "test": "vitest run",
-    "smoke": "node scripts/smoke.mjs"
+    "smoke": "node scripts/build.mjs && vitest run --config vitest.smoke.config.ts"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
@@ -24,9 +24,11 @@
     "eslint": "10.14.0",
     "globals": "17.14.0",
     "jsdom": "31.0.0",
+    "playwright": "1.65.0",
     "prettier": "3.9.10",
     "typescript": "6.0.3",
     "typescript-eslint": "8.72.1",
-    "vitest": "5.1.0"
+    "vitest": "5.1.0",
+    "web-ext": "10.8.0"
   }
 }
