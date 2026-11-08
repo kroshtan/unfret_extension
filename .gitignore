@@ -3,3 +3,7 @@ dist/
 coverage/
 *.zip
 .smoke/
+
+# Signing keys never belong in the repo (the CRX key lives in ~/kroshtan_secrets)
+*.pem
+*.key

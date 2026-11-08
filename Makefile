@@ -1,4 +1,4 @@
-.PHONY: help install lint typecheck test smoke build build-dev parity icons clean
+.PHONY: help install lint typecheck test smoke build build-dev parity icons crx-key release verify-release clean
 .DEFAULT_GOAL := help
 
 BACKEND ?= $(HOME)/repos/veridex_backend
@@ -32,6 +32,15 @@ parity:  ## Regenerate parity expectations with the backend's Python extractors 
 
 icons:  ## Regenerate the placeholder icons
 	node scripts/icons.mjs
+
+crx-key:  ## Create the CRX signing key once (VERIDEX_CRX_KEY, default ~/kroshtan_secrets/veridex-extension-crx.pem)
+	node scripts/crx-key.mjs
+
+release: build  ## Signed self-hosted release in dist/release: CRX, updates.xml, store zip, SHA256SUMS
+	node scripts/release.mjs
+
+verify-release: build  ## Check a published CRX against your own build: make verify-release CRX=path/to/file.crx
+	node scripts/verify-release.mjs $(CRX)
 
 clean:  ## Remove build output
 	rm -rf dist coverage

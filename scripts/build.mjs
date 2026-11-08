@@ -1,7 +1,11 @@
-// Build dist/chrome and dist/firefox (plus store zips) from one source tree.
+// Build the extension from one source tree:
+//   dist/chrome             Chromium, store variant (no update_url; Chrome Web Store if ever listed) + its zip
+//   dist/chrome-selfhosted  Chromium, self-hosted variant: update_url on veridex.kroshtan.com and the public `key`,
+//                           so the ID is the one the signed CRX has (needs release/public-key.b64, see crx-key.mjs)
+//   dist/firefox            Firefox (built, not published) + its zip
 //   node scripts/build.mjs          production (minified)
 //   node scripts/build.mjs --dev    readable, with source maps
-import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -15,6 +19,8 @@ const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
 const sites = JSON.parse(readFileSync(join(root, "src/shared/sites.json"), "utf8"));
 
 const API_ORIGIN = "https://veridex.kroshtan.com";
+const UPDATE_URL = `${API_ORIGIN}/extension/updates.xml`;
+const PUBLIC_KEY_FILE = join(root, "release", "public-key.b64");
 const DEV_PERMISSIONS = ["http://localhost/*", "http://127.0.0.1/*"];
 
 const entries = {
@@ -55,6 +61,10 @@ function manifest(browser) {
   if (browser === "chrome") {
     return { ...base, background: { service_worker: "background.js" }, minimum_chrome_version: "116" };
   }
+  if (browser === "chrome-selfhosted") {
+    const key = readFileSync(PUBLIC_KEY_FILE, "utf8").trim();
+    return { ...manifest("chrome"), key, update_url: UPDATE_URL };
+  }
   return {
     ...base,
     background: { scripts: ["background.js"] },
@@ -78,7 +88,7 @@ async function buildFor(browser) {
     outdir: out,
     bundle: true,
     format: "iife",
-    target: browser === "chrome" ? "chrome116" : "firefox140",
+    target: browser === "firefox" ? "firefox140" : "chrome116",
     minify: !dev,
     sourcemap: dev ? "inline" : false,
     legalComments: "none",
@@ -87,9 +97,14 @@ async function buildFor(browser) {
   for (const file of statics) cpSync(join(root, "src", file), join(out, file));
   cpSync(join(root, "icons"), join(out, "icons"), { recursive: true });
   writeFileSync(join(out, "manifest.json"), JSON.stringify(manifest(browser), null, 2) + "\n");
-  if (!dev) zipDirectory(out, join(root, "dist", `veridex-${browser}-${pkg.version}.zip`));
+  // The self-hosted variant ships as a signed CRX (scripts/release.mjs), not a zip.
+  if (!dev && browser !== "chrome-selfhosted") {
+    zipDirectory(out, join(root, "dist", `veridex-${browser}-${pkg.version}.zip`));
+  }
   console.log(`built dist/${browser}${dev ? " (dev)" : ""}`);
 }
 
 await buildFor("chrome");
+if (existsSync(PUBLIC_KEY_FILE)) await buildFor("chrome-selfhosted");
+else console.log("skipped dist/chrome-selfhosted: no release/public-key.b64 (run `make crx-key`)");
 await buildFor("firefox");
