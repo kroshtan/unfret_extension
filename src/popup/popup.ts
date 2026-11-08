@@ -1,13 +1,15 @@
 /** The popup: account and credits, the "Analyse this page" button, live progress and the result. */
 
-import { ApiError, type AnalysisResult, VeridexApi } from "../api/client.js";
+import { ApiError, type AnalysisResult, type Pairing, VeridexApi } from "../api/client.js";
 import {
   ANALYSIS_PORT,
   type BackgroundUpdate,
   type PopupRequest,
   type TabState,
 } from "../shared/messages.js";
-import { clearSession, loadSettings, type Session, shortAddress } from "../shared/settings.js";
+import { waitForPairing } from "../shared/pairing.js";
+import { encodeQr, qrSvg } from "../shared/qr.js";
+import { clearSession, loadSettings, saveSession, type Session, shortAddress } from "../shared/settings.js";
 import { isAnalysable } from "../shared/sites.js";
 import { checksText, flagName, scoreClass, scoreLabel } from "./view.js";
 
@@ -63,11 +65,104 @@ async function refreshPricing(): Promise<void> {
   renderAccount();
 }
 
+// ── Sign in with phone ─────────────────────────────────────────────────────────
+// The pending pairing is kept in session storage (memory, cleared when the browser closes) so closing and reopening
+// the popup while the phone signs in resumes the same pairing instead of starting over.
+
+const PAIRING_KEY = "pendingPairing";
+let pairingAbort: AbortController | undefined;
+
+async function storedPairing(): Promise<Pairing | undefined> {
+  try {
+    const stored = await chrome.storage.session.get<{ pendingPairing?: Pairing }>(PAIRING_KEY);
+    const pairing = stored.pendingPairing;
+    return pairing && Date.parse(pairing.expires_at) > Date.now() ? pairing : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+async function forgetPairing(): Promise<void> {
+  try {
+    await chrome.storage.session.remove(PAIRING_KEY);
+  } catch {
+    // session storage unavailable: nothing was kept
+  }
+}
+
+function phoneStatus(text: string, retry = false): void {
+  el("phone-status").textContent = text;
+  show("phone-retry", retry);
+}
+
+function stopPairing(): void {
+  pairingAbort?.abort();
+  pairingAbort = undefined;
+}
+
+async function showPairing(pairing: Pairing): Promise<void> {
+  stopPairing();
+  show("phone", true);
+  el("phone-qr").replaceChildren(qrSvg(encodeQr(pairing.connect_url), "QR code to sign in on your phone"));
+  el("phone-code").textContent = pairing.confirm_code;
+  phoneStatus("Waiting for your phone…");
+  const abort = new AbortController();
+  pairingAbort = abort;
+  const outcome = await waitForPairing(new VeridexApi(apiBase), pairing.pair_id, {
+    expiresAt: pairing.expires_at,
+    signal: abort.signal,
+  });
+  if (pairingAbort !== abort) return; // superseded by a retry or cancel
+  pairingAbort = undefined;
+  await forgetPairing();
+  if (outcome.kind === "signed-in") {
+    await saveSession(outcome.session);
+    session = outcome.session;
+    show("phone", false);
+    renderAccount();
+    void refreshCredits();
+  } else if (outcome.kind === "expired") {
+    el("phone-qr").replaceChildren();
+    phoneStatus("This sign-in request expired.", true);
+  } else if (outcome.kind === "failed") {
+    el("phone-qr").replaceChildren();
+    phoneStatus(outcome.message, true);
+  }
+}
+
+async function startPhoneSignIn(): Promise<void> {
+  stopPairing();
+  show("phone", true);
+  el("phone-qr").replaceChildren();
+  el("phone-code").textContent = "";
+  phoneStatus("Preparing…");
+  try {
+    const pairing = await new VeridexApi(apiBase).startPairing();
+    try {
+      await chrome.storage.session.set({ [PAIRING_KEY]: pairing });
+    } catch {
+      // without session storage, closing the popup simply ends this attempt
+    }
+    await showPairing(pairing);
+  } catch (error) {
+    const message =
+      error instanceof ApiError && error.serviceOff
+        ? "Sign-in isn't available yet."
+        : error instanceof ApiError && error.status === 429
+          ? "Too many attempts; wait a few minutes."
+          : error instanceof ApiError
+            ? error.message
+            : "Couldn't reach Veridex. Check your connection.";
+    phoneStatus(message, true);
+  }
+}
+
 function renderAccount(): void {
   el("account-status").textContent = session
     ? `Signed in as ${shortAddress(session.address)}`
     : "Not signed in. Sign in with your Solana wallet to use your checks.";
   show("sign-in", !session);
+  show("sign-in-phone", !session);
   show("buy", Boolean(session) && purchasesOn);
   if (!session) show("credits", false);
   button("analyse").disabled = !session || !analysable;
@@ -164,6 +259,21 @@ async function init(): Promise<void> {
     el(id).addEventListener("click", () => {
       openTab("/checkout");
     });
+  }
+  el("sign-in-phone").addEventListener("click", () => {
+    void startPhoneSignIn();
+  });
+  el("phone-retry").addEventListener("click", () => {
+    void startPhoneSignIn();
+  });
+  el("phone-cancel").addEventListener("click", () => {
+    stopPairing();
+    void forgetPairing();
+    show("phone", false);
+  });
+  if (!session) {
+    const pending = await storedPairing();
+    if (pending) void showPairing(pending);
   }
 
   if (tabId === undefined) return;

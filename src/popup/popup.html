@@ -18,7 +18,24 @@
       <p id="credits" class="muted" hidden></p>
       <div class="row">
         <button id="sign-in" type="button" class="secondary">Sign in with a Solana wallet</button>
+        <button id="sign-in-phone" type="button" class="secondary">Sign in with phone</button>
         <button id="buy" type="button" class="secondary" hidden>Buy checks</button>
+      </div>
+    </section>
+
+    <section id="phone" class="card" aria-labelledby="phone-heading" hidden>
+      <h2 id="phone-heading">Sign in with your phone</h2>
+      <p class="small">
+        Scan this with your phone and open the page in your wallet app (Phantom, Solflare…). If your camera
+        opens a browser instead, the page offers to open itself in your wallet.
+      </p>
+      <div id="phone-qr" class="qr"></div>
+      <p class="small">Check that your phone shows the same code:</p>
+      <p id="phone-code" class="code" aria-live="polite"></p>
+      <p id="phone-status" class="muted small" role="status" aria-live="polite"></p>
+      <div class="row">
+        <button id="phone-retry" type="button" class="secondary" hidden>Try again</button>
+        <button id="phone-cancel" type="button" class="secondary">Cancel</button>
       </div>
     </section>
 

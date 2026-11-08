@@ -10,8 +10,20 @@ import type { AddressInfo } from "node:net";
 export interface MockApi {
   url: string;
   requests: { path: string; auth: string; body: unknown }[];
+  /**
+   * Phone pairing behaviour. `POST /v1/auth/pair` returns `id`; polls of "pair-ok" answer 202 `pendingPolls` times,
+   * then the session once, then 404. "pair-expired" → 410, "pair-gone" → 404, "pair-flaky" → 503 once, then the
+   * session. `connectBase` overrides the connect URL's origin (to test the origin check).
+   */
+  pairing: { id: string; pendingPolls: number; connectBase?: string; delivered: boolean; flaked: boolean };
   close(): Promise<void>;
 }
+
+export const PAIRED_SESSION = {
+  token: "paired-session-token-0123456789",
+  address: "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin",
+  expires_at: "2099-01-01T00:00:00Z",
+};
 
 function json(res: ServerResponse, status: number, body: unknown): void {
   res.writeHead(status, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
@@ -27,6 +39,8 @@ async function readBody(req: IncomingMessage): Promise<unknown> {
 
 export async function startMockApi(): Promise<MockApi> {
   const requests: MockApi["requests"] = [];
+  const pairing: MockApi["pairing"] = { id: "pair-ok", pendingPolls: 2, delivered: false, flaked: false };
+  let base = "";
   const server: Server = createServer((req, res) => {
     void (async () => {
       const auth = req.headers.authorization ?? "";
@@ -61,6 +75,35 @@ export async function startMockApi(): Promise<MockApi> {
           network: "solana-devnet",
           trial_checks: 5,
         });
+        return;
+      }
+      if (path === "/v1/auth/pair" && req.method === "POST") {
+        json(res, 201, {
+          pair_id: pairing.id,
+          confirm_code: "K7-4Q",
+          connect_url: `${pairing.connectBase ?? base}/connect?pair=${pairing.id}`,
+          expires_at: "2099-01-01T00:05:00Z",
+        });
+        return;
+      }
+      if (path.startsWith("/v1/auth/pair/")) {
+        const id = decodeURIComponent(path.slice("/v1/auth/pair/".length));
+        if (id === "pair-expired") {
+          json(res, 410, { detail: "This pairing expired; start again.", error_code: "PAIRING_EXPIRED" });
+        } else if (id === "pair-flaky" && !pairing.flaked) {
+          pairing.flaked = true;
+          json(res, 503, { detail: "Busy.", error_code: "SERVICE_UNAVAILABLE" });
+        } else if ((id === "pair-ok" || id === "pair-flaky") && !pairing.delivered) {
+          if (id === "pair-ok" && pairing.pendingPolls > 0) {
+            pairing.pendingPolls -= 1;
+            json(res, 202, { status: "pending" });
+          } else {
+            pairing.delivered = true;
+            json(res, 200, PAIRED_SESSION);
+          }
+        } else {
+          json(res, 404, { detail: "Unknown pairing.", error_code: "PAIRING_UNKNOWN" });
+        }
         return;
       }
       if (path === "/v1/credits") {
@@ -116,9 +159,11 @@ export async function startMockApi(): Promise<MockApi> {
   });
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   const { port } = server.address() as AddressInfo;
+  base = `http://127.0.0.1:${port}`;
   return {
-    url: `http://127.0.0.1:${port}`,
+    url: base,
     requests,
+    pairing,
     close: () =>
       new Promise((resolve, reject) => {
         server.close((err) => {

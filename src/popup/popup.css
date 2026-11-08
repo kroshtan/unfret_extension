@@ -73,3 +73,26 @@ body {
 .flags .type {
   font-weight: 600;
 }
+
+/* Phone sign-in: the QR code stays black on white in both themes so phones can read it. */
+.qr {
+  width: 200px;
+  margin: 8px auto;
+  background: #ffffff;
+  border-radius: 8px;
+}
+
+.qr svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.code {
+  margin: 4px 0;
+  text-align: center;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}

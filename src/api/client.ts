@@ -46,6 +46,22 @@ export interface Credits {
   checks_remaining: number;
 }
 
+/** A phone sign-in pairing (contract: "phone sign-in by pairing"). */
+export interface Pairing {
+  pair_id: string;
+  confirm_code: string;
+  connect_url: string;
+  expires_at: string;
+}
+
+export interface PairedSession {
+  token: string;
+  address: string;
+  expires_at: string;
+}
+
+export type PairPoll = { status: "pending" } | { status: "ready"; session: PairedSession };
+
 export interface Flag {
   type: string;
   evidence: string;
@@ -141,6 +157,34 @@ export class VeridexApi {
 
   credits(): Promise<Credits> {
     return this.get<Credits>("/v1/credits");
+  }
+
+  /** Start a phone sign-in; the connect URL must be on this API's origin (it goes into a QR code). */
+  async startPairing(): Promise<Pairing> {
+    const response = await this.fetcher(`${this.base}/v1/auth/pair`, {
+      method: "POST",
+      headers: this.headers(true),
+    });
+    if (!response.ok) throw await errorFrom(response);
+    const pairing = (await response.json()) as Pairing;
+    if (
+      typeof pairing.connect_url !== "string" ||
+      !pairing.connect_url.startsWith(`${this.base}/connect?pair=`)
+    ) {
+      throw new ApiError(502, "BAD_PAIRING", "The server sent an unexpected sign-in link.");
+    }
+    return pairing;
+  }
+
+  /** One poll: pending (202), or the session (200, delivered once). 410 expired and 404 unknown throw ApiError. */
+  async pollPairing(pairId: string): Promise<PairPoll> {
+    const response = await this.fetcher(`${this.base}/v1/auth/pair/${encodeURIComponent(pairId)}`, {
+      headers: this.headers(false),
+      cache: "no-store",
+    });
+    if (response.status === 202) return { status: "pending" };
+    if (!response.ok) throw await errorFrom(response);
+    return { status: "ready", session: (await response.json()) as PairedSession };
   }
 
   /** Run a streamed analysis; yields progress, ends with the result, throws ApiError on failure. */
