@@ -7,7 +7,7 @@ import { parseCount, parseDate, parseNumber, parsePrice, parseRating } from "../
 import { pyJsonLength } from "../src/extract/pyjson.js";
 import { checksText, flagName, scoreLabel } from "../src/popup/view.js";
 import { DEFAULT_API_BASE, isDevBase, normaliseApiBase, parseSession } from "../src/shared/settings.js";
-import { isAnalysable, isMarketplaceProduct, marketplacePatterns } from "../src/shared/sites.js";
+import { isAnalysable, isMarketplaceProduct } from "../src/shared/sites.js";
 
 describe("parsing (the backend's test cases)", () => {
   it.each([
@@ -162,7 +162,6 @@ describe("sites", () => {
     expect(isMarketplaceProduct("https://www.amazon.com/s?k=earbuds")).toBe(false);
     expect(isMarketplaceProduct("https://www.bol.com/nl/nl/p/koffiezetapparaat/9300000/")).toBe(true);
     expect(isMarketplaceProduct("https://notamazon.com/dp/B0TEST1234")).toBe(false);
-    expect(marketplacePatterns()).toContain("*://*.amazon.co.jp/*");
   });
 
   it("knows which pages can be analysed", () => {

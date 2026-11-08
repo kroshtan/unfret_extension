@@ -18,9 +18,11 @@ toolbar click ─► popup ─► background ─► inject extract.js into the t
                                    └─► POST /v1/analyze/stream (Bearer session) ─► live steps ─► score, flags
 ```
 
-- **Nothing runs until you click "Analyse this page".** Each analysis costs one check. On supported marketplace
-  product pages (Amazon, all countries; bol.com) the toolbar shows "?" until analysed; that badge comes from the
-  URL alone, without reading the page.
+- **Nothing runs until you click "Analyse this page".** Each analysis costs one check. The extension has no standing
+  access to any website: it reads a page only through `activeTab`, which the browser grants for that one tab when you
+  click the toolbar button. On supported marketplace product pages (Amazon, all countries; bol.com) the toolbar icon
+  gets a small amber marker; in Chromium the browser sets it itself from the page address (`declarativeContent`),
+  without the extension seeing the page.
 - **Extraction happens in the browser.** `src/extract/` is a TypeScript port of the backend's PageFacts
   extractors (`veridex/facts/*.py`). It also adds what only the rendered page shows: text hidden by stylesheet CSS,
   the current state of checkboxes, and countdowns read twice a few seconds apart.
@@ -37,7 +39,7 @@ The API contract is in the backend repository (credits door, contract v1).
 
 ```
 src/
-  background/   service worker / event page: session relay, badge, analysis runner
+  background/   service worker / event page: session relay, icon hint, badge, analysis runner
   content/      extract-entry.ts (injected on demand), connect-relay.ts (connect page only), relay.ts (checks)
   extract/      PageFacts extraction: parse, dom, generic, amazon, bolcom (ports); live, clean (browser-only)
   api/          API client and SSE parser
@@ -52,11 +54,11 @@ test/           unit, parity (jsdom vs the Python extractors), mock API; smoke/ 
 
 | Permission                                          | Why                                                                         |
 | --------------------------------------------------- | --------------------------------------------------------------------------- |
-| `activeTab`                                         | Analyse the page you clicked on (any shop), only when you click             |
+| `activeTab`                                         | Read the page you clicked on (any shop, marketplaces too), only then        |
 | `scripting`                                         | Inject the extractor into that tab; register the relay for a dev API origin |
 | `storage`                                           | Your session (token, wallet address, expiry) and settings; nothing else     |
-| Amazon (all TLDs), bol.com                          | The "?" badge on product pages, and analysis without an extra prompt there  |
-| `https://veridex.kroshtan.com/*`                    | The API, and the sign-in relay on `/connect`                                |
+| `declarativeContent` (Chromium)                     | The browser marks the icon on marketplace product pages; no page access     |
+| `https://veridex.kroshtan.com/connect*`             | The sign-in relay on the Veridex sign-in page (the API itself is CORS)      |
 | optional `http://localhost/*`, `http://127.0.0.1/*` | Only if you point the extension at a local dev server                       |
 
 ## Development
@@ -74,7 +76,7 @@ Load unpacked:
 
 - **Chrome**: `chrome://extensions` → Developer mode → Load unpacked → `dist/chrome`.
 - **Firefox**: `about:debugging#/runtime/this-firefox` → Load Temporary Add-on → `dist/firefox/manifest.json`.
-  Firefox may ask you to allow access to Amazon/bol.com before the badge appears.
+  Firefox has no `declarativeContent`, so it shows no marketplace marker; analysis works the same.
 
 To use a local backend, open the extension's settings and set the API base to e.g. `http://localhost:8080`
 (the browser asks for access to that address).

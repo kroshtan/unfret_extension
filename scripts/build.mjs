@@ -11,17 +11,14 @@ import { fileURLToPath } from "node:url";
 
 import { build } from "esbuild";
 
+import { manifest as manifestFor } from "./manifest.mjs";
 import { zipDirectory } from "./zip.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const dev = process.argv.includes("--dev");
 const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
-const sites = JSON.parse(readFileSync(join(root, "src/shared/sites.json"), "utf8"));
 
-const API_ORIGIN = "https://veridex.kroshtan.com";
-const UPDATE_URL = `${API_ORIGIN}/extension/updates.xml`;
 const PUBLIC_KEY_FILE = join(root, "release", "public-key.b64");
-const DEV_PERMISSIONS = ["http://localhost/*", "http://127.0.0.1/*"];
 
 const entries = {
   background: "src/background/index.ts",
@@ -31,52 +28,11 @@ const entries = {
   "options/options": "src/options/options.ts",
 };
 const statics = ["popup/popup.html", "popup/popup.css", "options/options.html", "shared/ui.css"];
-const icons = {
-  16: "icons/icon-16.png",
-  32: "icons/icon-32.png",
-  48: "icons/icon-48.png",
-  128: "icons/icon-128.png",
-};
 
 function manifest(browser) {
-  const base = {
-    manifest_version: 3,
-    name: "Veridex",
-    version: pkg.version,
-    description: pkg.description,
-    icons,
-    action: { default_popup: "popup/popup.html", default_title: "Veridex", default_icon: icons },
-    options_ui: { page: "options/options.html", open_in_tab: true },
-    permissions: ["activeTab", "storage", "scripting"],
-    host_permissions: [...[...sites.amazon, ...sites.bol].map((d) => `*://*.${d}/*`), `${API_ORIGIN}/*`],
-    optional_host_permissions: DEV_PERMISSIONS,
-    content_scripts: [
-      { matches: [`${API_ORIGIN}/connect*`], js: ["connect-relay.js"], run_at: "document_start" },
-    ],
-    content_security_policy: {
-      // Extension pages may only talk to the Veridex API (or a local dev server).
-      extension_pages: `script-src 'self'; object-src 'self'; connect-src ${API_ORIGIN} http://localhost:* http://127.0.0.1:*`,
-    },
-  };
-  if (browser === "chrome") {
-    return { ...base, background: { service_worker: "background.js" }, minimum_chrome_version: "116" };
-  }
-  if (browser === "chrome-selfhosted") {
-    const key = readFileSync(PUBLIC_KEY_FILE, "utf8").trim();
-    return { ...manifest("chrome"), key, update_url: UPDATE_URL };
-  }
-  return {
-    ...base,
-    background: { scripts: ["background.js"] },
-    browser_specific_settings: {
-      gecko: {
-        id: "veridex@kroshtan.com",
-        strict_min_version: "140.0",
-        data_collection_permissions: { required: ["websiteContent", "browsingActivity"] },
-      },
-      gecko_android: { strict_min_version: "142.0" },
-    },
-  };
+  const publicKey =
+    browser === "chrome-selfhosted" ? readFileSync(PUBLIC_KEY_FILE, "utf8").trim() : undefined;
+  return manifestFor(browser, { version: pkg.version, description: pkg.description, publicKey });
 }
 
 async function buildFor(browser) {

@@ -1,10 +1,14 @@
 /**
- * Smoke test of the built Chrome extension (dist/chrome) in headless Chromium, against the local mock API:
- * the session relay, the "?" badge, extraction in a real browser (compared with the backend's output for the
- * same page) and a full analysis through the background. Run with `npm run smoke` (builds first).
+ * Smoke test of the built Chrome extension (dist/chrome) in headless Chromium, against the local mock API.
+ *
+ * The shipped build holds no standing access to any shop: it can't read the Amazon page on its own, while the
+ * browser applies its declarativeContent icon hint there; the session relay works on the sign-in page. Reading a
+ * page needs activeTab, which Chromium grants when the user clicks the toolbar button. A headless browser can't
+ * click the toolbar, so a second, test-only copy of the build is granted that one site, the access a click gives,
+ * to check extraction (compared with the backend's output for the same page) and a full analysis.
  */
 
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -16,7 +20,7 @@ import type { TabState } from "../../src/shared/messages.js";
 import { type MockApi, startMockApi } from "../mock-server.js";
 
 const root = join(import.meta.dirname, "..", "..");
-const extension = join(root, "dist", "chrome");
+const shipped = join(root, "dist", "chrome");
 const fixture = (name: string): string => readFileSync(join(root, "test", "fixtures", name), "utf8");
 const AMAZON_URL = "https://www.amazon.com/dp/B0WATCH123";
 const ADDRESS = "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin";
@@ -27,15 +31,12 @@ const CONNECT_PAGE = `<!doctype html><title>connect</title><script>
     address: "${ADDRESS}", expires_at: "2999-01-01T00:00:00Z" }, location.origin), 300);
 </script>`;
 
-let api: MockApi;
-let context: BrowserContext;
-let worker: Worker;
-let userData: string;
+const temp: string[] = [];
 
-beforeAll(async () => {
-  api = await startMockApi();
-  userData = mkdtempSync(join(tmpdir(), "veridex-smoke-"));
-  context = await chromium.launchPersistentContext(userData, {
+async function launch(extension: string): Promise<{ context: BrowserContext; worker: Worker }> {
+  const userData = mkdtempSync(join(tmpdir(), "veridex-smoke-"));
+  temp.push(userData);
+  const context = await chromium.launchPersistentContext(userData, {
     channel: "chromium",
     headless: true,
     args: [`--disable-extensions-except=${extension}`, `--load-extension=${extension}`],
@@ -46,44 +47,113 @@ beforeAll(async () => {
   await context.route("https://veridex.kroshtan.com/connect**", (route) =>
     route.fulfill({ contentType: "text/html", body: CONNECT_PAGE }),
   );
-  worker = context.serviceWorkers()[0] ?? (await context.waitForEvent("serviceworker"));
-}, 120_000);
+  const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent("serviceworker"));
+  return { context, worker };
+}
 
-afterAll(async () => {
-  await context.close();
-  await api.close();
-  rmSync(userData, { recursive: true, force: true });
-});
+/** A copy of the build granted the Amazon site: the access a toolbar click (activeTab) gives for that tab. */
+function grantedCopy(): string {
+  const dir = mkdtempSync(join(tmpdir(), "veridex-granted-"));
+  temp.push(dir);
+  cpSync(shipped, dir, { recursive: true });
+  const manifestPath = join(dir, "manifest.json");
+  const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as Record<string, unknown>;
+  writeFileSync(
+    manifestPath,
+    JSON.stringify({ ...manifest, host_permissions: ["https://www.amazon.com/*"] }),
+  );
+  return dir;
+}
 
-async function amazonTabId(): Promise<number> {
+/** The most recently opened tab (the extension can't see tab URLs without host access, so not by URL). */
+async function newestTabId(worker: Worker): Promise<number> {
   return worker.evaluate(async () => {
-    const [tab] = await chrome.tabs.query({ url: "https://www.amazon.com/*" });
-    return tab?.id ?? -1;
+    const ids = (await chrome.tabs.query({})).map((t) => t.id ?? -1);
+    return Math.max(...ids);
   });
 }
 
-describe("the built extension in Chromium", () => {
+let api: MockApi;
+let plain: { context: BrowserContext; worker: Worker };
+let granted: { context: BrowserContext; worker: Worker };
+
+beforeAll(async () => {
+  api = await startMockApi();
+  plain = await launch(shipped);
+  granted = await launch(grantedCopy());
+}, 180_000);
+
+afterAll(async () => {
+  await plain.context.close();
+  await granted.context.close();
+  await api.close();
+  for (const dir of temp) rmSync(dir, { recursive: true, force: true });
+});
+
+describe("the shipped extension (no host permissions)", () => {
+  it("declares no host permissions", () => {
+    const manifest = JSON.parse(readFileSync(join(shipped, "manifest.json"), "utf8")) as Record<
+      string,
+      unknown
+    >;
+    expect(manifest).not.toHaveProperty("host_permissions");
+    expect(manifest.permissions).toEqual(["activeTab", "storage", "scripting", "declarativeContent"]);
+  });
+
   it("stores the session the connect page relays", async () => {
-    const page = await context.newPage();
+    const page = await plain.context.newPage();
     await page.goto("https://veridex.kroshtan.com/connect");
     await page.waitForFunction(() => document.title === "received", undefined, { timeout: 10_000 });
-    const stored = await worker.evaluate(() => chrome.storage.local.get("session"));
+    const stored = await plain.worker.evaluate(() => chrome.storage.local.get("session"));
     expect(stored.session).toMatchObject({ address: ADDRESS });
     await page.close();
   });
 
-  it("marks a marketplace product page with ?", async () => {
-    const page = await context.newPage();
-    await page.goto(AMAZON_URL);
-    const tabId = await amazonTabId();
-    await expect
-      .poll(() => worker.evaluate((id) => chrome.action.getBadgeText({ tabId: id }), tabId))
-      .toBe("?");
+  it("registers the marketplace icon hint, matching the product page's URL", async () => {
+    const rules = await plain.worker.evaluate(
+      () =>
+        new Promise<chrome.events.Rule[]>((resolve) => {
+          const poll = (): void => {
+            chrome.declarativeContent.onPageChanged.getRules((r) => {
+              if (r.length > 0) resolve(r);
+              else setTimeout(poll, 200);
+            });
+          };
+          poll();
+        }),
+    );
+    expect(rules).toHaveLength(1);
+    const patterns = JSON.stringify(rules[0]?.conditions).match(/"urlMatches":"([^"]+)"/gu) ?? [];
+    expect(patterns).toHaveLength(2);
+    expect(JSON.stringify(rules[0]?.actions)).toContain("SetIcon");
+    const amazon = JSON.parse(`{${patterns[0] ?? ""}}`) as { urlMatches: string };
+    expect(new RegExp(amazon.urlMatches, "u").test(AMAZON_URL)).toBe(true);
   });
 
+  it("can't read a shop page on its own", async () => {
+    const page = await plain.context.newPage();
+    await page.goto(AMAZON_URL);
+    const tabId = await newestTabId(plain.worker);
+    const outcome = await plain.worker.evaluate(async (id) => {
+      try {
+        await chrome.scripting.executeScript({ target: { tabId: id }, func: () => document.title });
+        return "read";
+      } catch (error) {
+        return String(error);
+      }
+    }, tabId);
+    expect(outcome).not.toBe("read");
+    expect(outcome).toMatch(/permission|Cannot access/iu);
+    expect(await plain.worker.evaluate((id) => chrome.action.getBadgeText({ tabId: id }), tabId)).toBe("");
+  });
+});
+
+describe("with the access a click grants (activeTab)", () => {
   it("extracts the same facts as the backend, without the user's personal text", async () => {
-    const tabId = await amazonTabId();
-    const extraction = await worker.evaluate(async (id) => {
+    const page = await granted.context.newPage();
+    await page.goto(AMAZON_URL);
+    const tabId = await newestTabId(granted.worker);
+    const extraction = await granted.worker.evaluate(async (id) => {
       await chrome.scripting.executeScript({ target: { tabId: id }, files: ["extract.js"] });
       const [result] = await chrome.scripting.executeScript({
         target: { tabId: id },
@@ -99,10 +169,17 @@ describe("the built extension in Chromium", () => {
   });
 
   it("runs a full analysis through the background against the API", async () => {
-    await worker.evaluate((base) => chrome.storage.local.set({ apiBase: base }), api.url);
-    const tabId = await amazonTabId();
-    const extensionId = new URL(worker.url()).host;
-    const popup = await context.newPage();
+    await granted.worker.evaluate(
+      ({ base, address }) =>
+        chrome.storage.local.set({
+          apiBase: base,
+          session: { token: `good-token-${"x".repeat(20)}`, address, expiresAt: "2999-01-01T00:00:00.000Z" },
+        }),
+      { base: api.url, address: ADDRESS },
+    );
+    const tabId = await newestTabId(granted.worker);
+    const extensionId = new URL(granted.worker.url()).host;
+    const popup = await granted.context.newPage();
     await popup.goto(`chrome-extension://${extensionId}/popup/popup.html`);
 
     const state = await popup.evaluate(
@@ -117,7 +194,7 @@ describe("the built extension in Chromium", () => {
       tabId,
     );
 
-    expect(state.status).toBe("done");
+    expect(state.status === "error" ? state.message : state.status).toBe("done");
     if (state.status === "done") {
       expect(state.result.score).toBe(18);
       expect(state.findings.map((f) => f.skill)).toEqual(["listing", "reviews"]);
@@ -127,6 +204,8 @@ describe("the built extension in Chromium", () => {
     expect(request?.auth).toBe("Bearer good-token-xxxxxxxxxxxxxxxxxxxx");
     expect(body.page_facts.title).toMatch(/^NOVAXEL Smart Watch/u);
     expect(body.page_content).not.toMatch(/Jane/u);
-    expect(await worker.evaluate((id) => chrome.action.getBadgeText({ tabId: id }), tabId)).toBe("18");
+    expect(await granted.worker.evaluate((id) => chrome.action.getBadgeText({ tabId: id }), tabId)).toBe(
+      "18",
+    );
   });
 });

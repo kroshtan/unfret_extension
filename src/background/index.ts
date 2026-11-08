@@ -2,15 +2,15 @@
  * The background (service worker in Chrome, event page in Firefox):
  *
  * - stores the session the connect page relays, after checking where it came from;
- * - marks supported marketplace product pages with a "?" badge (nothing is read from them);
- * - runs an analysis only when the user asks, for the active tab: injects the extractor, streams the result.
+ * - registers the marketplace icon hint (declarativeContent: the browser matches URLs, the extension reads nothing);
+ * - runs an analysis only when the user asks, for the active tab (activeTab, granted by that click): injects the
+ *   extractor, streams the result. It holds no standing access to any shop.
  *
  * Results live in memory per tab for the popup to show; nothing about pages is ever written to storage.
  */
 
 import { ApiError, VeridexApi } from "../api/client.js";
 import { SESSION_MESSAGE } from "../content/relay.js";
-import type { Extraction } from "../extract/index.js";
 import {
   ANALYSIS_PORT,
   type BackgroundUpdate,
@@ -18,8 +18,10 @@ import {
   type TabState,
 } from "../shared/messages.js";
 import { isDevBase, loadSettings, parseSession, saveSession } from "../shared/settings.js";
-import { isAnalysable, isMarketplaceProduct } from "../shared/sites.js";
+import { isAnalysable } from "../shared/sites.js";
 import { badgeFor } from "./badge.js";
+import { registerMarketplaceHint } from "./icon-hint.js";
+import { extractFromTab } from "./inject.js";
 
 const DEV_RELAY_ID = "veridex-connect-dev";
 const states = new Map<number, TabState>();
@@ -69,17 +71,13 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
   return true; // async response
 });
 
-// ── Marketplace badge ────────────────────────────────────────────────────────
+// ── Navigation: a result belongs to the page it was made for ────────────────
+// (No tab URL needed, and none is available without host access: any navigation clears the tab's result.)
 
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status !== "loading" || !tab.url) return;
+chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+  if (changeInfo.status !== "loading") return;
   states.delete(tabId);
-  if (isMarketplaceProduct(tab.url)) {
-    void chrome.action.setBadgeText({ tabId, text: "?" });
-    void chrome.action.setBadgeBackgroundColor({ tabId, color: "#5f6368" });
-  } else {
-    void chrome.action.setBadgeText({ tabId, text: "" });
-  }
+  void chrome.action.setBadgeText({ tabId, text: "" });
 });
 
 chrome.tabs.onRemoved.addListener((tabId) => {
@@ -88,17 +86,6 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 });
 
 // ── Analysis ─────────────────────────────────────────────────────────────────
-
-async function extract(tabId: number): Promise<Extraction> {
-  await chrome.scripting.executeScript({ target: { tabId }, files: ["extract.js"] });
-  const [injection] = await chrome.scripting.executeScript({
-    target: { tabId },
-    func: () => window.__veridexExtract?.(),
-  });
-  const result: Extraction | undefined = injection?.result;
-  if (!result) throw new Error("Couldn't read this page.");
-  return result;
-}
 
 async function analyse(tabId: number): Promise<void> {
   const current = states.get(tabId);
@@ -112,7 +99,10 @@ async function analyse(tabId: number): Promise<void> {
   if (!isAnalysable(tab.url, apiBase)) {
     setState(tabId, {
       status: "error",
-      message: "This page can't be analysed.",
+      // No URL means no access yet: activeTab is granted by clicking the toolbar button on that page.
+      message: tab.url
+        ? "This page can't be analysed."
+        : "Click the Veridex button on the page you want to analyse, then try again.",
       needsSignIn: false,
       needsCredits: false,
     });
@@ -120,7 +110,7 @@ async function analyse(tabId: number): Promise<void> {
   }
   setState(tabId, { status: "extracting" });
   try {
-    const { facts, text } = await extract(tabId);
+    const { facts, text } = await extractFromTab(tabId);
     const api = new VeridexApi(apiBase, session.token);
     let state: Extract<TabState, { status: "analysing" }> = { status: "analysing", findings: [] };
     setState(tabId, state);
@@ -190,8 +180,14 @@ async function syncDevRelay(): Promise<void> {
   ]);
 }
 
-chrome.runtime.onInstalled.addListener(() => void syncDevRelay());
-chrome.runtime.onStartup.addListener(() => void syncDevRelay());
+chrome.runtime.onInstalled.addListener(() => {
+  void syncDevRelay();
+  void registerMarketplaceHint();
+});
+chrome.runtime.onStartup.addListener(() => {
+  void syncDevRelay();
+  void registerMarketplaceHint();
+});
 chrome.storage.onChanged.addListener((changes) => {
   if ("apiBase" in changes) void syncDevRelay();
 });

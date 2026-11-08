@@ -1,39 +1,27 @@
-/** Which pages the extension knows: supported marketplaces (badge, host permission) and analysable pages. */
+/** Which pages the extension knows: supported marketplaces (icon hint) and analysable pages. */
 
 import sites from "./sites.json";
 
-const AMAZON_PRODUCT_RE = /\/(?:dp|gp\/product|gp\/aw\/d)\/[A-Z0-9]{10}/u;
-const BOL_PRODUCT_RE = /\/p\/[^/]+\/\d+/u;
-
-function hostOf(url: string): string {
-  try {
-    return new URL(url).hostname.toLowerCase();
-  } catch {
-    return "";
-  }
+function escaped(domain: string): string {
+  return domain.replaceAll(".", "\\.");
 }
 
-function onDomain(host: string, domain: string): boolean {
-  return host === domain || host.endsWith(`.${domain}`);
+/**
+ * Full-URL patterns for marketplace product pages, in the subset of syntax that both RE2 (Chromium's
+ * `declarativeContent` `urlMatches`) and JavaScript accept. The browser matches them without any access to the page.
+ */
+export function marketplaceUrlPatterns(): string[] {
+  const host = (domains: string[]): string =>
+    `^https?://(?:[a-z0-9-]+\\.)*(?:${domains.map(escaped).join("|")})(?::[0-9]+)?/`;
+  return [
+    `${host(sites.amazon)}(?:[^?#]*/)?(?:dp|gp/product|gp/aw/d)/[A-Z0-9]{10}`,
+    `${host(sites.bol)}(?:[^?#]*/)?p/[^/?#]+/[0-9]+`,
+  ];
 }
 
-/** Match patterns for the manifest's host permissions. */
-export function marketplacePatterns(): string[] {
-  return [...sites.amazon, ...sites.bol].map((d) => `*://*.${d}/*`);
-}
-
-/** A product page on a supported marketplace (gets the "?" badge until analysed). */
+/** A product page on a supported marketplace (gets the icon hint), by the same patterns the browser uses. */
 export function isMarketplaceProduct(url: string): boolean {
-  let path: string;
-  try {
-    path = new URL(url).pathname;
-  } catch {
-    return false;
-  }
-  const host = hostOf(url);
-  if (sites.amazon.some((d) => onDomain(host, d))) return AMAZON_PRODUCT_RE.test(path);
-  if (sites.bol.some((d) => onDomain(host, d))) return BOL_PRODUCT_RE.test(path);
-  return false;
+  return marketplaceUrlPatterns().some((pattern) => new RegExp(pattern, "u").test(url));
 }
 
 /** Pages a browser never lets extensions script (and the Veridex site itself). */

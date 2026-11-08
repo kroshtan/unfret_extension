@@ -13,8 +13,10 @@ checkboxes, countdowns) and the visible product text.
 Before anything leaves your browser, the extension removes account menus, delivery addresses, greetings, forms
 and input fields from a copy of the page. The page itself is not changed.
 
-On Amazon and bol.com product pages the toolbar icon shows "?" based on the page address alone; the page is not
-read.
+The extension has no standing access to any website. It can read a page only after you click its toolbar button on
+that page (the browser's `activeTab` grant, for that one tab). On Amazon and bol.com product pages the toolbar icon
+gets a small marker: the browser sets it itself from the page address (`declarativeContent`); the extension does not
+see the page or its address.
 
 ## What is sent, and to whom
 
