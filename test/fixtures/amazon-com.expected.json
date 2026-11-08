@@ -1,0 +1,65 @@
+{
+ "platform": "amazon",
+ "url": "https://www.amazon.com/dp/B0WATCH123",
+ "title": "NOVAXEL Smart Watch for Men Women, 1.96\" HD Fitness Tracker, 100+ Sport Modes, IP68 Waterproof",
+ "brand": "NOVAXEL",
+ "seller": "Shenzhen Novaxel Tech Co",
+ "seller_rating": null,
+ "ships_from": "Amazon",
+ "price": 29.99,
+ "list_price": 89.99,
+ "currency": "USD",
+ "date_first_available": "2026-09-03",
+ "rating": 4.4,
+ "rating_count": 2285,
+ "rating_histogram": {
+  "5": 0.72,
+  "4": 0.09,
+  "3": 0.05,
+  "2": 0.03,
+  "1": 0.11
+ },
+ "reviews": [
+  {
+   "rating": 5.0,
+   "posted": "2026-09-10",
+   "title": "Great watch for the price",
+   "body": "Works great, battery lasts a week.",
+   "verified": true
+  },
+  {
+   "rating": 1.0,
+   "posted": "2026-10-02",
+   "title": "Stopped working",
+   "body": "Died after two weeks. Seller did not answer.",
+   "verified": false
+  }
+ ],
+ "variations": [
+  "Black",
+  "Pink"
+ ],
+ "json_ld": [],
+ "script_srcs": [
+  "https://www.amazon.com/js/countdown-deal.js"
+ ],
+ "meta": {
+  "description": "NOVAXEL Smart Watch for Men Women"
+ },
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [
+  "<div id=\"deal-timer\" class=\"a-section countdown-timer\"> Deal ends in 02:14:09",
+  "script src: https://www.amazon.com/js/countdown-deal.js"
+ ],
+ "fee_mentions": [],
+ "vat_ids": [],
+ "legal_mentions": [],
+ "policy_links": {
+  "refund": "https://www.amazon.com/gp/help/customer/display.html?nodeId=returns",
+  "privacy": "https://www.amazon.com/privacy"
+ },
+ "image_urls": [
+  "https://m.media-amazon.com/images/I/watch.jpg"
+ ]
+}

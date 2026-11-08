@@ -1,0 +1,336 @@
+{
+ "$defs": {
+  "Checkbox": {
+   "description": "A checkbox on the page, e.g. an add-on in a cart or checkout form.",
+   "properties": {
+    "label": {
+     "default": "",
+     "maxLength": 300,
+     "title": "Label",
+     "type": "string"
+    },
+    "name": {
+     "default": "",
+     "maxLength": 300,
+     "title": "Name",
+     "type": "string"
+    },
+    "checked": {
+     "default": false,
+     "title": "Checked",
+     "type": "boolean"
+    }
+   },
+   "title": "Checkbox",
+   "type": "object"
+  },
+  "Review": {
+   "description": "One review as shown on the page.",
+   "properties": {
+    "rating": {
+     "anyOf": [
+      {
+       "maximum": 5,
+       "minimum": 0,
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Rating"
+    },
+    "posted": {
+     "anyOf": [
+      {
+       "format": "date",
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Posted"
+    },
+    "title": {
+     "default": "",
+     "maxLength": 300,
+     "title": "Title",
+     "type": "string"
+    },
+    "body": {
+     "default": "",
+     "maxLength": 2000,
+     "title": "Body",
+     "type": "string"
+    },
+    "verified": {
+     "anyOf": [
+      {
+       "type": "boolean"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Verified"
+    }
+   },
+   "title": "Review",
+   "type": "object"
+  }
+ },
+ "description": "Structured facts about one product page. Absent facts are ``None`` or empty, never guessed.",
+ "properties": {
+  "platform": {
+   "default": "generic",
+   "enum": [
+    "amazon",
+    "bol.com",
+    "shopify",
+    "woocommerce",
+    "generic"
+   ],
+   "title": "Platform",
+   "type": "string"
+  },
+  "url": {
+   "default": "",
+   "maxLength": 2000,
+   "title": "Url",
+   "type": "string"
+  },
+  "title": {
+   "default": "",
+   "maxLength": 2000,
+   "title": "Title",
+   "type": "string"
+  },
+  "brand": {
+   "default": "",
+   "maxLength": 300,
+   "title": "Brand",
+   "type": "string"
+  },
+  "seller": {
+   "default": "",
+   "maxLength": 300,
+   "title": "Seller",
+   "type": "string"
+  },
+  "seller_rating": {
+   "anyOf": [
+    {
+     "maximum": 100,
+     "minimum": 0,
+     "type": "number"
+    },
+    {
+     "type": "null"
+    }
+   ],
+   "default": null,
+   "description": "Positive share in percent.",
+   "title": "Seller Rating"
+  },
+  "ships_from": {
+   "default": "",
+   "maxLength": 300,
+   "title": "Ships From",
+   "type": "string"
+  },
+  "price": {
+   "anyOf": [
+    {
+     "minimum": 0,
+     "type": "number"
+    },
+    {
+     "type": "null"
+    }
+   ],
+   "default": null,
+   "title": "Price"
+  },
+  "list_price": {
+   "anyOf": [
+    {
+     "minimum": 0,
+     "type": "number"
+    },
+    {
+     "type": "null"
+    }
+   ],
+   "default": null,
+   "description": "Struck-through 'was' / compare-at price.",
+   "title": "List Price"
+  },
+  "currency": {
+   "default": "",
+   "maxLength": 8,
+   "title": "Currency",
+   "type": "string"
+  },
+  "date_first_available": {
+   "anyOf": [
+    {
+     "format": "date",
+     "type": "string"
+    },
+    {
+     "type": "null"
+    }
+   ],
+   "default": null,
+   "title": "Date First Available"
+  },
+  "rating": {
+   "anyOf": [
+    {
+     "maximum": 5,
+     "minimum": 0,
+     "type": "number"
+    },
+    {
+     "type": "null"
+    }
+   ],
+   "default": null,
+   "title": "Rating"
+  },
+  "rating_count": {
+   "anyOf": [
+    {
+     "minimum": 0,
+     "type": "integer"
+    },
+    {
+     "type": "null"
+    }
+   ],
+   "default": null,
+   "title": "Rating Count"
+  },
+  "rating_histogram": {
+   "additionalProperties": {
+    "type": "number"
+   },
+   "description": "Share of ratings (0\u20131) per star count 1\u20135.",
+   "title": "Rating Histogram",
+   "type": "object"
+  },
+  "reviews": {
+   "items": {
+    "$ref": "#/$defs/Review"
+   },
+   "maxItems": 100,
+   "title": "Reviews",
+   "type": "array"
+  },
+  "variations": {
+   "items": {
+    "type": "string"
+   },
+   "maxItems": 100,
+   "title": "Variations",
+   "type": "array"
+  },
+  "json_ld": {
+   "description": "Product JSON-LD.",
+   "items": {
+    "additionalProperties": true,
+    "type": "object"
+   },
+   "maxItems": 20,
+   "title": "Json Ld",
+   "type": "array"
+  },
+  "script_srcs": {
+   "items": {
+    "type": "string"
+   },
+   "maxItems": 300,
+   "title": "Script Srcs",
+   "type": "array"
+  },
+  "meta": {
+   "additionalProperties": {
+    "type": "string"
+   },
+   "title": "Meta",
+   "type": "object"
+  },
+  "hidden_text": {
+   "items": {
+    "type": "string"
+   },
+   "maxItems": 100,
+   "title": "Hidden Text",
+   "type": "array"
+  },
+  "checkboxes": {
+   "items": {
+    "$ref": "#/$defs/Checkbox"
+   },
+   "maxItems": 100,
+   "title": "Checkboxes",
+   "type": "array"
+  },
+  "timers": {
+   "description": "Countdown elements or scripts.",
+   "items": {
+    "type": "string"
+   },
+   "maxItems": 50,
+   "title": "Timers",
+   "type": "array"
+  },
+  "fee_mentions": {
+   "items": {
+    "type": "string"
+   },
+   "maxItems": 50,
+   "title": "Fee Mentions",
+   "type": "array"
+  },
+  "vat_ids": {
+   "items": {
+    "type": "string"
+   },
+   "maxItems": 10,
+   "title": "Vat Ids",
+   "type": "array"
+  },
+  "legal_mentions": {
+   "description": "Imprint, company register and withdrawal-right text.",
+   "items": {
+    "type": "string"
+   },
+   "maxItems": 50,
+   "title": "Legal Mentions",
+   "type": "array"
+  },
+  "policy_links": {
+   "additionalProperties": {
+    "type": "string"
+   },
+   "description": "Kind (refund, terms, privacy, contact, imprint, shipping) to URL.",
+   "title": "Policy Links",
+   "type": "object"
+  },
+  "image_urls": {
+   "items": {
+    "type": "string"
+   },
+   "maxItems": 50,
+   "title": "Image Urls",
+   "type": "array"
+  }
+ },
+ "title": "PageFacts",
+ "type": "object"
+}

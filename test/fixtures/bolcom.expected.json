@@ -1,0 +1,38 @@
+{
+ "platform": "bol.com",
+ "url": "https://www.bol.com/nl/nl/p/koffiezetapparaat/9300000/",
+ "title": "Koffiezetapparaat XL",
+ "brand": "Philips",
+ "seller": "KoffieShop BV",
+ "seller_rating": 91.0,
+ "ships_from": "",
+ "price": 39.99,
+ "list_price": null,
+ "currency": "EUR",
+ "date_first_available": null,
+ "rating": null,
+ "rating_count": null,
+ "rating_histogram": {},
+ "reviews": [],
+ "variations": [],
+ "json_ld": [
+  {
+   "@type": "Product",
+   "name": "Koffiezetapparaat",
+   "offers": {
+    "price": "39.99",
+    "priceCurrency": "EUR"
+   }
+  }
+ ],
+ "script_srcs": [],
+ "meta": {},
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [],
+ "fee_mentions": [],
+ "vat_ids": [],
+ "legal_mentions": [],
+ "policy_links": {},
+ "image_urls": []
+}

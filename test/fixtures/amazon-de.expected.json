@@ -1,0 +1,48 @@
+{
+ "platform": "amazon",
+ "url": "https://www.amazon.de/dp/B0TEST1234",
+ "title": "ZHUIBO Wireless Earbuds Bluetooth 5.4",
+ "brand": "ZHUIBO",
+ "seller": "HUAXINGDA Direct",
+ "seller_rating": null,
+ "ships_from": "Amazon",
+ "price": 19.99,
+ "list_price": 129.99,
+ "currency": "EUR",
+ "date_first_available": "2026-08-14",
+ "rating": 4.6,
+ "rating_count": 5231,
+ "rating_histogram": {
+  "5": 0.89,
+  "4": 0.04,
+  "3": 0.02,
+  "2": 0.01,
+  "1": 0.04
+ },
+ "reviews": [
+  {
+   "rating": 5.0,
+   "posted": "2026-08-20",
+   "title": "Super",
+   "body": "Great product fast shipping",
+   "verified": true
+  }
+ ],
+ "variations": [
+  "Black",
+  "White"
+ ],
+ "json_ld": [],
+ "script_srcs": [],
+ "meta": {},
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [],
+ "fee_mentions": [],
+ "vat_ids": [],
+ "legal_mentions": [],
+ "policy_links": {},
+ "image_urls": [
+  "https://m.media-amazon.com/images/I/big.jpg"
+ ]
+}

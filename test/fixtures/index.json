@@ -1,0 +1,9 @@
+{
+  "amazon-de": "https://www.amazon.de/dp/B0TEST1234",
+  "amazon-com": "https://www.amazon.com/dp/B0WATCH123",
+  "shopify-glow": "https://shop.test/products/glow-lamp",
+  "bolcom": "https://www.bol.com/nl/nl/p/koffiezetapparaat/9300000/",
+  "woocommerce": "https://gadget-handel.example/produkt/massagepistole",
+  "generic-graph": "https://www.zentrashop.example/products/zentra-lamp?variant=1",
+  "empty": ""
+}

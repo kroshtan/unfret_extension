@@ -1,0 +1,405 @@
+/**
+ * Extract `PageFacts` from a page's DOM: a port of the backend's `veridex/facts/extract.py`. Platform extractors
+ * (Amazon, bol.com) fill in what generic markup (JSON-LD, microdata, Open Graph) doesn't carry.
+ *
+ * Works on any `Document`: the live page in the browser, or a parsed HTML string in tests (parity with Python).
+ */
+
+import { type Checkbox, emptyFacts, emptyReview, type PageFacts, type Platform } from "../shared/facts.js";
+import * as amazon from "./amazon.js";
+import * as bolcom from "./bolcom.js";
+import { attr, cut, dedupe, hostname, squash, tagName, text, urljoin } from "./dom.js";
+import { parseDate, parseNumber, parseRating } from "./parse.js";
+import { pyJsonLength } from "./pyjson.js";
+
+const HIDDEN_STYLE_RE =
+  /display\s*:\s*none|visibility\s*:\s*hidden|font-size\s*:\s*0(?![.\d])|opacity\s*:\s*0(?![.\d])|(?:left|top|text-indent)\s*:\s*-\d{3,}px/iu;
+export const TIMER_ATTR_RE = /countdown|count-down|timer|hurry|urgency|limited-time|flash-?sale/iu;
+const TIMER_SCRIPT_RE =
+  /countdown|setInterval\s*\(.{0,200}?(?:hours|minutes|seconds)|evergreen|deadline\s*=/isu;
+const FEE_RE =
+  /[^.\n]{0,80}(?:service fee|handling fee|processing fee|booking fee|convenience fee|admin(?:istration)? fee|shipping (?:is )?calculated at checkout|taxes and shipping calculated|plus shipping|excl\.? shipping|verzendkosten|servicekosten|administratiekosten|bearbeitungsgebühr|servicegebühr|zzgl\.? versand|frais de (?:service|dossier|traitement)|gastos de (?:gestión|envío)|spese di (?:gestione|spedizione))[^.\n]{0,80}/giu;
+// EU VAT numbers per country (VIES formats), matched against a candidate with its separators removed.
+const VAT_RE =
+  /^(?:ATU\d{8}|BE0?\d{9}|BG\d{9,10}|CY\d{8}[A-Z]|CZ\d{8,10}|DE\d{9}|DK\d{8}|EE\d{9}|EL\d{9}|ES[A-Z0-9]\d{7}[A-Z0-9]|FI\d{8}|FR[A-HJ-NP-Z0-9]{2}\d{9}|HR\d{11}|HU\d{8}|IE\d[A-Z0-9+*]\d{5}[A-Z]{1,2}|IT\d{11}|LT\d{9,12}|LU\d{8}|LV\d{11}|MT\d{8}|NL\d{9}B\d{2}|PL\d{10}|PT\d{9}|RO\d{2,10}|SE\d{12}|SI\d{8}|SK\d{10}|XI\d{9})$/u;
+const VAT_CANDIDATE_RE =
+  /(?<![A-Z0-9])(?:AT|BE|BG|CY|CZ|DE|DK|EE|EL|ES|FI|FR|HR|HU|IE|IT|LT|LU|LV|MT|NL|PL|PT|RO|SE|SI|SK|XI)[\s.]?[0-9A-Z][0-9A-Z\s.+*]{6,18}/gu;
+const LEGAL_RE =
+  /[^.\n]{0,60}(?:impressum|imprint|kvk|kamer van koophandel|handelsregister|registre du commerce|company number|registered in|chamber of commerce|withdraw(?:al)?|widerruf|herroeping|bedenktijd|rétractation|desistimiento|recesso|14[ -](?:day|dagen|tage|jours|días|giorni))[^.\n]{0,100}/giu;
+const POLICY_KINDS: [string, RegExp][] = [
+  ["refund", /refund|return|retour|widerruf|rétractation|devoluci|reso/iu],
+  ["shipping", /shipping|delivery|verzend|versand|livraison|envío|spedizion/iu],
+  ["terms", /terms|conditions|voorwaarden|\bagb\b|cgv|condiciones|termini/iu],
+  ["privacy", /privacy|datenschutz|confidentialit|privacidad/iu],
+  ["contact", /contact|kontakt|contacto|contatti/iu],
+  ["imprint", /impressum|imprint|legal notice|mentions légales|colofon|aviso legal/iu],
+];
+const SHOPIFY_RE = /cdn\.shopify\.com|Shopify\.theme|myshopify\.com/iu;
+const WOO_RE = /woocommerce|wp-content\/plugins\/woocommerce/iu;
+const AMAZON_HOST_RE = /(?:^|[\s.])amazon\.[a-z.]+/u;
+const BOL_HOST_RE = /(?:^|[\s.])bol\.com/u;
+const COMPARE_AT_RE = /"compare_at_price"\s*:\s*"?(\d+(?:\.\d+)?)"?/u;
+const SKIP_HIDDEN = new Set([
+  "script",
+  "style",
+  "noscript",
+  "template",
+  "head",
+  "meta",
+  "link",
+  "svg",
+  "input",
+]);
+const TRIM_KEYS = [
+  "@type",
+  "name",
+  "brand",
+  "sku",
+  "gtin",
+  "gtin13",
+  "gtin12",
+  "gtin8",
+  "mpn",
+  "offers",
+  "aggregateRating",
+];
+
+const MAX_HIDDEN_CHARS = 300;
+const MAX_SNIPPETS = 20;
+
+type Json = Record<string, unknown>;
+
+function isObject(value: unknown): value is Json {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/** Python's `str(value)` for the JSON values pages contain (strings, numbers, booleans). */
+function str(value: unknown): string {
+  if (value === null || value === undefined) return "None";
+  if (typeof value === "string") return value;
+  if (typeof value === "boolean") return value ? "True" : "False";
+  if (typeof value === "number") return String(value);
+  return JSON.stringify(value);
+}
+
+/** Python truthiness for JSON values. */
+function truthy(value: unknown): boolean {
+  if (Array.isArray(value)) return value.length > 0;
+  if (isObject(value)) return Object.keys(value).length > 0;
+  return Boolean(value);
+}
+
+/** `value or fallback` with Python truthiness. */
+function or(value: unknown, fallback: unknown): unknown {
+  return truthy(value) ? value : fallback;
+}
+
+/** Extract the facts from a page. `html` is the raw markup (some signals live in script text). */
+export function extractFacts(doc: Document, html: string, url = ""): PageFacts {
+  const facts = emptyFacts(url);
+  facts.platform = platform(doc, html, url);
+  scriptsAndMeta(doc, url, facts);
+  hiddenText(doc, facts);
+  facts.checkboxes = checkboxes(doc).slice(0, 100);
+  timers(doc, facts);
+  textSignals(doc, facts);
+  policyLinks(doc, url, facts);
+  images(doc, url, facts);
+  structuredData(doc, facts);
+  if (facts.platform === "amazon") amazon.extract(doc, facts);
+  else if (facts.platform === "bol.com") bolcom.extract(doc, facts);
+  else if (facts.platform === "shopify") shopify(html, facts);
+  if (!facts.title) facts.title = text(doc.querySelector("h1")) || meta(doc, "og:title");
+  const ogImage = meta(doc, "og:image");
+  if (facts.image_urls.length === 0 && ogImage) facts.image_urls = [urljoin(url, ogImage)];
+  return facts;
+}
+
+export function platform(doc: Document, html: string, url: string): Platform {
+  const host = hostname(url).replace(/^www\./u, "");
+  const canonical = doc.querySelector('link[rel~="canonical"]');
+  const canonicalHost = canonical ? hostname(attr(canonical, "href")) : "";
+  const hosts = `${host} ${canonicalHost}`;
+  if (AMAZON_HOST_RE.test(hosts) || (doc.getElementById("productTitle") && doc.getElementById("dp"))) {
+    return "amazon";
+  }
+  if (BOL_HOST_RE.test(hosts)) return "bol.com";
+  if (SHOPIFY_RE.test(html)) return "shopify";
+  if (WOO_RE.test(html)) return "woocommerce";
+  return "generic";
+}
+
+function scriptsAndMeta(doc: Document, url: string, facts: PageFacts): void {
+  facts.script_srcs = Array.from(doc.querySelectorAll("script[src]"))
+    .map((s) => urljoin(url, attr(s, "src")))
+    .slice(0, 300);
+  const metas: Record<string, string> = {};
+  let count = 0;
+  for (const tag of Array.from(doc.querySelectorAll("meta"))) {
+    const key = attr(tag, "name") || attr(tag, "property") || attr(tag, "http-equiv");
+    const content = attr(tag, "content");
+    if (key && content && count < 100) {
+      const k = cut(key.toLowerCase(), 100);
+      if (!(k in metas)) count++;
+      metas[k] = cut(content, 300);
+    }
+  }
+  facts.meta = metas;
+}
+
+function hiddenText(doc: Document, facts: PageFacts): void {
+  const hidden: string[] = [];
+  for (const tag of Array.from(doc.querySelectorAll("*"))) {
+    if (SKIP_HIDDEN.has(tagName(tag))) continue;
+    const style = attr(tag, "style");
+    if (tag.hasAttribute("hidden") || (style && HIDDEN_STYLE_RE.test(style))) {
+      const t = text(tag);
+      if (Array.from(t).length >= 20) hidden.push(cut(t, MAX_HIDDEN_CHARS));
+    }
+  }
+  facts.hidden_text = dedupe(hidden).slice(0, 100);
+}
+
+function checkboxes(doc: Document): Checkbox[] {
+  const labelsFor = new Map<string, string>();
+  for (const lab of Array.from(doc.querySelectorAll("label[for]")))
+    labelsFor.set(attr(lab, "for"), text(lab));
+  const boxes: Checkbox[] = [];
+  for (const box of Array.from(doc.querySelectorAll("input"))) {
+    if (!/^checkbox$/iu.test(attr(box, "type"))) continue;
+    let label = labelsFor.get(attr(box, "id")) ?? "";
+    const parentLabel = box.parentElement?.closest("label");
+    if (!label && parentLabel) label = text(parentLabel);
+    if (!label && box.parentElement) label = text(box.parentElement);
+    boxes.push({
+      label: cut(label, 300),
+      name: cut(attr(box, "name"), 300),
+      checked: box.hasAttribute("checked"),
+    });
+  }
+  return boxes;
+}
+
+export function attrSummary(tag: Element): string {
+  const parts: string[] = [];
+  const id = attr(tag, "id");
+  if (id) parts.push(`id="${id}"`);
+  const classes = (tag.getAttribute("class") ?? "").split(/\s+/u).filter(Boolean);
+  if (classes.length > 0) parts.push(`class="${classes.join(" ")}"`);
+  return cut(parts.join(" "), 120);
+}
+
+/** The elements bs4 finds with `class=TIMER_ATTR_RE` followed by those with `id=TIMER_ATTR_RE`. */
+export function timerElements(doc: Document): Element[] {
+  const all = Array.from(doc.querySelectorAll("*"));
+  const byClass = all.filter((el) =>
+    (el.getAttribute("class") ?? "")
+      .split(/\s+/u)
+      .filter(Boolean)
+      .some((c) => TIMER_ATTR_RE.test(c)),
+  );
+  const byId = all.filter((el) => TIMER_ATTR_RE.test(attr(el, "id")));
+  return [...byClass, ...byId].filter((el) => !["script", "style"].includes(tagName(el)));
+}
+
+export function timerLabel(tag: Element): string {
+  return `<${tagName(tag)} ${attrSummary(tag)}> ${cut(text(tag), 80)}`.trim();
+}
+
+function timers(doc: Document, facts: PageFacts): void {
+  const found = timerElements(doc).map(timerLabel);
+  for (const script of Array.from(doc.querySelectorAll("script:not([src])"))) {
+    const body = script.textContent;
+    const m = TIMER_SCRIPT_RE.exec(body);
+    if (m) {
+      found.push(`script: ${squash(body.slice(Math.max(0, m.index - 60), m.index + m[0].length + 120))}`);
+    }
+  }
+  for (const src of facts.script_srcs) if (TIMER_ATTR_RE.test(src)) found.push(`script src: ${src}`);
+  facts.timers = dedupe(found).slice(0, 50);
+}
+
+function matches(re: RegExp, value: string): string[] {
+  return Array.from(value.matchAll(re), (m) => squash(m[0]));
+}
+
+function textSignals(doc: Document, facts: PageFacts): void {
+  const all = text(doc.documentElement);
+  facts.fee_mentions = dedupe(matches(FEE_RE, all)).slice(0, MAX_SNIPPETS);
+  facts.vat_ids = dedupe(vatIds(all)).slice(0, 10);
+  facts.legal_mentions = dedupe(matches(LEGAL_RE, all)).slice(0, MAX_SNIPPETS);
+}
+
+function vatIds(value: string): string[] {
+  const found: string[] = [];
+  for (const m of value.matchAll(VAT_CANDIDATE_RE)) {
+    const squashed = m[0].replace(/[\s.]/gu, "");
+    // The run may swallow what follows the number; keep its longest prefix that is a valid VAT format.
+    for (let end = squashed.length; end > 7; end--) {
+      if (VAT_RE.test(squashed.slice(0, end))) {
+        found.push(squashed.slice(0, end));
+        break;
+      }
+    }
+  }
+  return found;
+}
+
+function policyLinks(doc: Document, url: string, facts: PageFacts): void {
+  const links: Record<string, string> = {};
+  for (const a of Array.from(doc.querySelectorAll("a[href]"))) {
+    const href = attr(a, "href");
+    const label = `${text(a)} ${href}`;
+    for (const [kind, pattern] of POLICY_KINDS) {
+      if (!(kind in links) && pattern.test(label)) links[kind] = cut(urljoin(url, href), 500);
+    }
+  }
+  facts.policy_links = links;
+}
+
+function images(doc: Document, url: string, facts: PageFacts): void {
+  const found: string[] = [];
+  for (const img of Array.from(doc.querySelectorAll("img"))) {
+    const src = attr(img, "data-old-hires") || attr(img, "src") || attr(img, "data-src");
+    if (src && !src.startsWith("data:") && !src.toLowerCase().endsWith(".svg")) found.push(urljoin(url, src));
+  }
+  facts.image_urls = dedupe(found).slice(0, 50);
+}
+
+function jsonLdProducts(doc: Document): Json[] {
+  const products: Json[] = [];
+  const walk = (node: unknown): void => {
+    if (Array.isArray(node)) {
+      for (const item of node) walk(item);
+    } else if (isObject(node)) {
+      const kind = node["@type"] ?? "";
+      if (kind === "Product" || (Array.isArray(kind) && kind.includes("Product"))) products.push(node);
+      for (const key of ["@graph", "mainEntity", "itemListElement"]) if (key in node) walk(node[key]);
+    }
+  };
+  for (const script of Array.from(doc.querySelectorAll("script"))) {
+    if (attr(script, "type") !== "application/ld+json") continue;
+    try {
+      walk(JSON.parse(script.textContent));
+    } catch {
+      continue;
+    }
+  }
+  return products;
+}
+
+function trim(node: Json): Json {
+  const trimmed: Json = {};
+  for (const k of TRIM_KEYS) if (k in node) trimmed[k] = node[k];
+  if (pyJsonLength(trimmed) <= 4000) return trimmed;
+  const small: Json = {};
+  for (const k of ["@type", "name", "brand"]) if (k in trimmed) small[k] = trimmed[k];
+  return small;
+}
+
+function structuredData(doc: Document, facts: PageFacts): void {
+  const products = jsonLdProducts(doc);
+  facts.json_ld = products.slice(0, 20).map(trim);
+  const product = products[0];
+  if (product) {
+    facts.title = facts.title || cut(str(or(product.name, "")), 2000);
+    const brand = product.brand;
+    facts.brand = facts.brand || cut(str(isObject(brand) ? (brand.name ?? "") : or(brand, "")), 300);
+    applyOffer(product.offers, facts);
+    applyRating(product.aggregateRating, facts);
+    applyReviews(product.review, facts);
+    applyImages(product.image, facts);
+  }
+  if (facts.price === null) {
+    facts.price = num(meta(doc, "product:price:amount") || meta(doc, "og:price:amount"));
+    facts.currency = facts.currency || meta(doc, "product:price:currency") || meta(doc, "og:price:currency");
+  }
+  if (facts.reviews.length === 0) microdataReviews(doc, facts);
+}
+
+function applyOffer(offers: unknown, facts: PageFacts): void {
+  const offer = Array.isArray(offers) && offers.length > 0 ? (offers[0] as unknown) : offers;
+  if (!isObject(offer)) return;
+  if (facts.price === null) facts.price = num(or(offer.price, offer.lowPrice));
+  facts.currency = facts.currency || cut(str(or(offer.priceCurrency, "")), 8);
+  const seller = offer.seller;
+  if (isObject(seller) && !facts.seller) facts.seller = cut(str(or(seller.name, "")), 300);
+}
+
+function applyRating(rating: unknown, facts: PageFacts): void {
+  if (!isObject(rating)) return;
+  if (facts.rating === null) facts.rating = num(rating.ratingValue, 5);
+  if (facts.rating_count === null) {
+    const count = num(or(rating.ratingCount, rating.reviewCount));
+    facts.rating_count = count !== null ? Math.trunc(count) : null;
+  }
+}
+
+function applyReviews(reviews: unknown, facts: PageFacts): void {
+  const items: unknown[] = Array.isArray(reviews) ? reviews : isObject(reviews) ? [reviews] : [];
+  for (const r of items.slice(0, 100)) {
+    if (!isObject(r)) continue;
+    const ratingNode = r.reviewRating;
+    const stars = isObject(ratingNode) ? ratingNode.ratingValue : ratingNode;
+    facts.reviews.push({
+      ...emptyReview(),
+      rating: num(stars, 5),
+      posted: parseDate(str(or(r.datePublished, ""))),
+      title: cut(str(or(r.name, "")), 300),
+      body: cut(str(or(r.reviewBody, "")), 2000),
+    });
+  }
+}
+
+function applyImages(imgs: unknown, facts: PageFacts): void {
+  const items: unknown[] = Array.isArray(imgs) ? imgs : truthy(imgs) ? [imgs] : [];
+  const urls = items
+    .map((i) => (isObject(i) ? i.url : i))
+    .filter((u): u is string => typeof u === "string" && u.length > 0);
+  facts.image_urls = dedupe([...urls, ...facts.image_urls]).slice(0, 50);
+}
+
+function microdataReviews(doc: Document, facts: PageFacts): void {
+  for (const container of Array.from(doc.querySelectorAll('[itemprop="review"]')).slice(0, 100)) {
+    const rating = container.querySelector('[itemprop="ratingValue"]');
+    const posted = container.querySelector('[itemprop="datePublished"]');
+    const body = container.querySelector('[itemprop="reviewBody"]');
+    facts.reviews.push({
+      ...emptyReview(),
+      rating: rating ? parseRating(attr(rating, "content") || text(rating)) : null,
+      posted: posted ? parseDate(attr(posted, "content") || text(posted)) : null,
+      body: body ? cut(text(body), 2000) : "",
+    });
+  }
+}
+
+function shopify(html: string, facts: PageFacts): void {
+  // The struck-through "was" price. Shopify's product JSON stores it in cents; only accept a value that is at
+  // least the listed price, so a mismatched or empty compare-at price is never reported as a discount.
+  const m = COMPARE_AT_RE.exec(html);
+  if (facts.list_price !== null || facts.price === null || !m) return;
+  const cents = Number(m[1]);
+  for (const candidate of [Math.round(cents) / 100, cents]) {
+    if (candidate > facts.price) {
+      facts.list_price = candidate;
+      return;
+    }
+  }
+}
+
+/** The content of the first `<meta property=key>`, else of the first `<meta name=key>` (as the backend looks). */
+export function meta(doc: Document, key: string): string {
+  const metas = Array.from(doc.querySelectorAll("meta"));
+  const tag =
+    metas.find((m) => m.getAttribute("property") === key) ??
+    metas.find((m) => m.getAttribute("name") === key);
+  return attr(tag, "content");
+}
+
+/** The backend's `_number`: JSON numbers as they are, strings parsed; negatives and out-of-range values dropped. */
+export function num(value: unknown, maximum?: number): number | null {
+  if (value === null || value === undefined || typeof value === "boolean") return null;
+  const n = typeof value === "number" ? value : parseNumber(str(value));
+  if (n === null || Number.isNaN(n) || n < 0 || (maximum !== undefined && n > maximum)) return null;
+  return n;
+}
