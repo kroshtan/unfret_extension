@@ -1,0 +1,44 @@
+{
+ "platform": "walmart",
+ "url": "https://www.walmart.com/ip/-/11826501717",
+ "title": "Apple AirPods 4",
+ "brand": "Apple",
+ "seller": "Shenzhen Haoyu Trading",
+ "seller_rating": null,
+ "ships_from": "",
+ "price": 15.94,
+ "list_price": null,
+ "currency": "USD",
+ "date_first_available": null,
+ "rating": 4.3,
+ "rating_count": 11308,
+ "rating_histogram": {},
+ "reviews": [],
+ "variations": [],
+ "json_ld": [
+  {
+   "@type": "Product",
+   "name": "Apple AirPods 4",
+   "offers": [
+    {
+     "price": 16,
+     "priceCurrency": "USD"
+    }
+   ]
+  }
+ ],
+ "script_srcs": [],
+ "meta": {},
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [
+  "script: var p = {\"pageId\":\"global_evergreen\"};"
+ ],
+ "fee_mentions": [],
+ "vat_ids": [],
+ "legal_mentions": [],
+ "policy_links": {},
+ "image_urls": [
+  "https://i5.walmartimages.com/seo/airpods.jpeg"
+ ]
+}

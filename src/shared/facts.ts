@@ -4,7 +4,7 @@
  * never guessed. Dates are ISO `YYYY-MM-DD` strings; histogram keys are star counts as strings ("1"–"5").
  */
 
-export type Platform = "amazon" | "bol.com" | "shopify" | "woocommerce" | "generic";
+export type Platform = "amazon" | "bol.com" | "walmart" | "shopify" | "woocommerce" | "generic";
 
 export interface Review {
   rating: number | null;

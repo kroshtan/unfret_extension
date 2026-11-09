@@ -1,0 +1,37 @@
+{
+ "platform": "amazon",
+ "url": "https://www.amazon.com/dp/B0TESTUS01",
+ "title": "Etta James Love's Been Rough On Me",
+ "brand": "Etta James (Artist)",
+ "seller": "RapidPrimePros",
+ "seller_rating": null,
+ "ships_from": "Amazon",
+ "price": 10.9,
+ "list_price": 14.39,
+ "currency": "USD",
+ "date_first_available": null,
+ "rating": null,
+ "rating_count": null,
+ "rating_histogram": {},
+ "reviews": [
+  {
+   "rating": 5.0,
+   "posted": "2025-03-03",
+   "title": "",
+   "body": "Great.",
+   "verified": true
+  }
+ ],
+ "variations": [],
+ "json_ld": [],
+ "script_srcs": [],
+ "meta": {},
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [],
+ "fee_mentions": [],
+ "vat_ids": [],
+ "legal_mentions": [],
+ "policy_links": {},
+ "image_urls": []
+}

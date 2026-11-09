@@ -21,6 +21,9 @@ const PERCENT_RE = /(\d{1,3})\s*%/u;
 const ARIA_HISTOGRAM_RE =
   /(\d{1,3})\s*(?:percent|prozent|pour cent|procent|por ciento|per cento).*?([1-5])/iu;
 const MERCHANT_RE = /ships from (.+?) and sold by (.+?)\./iu;
+const MERCHANT_SAME_RE = /ships from and sold by (.+?)\./iu;
+// Media bylines carry the format after the artist ("Etta James (Artist) Format: Audio CD").
+const FORMAT_SUFFIX_RE = /\s+(?:format|formaat|formato)\s*:.*$/iu;
 // Amazon wraps detail-table cells in left-to-right / right-to-left marks.
 const MARKS = " :‎‏";
 
@@ -50,7 +53,7 @@ export function extract(doc: Document, facts: PageFacts): void {
 
 function titleAndBrand(doc: Document, facts: PageFacts): void {
   facts.title = text(doc.getElementById("productTitle")) || facts.title;
-  const byline = text(doc.getElementById("bylineInfo"));
+  const byline = text(doc.getElementById("bylineInfo")).replace(FORMAT_SUFFIX_RE, "");
   if (byline) {
     const m = BYLINE_RE.exec(byline);
     facts.brand = cut((m ? (m[1] ?? m[2] ?? "") : byline).trim(), 300);
@@ -108,7 +111,7 @@ function reviews(doc: Document, facts: PageFacts): void {
       posted: parseDate(text(node.querySelector('[data-hook="review-date"]'))),
       title: cut(text(node.querySelector('[data-hook="review-title"]')), 300),
       body: cut(text(node.querySelector('[data-hook="review-body"]')), 2000),
-      verified: node.querySelector('[data-hook="avp-badge"]') !== null,
+      verified: node.querySelector('[data-hook^="avp-badge"]') !== null,
     }));
   if (found.length > 0) facts.reviews = found;
 }
@@ -175,16 +178,42 @@ function buyboxRows(doc: Document): Map<string, string> {
     const cells = Array.from(row.querySelectorAll("td, .tabular-buybox-text")).map((c) => text(c));
     if (cells.length >= 2) rows.set(cells[0] ?? "", cells[1] ?? "");
   }
-  for (const block of Array.from(doc.querySelectorAll(OFFER_BLOCK_SELECTORS))) {
-    const label = text(block.querySelector(".offer-display-feature-label"));
-    const value = text(block.querySelector(".offer-display-feature-text"));
-    if (label && value) rows.set(label, value);
+  for (const [label, value] of offerDisplayRows(doc)) {
+    if (!rows.has(label)) rows.set(label, value);
   }
   const merchant = text(doc.getElementById("merchant-info"));
   const m = merchant ? MERCHANT_RE.exec(merchant) : null;
-  if (m) {
-    if (!rows.has("Ships from")) rows.set("Ships from", m[1] ?? "");
-    if (!rows.has("Sold by")) rows.set("Sold by", m[2] ?? "");
+  const same = merchant && !m ? MERCHANT_SAME_RE.exec(merchant) : null;
+  const [shipsFrom, soldBy] = m ? [m[1], m[2]] : same ? [same[1], same[1]] : [undefined, undefined];
+  if (shipsFrom !== undefined && !rows.has("Ships from")) rows.set("Ships from", shipsFrom);
+  if (soldBy !== undefined && !rows.has("Sold by")) rows.set("Sold by", soldBy);
+  return rows;
+}
+
+/**
+ * The offer display shows each feature as a label element and a text element, either nested in one block or as
+ * two siblings that share the feature name (the current amazon.com layout).
+ */
+function offerDisplayRows(doc: Document): Map<string, string> {
+  const rows = new Map<string, string>();
+  const labels = new Map<string, string>();
+  const values = new Map<string, string>();
+  for (const block of Array.from(doc.querySelectorAll(OFFER_BLOCK_SELECTORS))) {
+    const feature = attr(block, "offer-display-feature-name");
+    const label = text(block.querySelector(".offer-display-feature-label"));
+    const value = text(
+      block.querySelector(".offer-display-feature-text-message, .offer-display-feature-text"),
+    );
+    if (label && value) rows.set(label, value);
+    else if (block.classList.contains("offer-display-feature-label")) {
+      if (!labels.has(feature)) labels.set(feature, text(block));
+    } else if (block.classList.contains("offer-display-feature-text") && !values.has(feature)) {
+      values.set(feature, text(block.querySelector(".offer-display-feature-text-message") ?? block));
+    }
+  }
+  for (const [feature, label] of labels) {
+    const value = values.get(feature);
+    if (label && value && !rows.has(label)) rows.set(label, value);
   }
   return rows;
 }

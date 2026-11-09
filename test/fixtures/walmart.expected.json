@@ -1,0 +1,58 @@
+{
+ "platform": "walmart",
+ "url": "https://www.walmart.com/ip/Apple-AirPods-4/11381374703",
+ "title": "Apple AirPods 4",
+ "brand": "Apple",
+ "seller": "Walmart.com",
+ "seller_rating": null,
+ "ships_from": "Walmart",
+ "price": 89.0,
+ "list_price": 129.99,
+ "currency": "USD",
+ "date_first_available": null,
+ "rating": 4.3,
+ "rating_count": 11308,
+ "rating_histogram": {
+  "1": 0.1,
+  "2": 0.05,
+  "3": 0.05,
+  "4": 0.2,
+  "5": 0.6
+ },
+ "reviews": [
+  {
+   "rating": 5.0,
+   "posted": "2025-05-30",
+   "title": "Typical",
+   "body": "Work great.",
+   "verified": true
+  }
+ ],
+ "variations": [],
+ "json_ld": [
+  {
+   "@type": "Product",
+   "name": "Apple AirPods 4",
+   "offers": [
+    {
+     "price": 16,
+     "priceCurrency": "USD"
+    }
+   ]
+  }
+ ],
+ "script_srcs": [],
+ "meta": {},
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [
+  "script: var p = {\"pageId\":\"global_evergreen\"};"
+ ],
+ "fee_mentions": [],
+ "vat_ids": [],
+ "legal_mentions": [],
+ "policy_links": {},
+ "image_urls": [
+  "https://i5.walmartimages.com/seo/airpods.jpeg"
+ ]
+}

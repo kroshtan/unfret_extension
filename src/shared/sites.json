@@ -23,5 +23,6 @@
     "amazon.sg",
     "amazon.com.au"
   ],
-  "bol": ["bol.com"]
+  "bol": ["bol.com"],
+  "walmart": ["walmart.com"]
 }
