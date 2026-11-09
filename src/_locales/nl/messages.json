@@ -297,7 +297,115 @@
     "description": "Options heading."
   },
   "opt_privacy_body": {
-    "message": "Veridex leest een pagina alleen als je op \"Deze pagina controleren\" klikt. Dan stuurt het de productgegevens en de zichtbare producttekst (zonder accountmenu's, adressen of formulieren) naar de Veridex-server. In je browser bewaart het alleen je inlogsessie, je akkoord en deze instellingen, en geen geschiedenis van analyses.",
+    "message": "Veridex leest een pagina alleen als je op \"Deze pagina controleren\" klikt. Dan stuurt het de productgegevens en de zichtbare producttekst (zonder accountmenu's, adressen of formulieren) naar de Veridex-server. In je browser bewaart het alleen je inlogsessie of API-sleutel, je akkoord en deze instellingen, en geen geschiedenis van analyses. Een pagina wordt alleen ter beoordeling gedeeld als je een uitslag als fout meldt en daarmee akkoord gaat.",
     "description": "Options privacy text."
+  },
+  "signed_in_key": {
+    "message": "API-sleutel $1 in gebruik",
+    "description": "$1 is de openbare ID van de sleutel."
+  },
+  "opt_using_key": {
+    "message": "API-sleutel $1 in gebruik.",
+    "description": "Options account status; $1 is the key's public ID."
+  },
+  "opt_key_heading": {
+    "message": "Of gebruik een API-sleutel",
+    "description": "Options heading."
+  },
+  "opt_key_help": {
+    "message": "Een API-sleutel is een alternatief voor een wallet: koop er controles voor met SOL, USDC (of later een kaart) op de betaalpagina en plak hem hier. Hij wordt alleen in deze browser bewaard.",
+    "description": "Options help text."
+  },
+  "opt_key_label": {
+    "message": "API-sleutel",
+    "description": "Label of the API key field."
+  },
+  "opt_key_use": {
+    "message": "Gebruik deze sleutel",
+    "description": "Button."
+  },
+  "opt_key_get": {
+    "message": "Sleutel maken of opwaarderen",
+    "description": "Link to the checkout page for API keys."
+  },
+  "opt_key_invalid": {
+    "message": "Dat is geen API-sleutel (die begint met ufk_).",
+    "description": "Options validation error."
+  },
+  "opt_key_rejected": {
+    "message": "De server kent deze sleutel niet (of hij is vervangen met de herstelcode).",
+    "description": "Options error."
+  },
+  "opt_key_saved": {
+    "message": "Opgeslagen. API-sleutel $1 in gebruik: $2.",
+    "description": "$1 key ID, $2 checks left."
+  },
+  "report_open": {
+    "message": "Dit klopt niet",
+    "description": "Link under a result that opens the report form."
+  },
+  "report_heading": {
+    "message": "Wat is deze pagina echt?",
+    "description": "Report form heading."
+  },
+  "report_real_brand": {
+    "message": "Een echt merk of een echte winkel",
+    "description": "Report reason."
+  },
+  "report_scam": {
+    "message": "Oplichting",
+    "description": "Report reason."
+  },
+  "report_junk": {
+    "message": "Rommel of dropshipping",
+    "description": "Report reason."
+  },
+  "report_other": {
+    "message": "Iets anders",
+    "description": "Report reason."
+  },
+  "report_consent": {
+    "message": "Als je dit verstuurt, deel je de productgegevens, paginatekst en uitslag van deze ene controle met Unfret ter beoordeling. Persoonlijke gegevens worden eerst verwijderd; na beoordeling bewaren we het zonder koppeling aan jou. Zaten we er flink naast, dan krijg je 3 gratis controles.",
+    "description": "Consent text in the report form."
+  },
+  "report_send": {
+    "message": "Melding versturen",
+    "description": "Button."
+  },
+  "report_sending": {
+    "message": "Versturen…",
+    "description": "Report status."
+  },
+  "report_queued": {
+    "message": "Bedankt! We bekijken deze pagina. Zaten we er flink naast, dan krijg je gratis controles.",
+    "description": "Report sent."
+  },
+  "report_already_reported": {
+    "message": "Bedankt! Iemand meldde deze pagina al; jouw melding telt als bevestiging.",
+    "description": "Report outcome."
+  },
+  "report_already_known": {
+    "message": "Bedankt! We hebben deze pagina onlangs al beoordeeld.",
+    "description": "Report outcome."
+  },
+  "report_limit": {
+    "message": "Je hebt je meldingen voor deze maand gebruikt. Bedankt!",
+    "description": "Report refused."
+  },
+  "report_twice": {
+    "message": "Je hebt deze pagina al gemeld.",
+    "description": "Report refused."
+  },
+  "report_queue_full": {
+    "message": "Onze wachtrij is nu vol; probeer het over een paar dagen opnieuw.",
+    "description": "Report refused."
+  },
+  "report_too_old": {
+    "message": "Deze controle kan niet meer gemeld worden; controleer de pagina eerst opnieuw.",
+    "description": "Report refused."
+  },
+  "report_failed": {
+    "message": "De melding is niet aangekomen. Probeer het later opnieuw.",
+    "description": "Report failed."
   }
 }

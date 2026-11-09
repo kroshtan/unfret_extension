@@ -140,6 +140,18 @@ export async function startMockApi(): Promise<MockApi> {
         }
         return;
       }
+      if (path === "/v1/reports" && req.method === "POST") {
+        if (token === "limited") {
+          json(res, 429, {
+            detail: "You've used this month's reports.",
+            error_code: "REPORT_LIMIT",
+            metadata: { used: 5, limit: 5 },
+          });
+        } else {
+          json(res, 201, { status: "queued", reports_used: 1, reports_per_month: 5 });
+        }
+        return;
+      }
       if (path === "/v1/credits") {
         json(res, 200, {
           address: "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin",
@@ -185,6 +197,7 @@ export async function startMockApi(): Promise<MockApi> {
               balance_lamports: 6_000_000,
               charged: true,
               verdict: language?.startsWith("nl") ? DUTCH_VERDICT : ENGLISH_VERDICT,
+              report_token: "report-token.mac",
             }) +
             "\n\n",
         );

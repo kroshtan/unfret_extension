@@ -6,7 +6,15 @@ import { acceptSessionMessage } from "../src/content/relay.js";
 import { parseCount, parseDate, parseNumber, parsePrice, parseRating } from "../src/extract/parse.js";
 import { pyJsonLength } from "../src/extract/pyjson.js";
 import { checksText } from "../src/popup/view.js";
-import { DEFAULT_API_BASE, isDevBase, normaliseApiBase, parseSession } from "../src/shared/settings.js";
+import {
+  accountLabel,
+  DEFAULT_API_BASE,
+  isDevBase,
+  isKeySession,
+  keySession,
+  normaliseApiBase,
+  parseSession,
+} from "../src/shared/settings.js";
 import { isAnalysable, isMarketplaceProduct } from "../src/shared/sites.js";
 
 describe("parsing (the backend's test cases)", () => {
@@ -152,6 +160,27 @@ describe("settings", () => {
     expect(parseSession({ ...ok, token: "short" }, now)).toBeNull();
     expect(parseSession({ ...ok, expires_at: "garbage" }, now)).toBeNull();
     expect(parseSession(null, now)).toBeNull();
+  });
+
+  it("turns an API key into a session that never expires", () => {
+    const key = `ufk_abcdefghij_${"a".repeat(52)}`;
+    const session = keySession(` ${key} `);
+    expect(session).toMatchObject({ token: key, address: "key:abcdefghij", kind: "key" });
+    expect(session && isKeySession(session)).toBe(true);
+    expect(session && accountLabel(session)).toBe("abcdefghij");
+    expect(Date.parse(session?.expiresAt ?? "")).toBeGreaterThan(Date.parse("2100-01-01"));
+    for (const bad of [
+      "ufr_abcdefghij_" + "a".repeat(52),
+      "ufk_ABCDEFGHIJ_" + "a".repeat(52),
+      "ufk_short",
+      "",
+    ]) {
+      expect(keySession(bad)).toBeNull();
+    }
+    // A key can't be smuggled in through the connect page's session relay.
+    expect(
+      parseSession({ token: key, address: "key:abcdefghij", expires_at: "2099-01-01T00:00:00Z" }),
+    ).toBeNull();
   });
 });
 

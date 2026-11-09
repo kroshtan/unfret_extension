@@ -3,6 +3,22 @@ body {
   padding-bottom: 8px;
 }
 
+#report fieldset {
+  border: 0;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+#report legend {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+#report label {
+  display: block;
+  padding: 2px 0;
+}
+
 .bar {
   display: flex;
   align-items: center;

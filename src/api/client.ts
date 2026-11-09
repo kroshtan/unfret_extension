@@ -104,9 +104,21 @@ export interface AnalysisResult {
   explanation: string;
   assessment?: { risk_score: number; confidence: number; flags: Flag[]; model_version: string };
   balance_lamports?: number;
+  balance_usd_micros?: number;
   /** False when no check was used (a page that couldn't be analysed, or a recent result from the cache). */
   charged?: boolean;
   verdict?: Verdict;
+  /** Lets this account report the result as wrong (POST /v1/reports) within 7 days. */
+  report_token?: string;
+}
+
+export type ReportReason = "real_brand" | "scam" | "junk" | "other";
+export type ReportOutcome = "queued" | "already_reported" | "already_known";
+
+export interface ReportResponse {
+  status: ReportOutcome;
+  reports_used: number;
+  reports_per_month: number;
 }
 
 export interface Finding {
@@ -195,6 +207,27 @@ export class VeridexApi {
 
   credits(): Promise<Credits> {
     return this.get<Credits>("/v1/credits");
+  }
+
+  /**
+   * Report a result as wrong, with the user's consent to share this one check's page data: the analysed request
+   * and the explanation go back exactly as they were, with the result's report token.
+   */
+  async report(body: AnalyzeBody, result: AnalysisResult, reason: ReportReason): Promise<ReportResponse> {
+    const response = await this.fetcher(`${this.base}/v1/reports`, {
+      method: "POST",
+      headers: this.headers(true),
+      body: JSON.stringify({
+        report_token: result.report_token,
+        reason,
+        consent: true,
+        request: body,
+        explanation: result.explanation,
+        ...(result.verdict ? { verdict: result.verdict } : {}),
+      }),
+    });
+    if (!response.ok) throw await errorFrom(response);
+    return (await response.json()) as ReportResponse;
   }
 
   /** Start a phone sign-in; the connect URL must be on this API's origin (it goes into a QR code). */

@@ -1,6 +1,6 @@
 /** The popup: account and credits, the "Analyse this page" button, live progress and the result. */
 
-import { ApiError, type Pairing, VeridexApi } from "../api/client.js";
+import { ApiError, type Pairing, type ReportReason, VeridexApi } from "../api/client.js";
 import { localise, t, uiLanguage } from "../shared/i18n.js";
 import {
   ANALYSIS_PORT,
@@ -11,15 +11,16 @@ import {
 import { waitForPairing } from "../shared/pairing.js";
 import { encodeQr, qrSvg } from "../shared/qr.js";
 import {
+  accountLabel,
   clearSession,
   expireSession,
+  isKeySession,
   loadSettings,
   consentGiven,
   giveConsent,
   PRIVACY_URL,
   saveSession,
   type Session,
-  shortAddress,
 } from "../shared/settings.js";
 import { isAnalysable } from "../shared/sites.js";
 import { buildChecklist, checklistDone, checksText, renderResult, updateChecklist } from "./view.js";
@@ -193,13 +194,14 @@ function untilText(expiresAt: string): string {
 }
 
 function renderAccount(): void {
+  const usingKey = isKeySession(session);
   el("account-status").textContent = session
-    ? t("signed_in_as", [shortAddress(session.address)])
+    ? t(usingKey ? "signed_in_key" : "signed_in_as", [accountLabel(session)])
     : expired
       ? t("session_expired")
       : t("not_signed_in");
-  el("account-until").textContent = session ? untilText(session.expiresAt) : "";
-  show("account-until", Boolean(session));
+  el("account-until").textContent = session && !usingKey ? untilText(session.expiresAt) : "";
+  show("account-until", Boolean(session) && !usingKey);
   show("sign-in", !session);
   show("sign-in-phone", !session);
   show("sign-out", Boolean(session));
@@ -238,6 +240,7 @@ function render(state: TabState): void {
   }
   if (state.status === "done") {
     renderResult(el("result-body"), state.result);
+    renderReport(state);
     if (state.result.balance_lamports !== undefined) void refreshCredits();
   } else if (state.status === "error") {
     el("error-message").textContent = state.message;
@@ -246,6 +249,31 @@ function render(state: TabState): void {
     show("error-buy", state.needsCredits && purchasesOn);
     if (state.needsSignIn) void sessionRejected();
   }
+}
+
+// ── "This is wrong" ──────────────────────────────────────────────────────────
+
+const REPORT_OUTCOME = {
+  queued: "report_queued",
+  already_reported: "report_already_reported",
+  already_known: "report_already_known",
+} as const;
+
+function renderReport(state: Extract<TabState, { status: "done" }>): void {
+  const report = state.report;
+  const reportable = Boolean(state.body && state.result.report_token && session);
+  show("report-open-row", reportable && report === undefined && el("report").hidden === true);
+  if (report !== undefined) show("report", false);
+  const status = el("report-status");
+  status.hidden = report === undefined;
+  if (report?.status === "sending") status.textContent = t("report_sending");
+  else if (report?.status === "sent") status.textContent = t(REPORT_OUTCOME[report.outcome]);
+  else if (report?.status === "error") status.textContent = report.message;
+}
+
+function reportReason(): ReportReason | undefined {
+  const picked = document.querySelector<HTMLInputElement>('#report input[name="reason"]:checked');
+  return (picked?.value as ReportReason | undefined) ?? undefined;
 }
 
 async function init(): Promise<void> {
@@ -295,7 +323,7 @@ async function init(): Promise<void> {
   }
   for (const id of ["buy", "error-buy"]) {
     el(id).addEventListener("click", () => {
-      openTab("/checkout");
+      openTab(isKeySession(session) ? "/checkout?for=key" : "/checkout");
     });
   }
   el("sign-out").addEventListener("click", () => {
@@ -328,10 +356,29 @@ async function init(): Promise<void> {
     if (update.tabId === tabId) render(update.state);
   });
   port.postMessage({ type: "watch", tabId } satisfies PopupRequest);
+  el("report-open").addEventListener("click", (event) => {
+    event.preventDefault();
+    show("report-open-row", false);
+    show("report", true);
+  });
+  el("report-cancel").addEventListener("click", () => {
+    show("report", false);
+    show("report-open-row", true);
+  });
+  el("report").addEventListener("change", () => {
+    button("report-send").disabled = reportReason() === undefined;
+  });
+  el("report").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const reason = reportReason();
+    if (!reason || tabId === undefined) return;
+    button("report-send").disabled = true;
+    port?.postMessage({ type: "report", tabId, reason } satisfies PopupRequest);
+  });
   el("analyse").addEventListener("click", () => {
     if (busy || !consented) return; // a second click before the first one's state arrives must not charge twice
     if (session && checks === 0) {
-      if (purchasesOn) openTab("/checkout");
+      if (purchasesOn) openTab(isKeySession(session) ? "/checkout?for=key" : "/checkout");
       return;
     }
     if (tabId === undefined) return;

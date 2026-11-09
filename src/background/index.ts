@@ -10,7 +10,7 @@
  * when the browser closes) so they survive the service worker sleeping. Nothing about pages is written to disk.
  */
 
-import { ApiError, VeridexApi } from "../api/client.js";
+import { ApiError, type ReportReason, VeridexApi } from "../api/client.js";
 import { SESSION_MESSAGE } from "../content/relay.js";
 import {
   ANALYSIS_PORT,
@@ -181,7 +181,7 @@ async function runAnalysis(tabId: number): Promise<void> {
       else if (event.kind === "step") state = { ...state, steps: [...(state.steps ?? []), event.skill] };
       else if (event.kind === "finding") state = { ...state, findings: [...state.findings, event.finding] };
       else {
-        setState(tabId, { ...state, status: "done", result: event.result });
+        setState(tabId, { ...state, status: "done", result: event.result, body });
         return;
       }
       setState(tabId, state);
@@ -208,6 +208,34 @@ async function runAnalysis(tabId: number): Promise<void> {
   }
 }
 
+// ── Reports: "this is wrong" ────────────────────────────────────────────────
+
+/** The server's refusals, in plain words in the user's language. */
+function reportError(error: unknown): string {
+  if (!(error instanceof ApiError)) return t("offline");
+  if (error.code === "REPORT_LIMIT") return t("report_limit");
+  if (error.code === "ALREADY_REPORTED_BY_YOU") return t("report_twice");
+  if (error.code === "QUEUE_FULL") return t("report_queue_full");
+  if (error.code === "BAD_REPORT_TOKEN") return t("report_too_old");
+  return t("report_failed");
+}
+
+/** Send the finished check's request back as a report (the user consented in the popup, for this check only). */
+async function report(tabId: number, reason: ReportReason): Promise<void> {
+  const state = await stateOf(tabId);
+  if (state.status !== "done" || !state.body || !state.result.report_token) return;
+  if (state.report?.status === "sending" || state.report?.status === "sent") return;
+  const { apiBase, session } = await loadSettings();
+  if (!session) return;
+  setState(tabId, { ...state, report: { status: "sending" } });
+  try {
+    const sent = await new VeridexApi(apiBase, session.token).report(state.body, state.result, reason);
+    setState(tabId, { ...state, report: { status: "sent", outcome: sent.status } });
+  } catch (error) {
+    setState(tabId, { ...state, report: { status: "error", message: reportError(error) } });
+  }
+}
+
 chrome.runtime.onConnect.addListener((port) => {
   if (port.name !== ANALYSIS_PORT || port.sender?.id !== chrome.runtime.id) return;
   const watched = new Set<number>();
@@ -219,6 +247,7 @@ chrome.runtime.onConnect.addListener((port) => {
     void stateOf(message.tabId).then((state) => {
       port.postMessage({ type: "state", tabId: message.tabId, state } satisfies BackgroundUpdate);
       if (message.type === "analyze") void analyse(message.tabId);
+      if (message.type === "report") void report(message.tabId, message.reason);
     });
   });
   port.onDisconnect.addListener(() => {

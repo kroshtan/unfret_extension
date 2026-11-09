@@ -1,7 +1,7 @@
 /**
- * The only things the extension stores: the API base URL, the session (token, wallet address, expiry), whether
- * the last session expired (so the popup can say so) and which version of the consent screen was accepted. No
- * browsing data, no analysis results, no history.
+ * The only things the extension stores: the API base URL, the session (token, wallet address, expiry; or an API key
+ * in its place), whether the last session expired (so the popup can say so) and which version of the consent screen
+ * was accepted. No browsing data, no analysis results, no history.
  */
 
 export const DEFAULT_API_BASE = "https://unfret.kroshtan.com";
@@ -11,9 +11,34 @@ export const DEV_ORIGINS = ["http://localhost", "http://127.0.0.1"];
 export const DEV_API_BASE = "https://dev.unfret.kroshtan.com";
 
 export interface Session {
+  /** A wallet's session token, or an API key (`ufk_…`): both are sent as `Authorization: Bearer`. */
   token: string;
+  /** The wallet address, or `key:<id>` for an API key. */
   address: string;
   expiresAt: string;
+  kind?: "wallet" | "key";
+}
+
+/** An API key: `ufk_<10-letter id>_<52-letter secret>`, lower-case base32. */
+export const API_KEY_RE = /^ufk_([a-z2-7]{10})_[a-z2-7]{52}$/u;
+/** API keys don't expire; they are replaced with the recovery code. */
+const KEY_EXPIRY = "9999-12-31T00:00:00.000Z";
+
+/** A session that uses an API key instead of a wallet, or null when `value` isn't a key. */
+export function keySession(value: string): Session | null {
+  const key = value.trim();
+  const match = API_KEY_RE.exec(key);
+  if (!match) return null;
+  return { token: key, address: `key:${match[1]}`, expiresAt: KEY_EXPIRY, kind: "key" };
+}
+
+export function isKeySession(session: Session | undefined): boolean {
+  return session?.kind === "key";
+}
+
+/** How to name the account: a shortened wallet address, or the key's public ID. */
+export function accountLabel(session: Session): string {
+  return isKeySession(session) ? session.address.slice("key:".length) : shortAddress(session.address);
 }
 
 interface Stored {
