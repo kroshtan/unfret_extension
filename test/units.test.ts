@@ -142,8 +142,11 @@ describe("session relay origin check", () => {
 });
 
 describe("settings", () => {
-  it("only allows https or a local dev origin", () => {
+  it("only allows this build's API or a local dev origin", () => {
     expect(normaliseApiBase("https://unfret.kroshtan.com/v1/")).toBe(DEFAULT_API_BASE);
+    // Stored by 0.5–0.7's "Use the dev server": that is Unfret Dev's job now, so production falls back.
+    expect(normaliseApiBase("https://dev.unfret.kroshtan.com")).toBe(DEFAULT_API_BASE);
+    expect(normaliseApiBase("https://other.example")).toBe(DEFAULT_API_BASE);
     expect(normaliseApiBase("http://localhost:8080/")).toBe("http://localhost:8080");
     expect(normaliseApiBase("http://evil.example")).toBe(DEFAULT_API_BASE);
     expect(normaliseApiBase("not a url")).toBe(DEFAULT_API_BASE);
