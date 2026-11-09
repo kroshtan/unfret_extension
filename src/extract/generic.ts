@@ -1,6 +1,6 @@
 /**
  * Extract `PageFacts` from a page's DOM: a port of the backend's `veridex/facts/extract.py`. Platform extractors
- * (Amazon, bol.com) fill in what generic markup (JSON-LD, microdata, Open Graph) doesn't carry.
+ * (Amazon, bol.com, Walmart) fill in what generic markup (JSON-LD, microdata, Open Graph) doesn't carry.
  *
  * Works on any `Document`: the live page in the browser, or a parsed HTML string in tests (parity with Python).
  */
@@ -8,6 +8,7 @@
 import { type Checkbox, emptyFacts, emptyReview, type PageFacts, type Platform } from "../shared/facts.js";
 import * as amazon from "./amazon.js";
 import * as bolcom from "./bolcom.js";
+import * as walmart from "./walmart.js";
 import { attr, cut, dedupe, hostname, squash, tagName, text, urljoin } from "./dom.js";
 import { parseDate, parseNumber, parseRating } from "./parse.js";
 import { pyJsonLength } from "./pyjson.js";
@@ -18,14 +19,14 @@ export const TIMER_ATTR_RE = /countdown|count-down|timer|hurry|urgency|limited-t
 const TIMER_SCRIPT_RE =
   /countdown|setInterval\s*\(.{0,200}?(?:hours|minutes|seconds)|evergreen|deadline\s*=/isu;
 const FEE_RE =
-  /[^.\n]{0,80}(?:service fee|handling fee|processing fee|booking fee|convenience fee|admin(?:istration)? fee|shipping (?:is )?calculated at checkout|taxes and shipping calculated|plus shipping|excl\.? shipping|verzendkosten|servicekosten|administratiekosten|bearbeitungsgebühr|servicegebühr|zzgl\.? versand|frais de (?:service|dossier|traitement)|gastos de (?:gestión|envío)|spese di (?:gestione|spedizione))[^.\n]{0,80}/giu;
+  /(?:service fee|handling fee|processing fee|booking fee|convenience fee|admin(?:istration)? fee|shipping (?:is )?calculated at checkout|taxes and shipping calculated|plus shipping|excl\.? shipping|verzendkosten|servicekosten|administratiekosten|bearbeitungsgebühr|servicegebühr|zzgl\.? versand|frais de (?:service|dossier|traitement)|gastos de (?:gestión|envío)|spese di (?:gestione|spedizione))/giu;
 // EU VAT numbers per country (VIES formats), matched against a candidate with its separators removed.
 const VAT_RE =
   /^(?:ATU\d{8}|BE0?\d{9}|BG\d{9,10}|CY\d{8}[A-Z]|CZ\d{8,10}|DE\d{9}|DK\d{8}|EE\d{9}|EL\d{9}|ES[A-Z0-9]\d{7}[A-Z0-9]|FI\d{8}|FR[A-HJ-NP-Z0-9]{2}\d{9}|HR\d{11}|HU\d{8}|IE\d[A-Z0-9+*]\d{5}[A-Z]{1,2}|IT\d{11}|LT\d{9,12}|LU\d{8}|LV\d{11}|MT\d{8}|NL\d{9}B\d{2}|PL\d{10}|PT\d{9}|RO\d{2,10}|SE\d{12}|SI\d{8}|SK\d{10}|XI\d{9})$/u;
 const VAT_CANDIDATE_RE =
   /(?<![A-Z0-9])(?:AT|BE|BG|CY|CZ|DE|DK|EE|EL|ES|FI|FR|HR|HU|IE|IT|LT|LU|LV|MT|NL|PL|PT|RO|SE|SI|SK|XI)[\s.]?[0-9A-Z][0-9A-Z\s.+*]{6,18}/gu;
 const LEGAL_RE =
-  /[^.\n]{0,60}(?:impressum|imprint|kvk|kamer van koophandel|handelsregister|registre du commerce|company number|registered in|chamber of commerce|withdraw(?:al)?|widerruf|herroeping|bedenktijd|rétractation|desistimiento|recesso|14[ -](?:day|dagen|tage|jours|días|giorni))[^.\n]{0,100}/giu;
+  /(?:impressum|imprint|kvk|kamer van koophandel|handelsregister|registre du commerce|company number|registered in|chamber of commerce|withdraw(?:al)?|widerruf|herroeping|bedenktijd|rétractation|desistimiento|recesso|14[ -](?:day|dagen|tage|jours|días|giorni))/giu;
 const POLICY_KINDS: [string, RegExp][] = [
   ["refund", /refund|return|retour|widerruf|rétractation|devoluci|reso/iu],
   ["shipping", /shipping|delivery|verzend|versand|livraison|envío|spedizion/iu],
@@ -38,6 +39,7 @@ const SHOPIFY_RE = /cdn\.shopify\.com|Shopify\.theme|myshopify\.com/iu;
 const WOO_RE = /woocommerce|wp-content\/plugins\/woocommerce/iu;
 const AMAZON_HOST_RE = /(?:^|[\s.])amazon\.[a-z.]+/u;
 const BOL_HOST_RE = /(?:^|[\s.])bol\.com/u;
+const WALMART_HOST_RE = /(?:^|[\s.])walmart\.com\b/u;
 const COMPARE_AT_RE = /"compare_at_price"\s*:\s*("?)(\d+(?:\.\d+)?)\1/gu;
 const VARIANT_PRICE_RE = /"price"\s*:\s*("?)(\d+(?:\.\d+)?)\1/gu;
 const VARIANT_ID_RE = /"id"\s*:\s*"?(\d{6,})/gu;
@@ -111,6 +113,7 @@ export function extractFacts(doc: Document, html: string, url = ""): PageFacts {
   structuredData(doc, facts);
   if (facts.platform === "amazon") amazon.extract(doc, facts);
   else if (facts.platform === "bol.com") bolcom.extract(doc, facts);
+  else if (facts.platform === "walmart") walmart.extract(doc, facts);
   else if (facts.platform === "shopify") shopify(html, facts, url);
   if (!facts.title) facts.title = text(doc.querySelector("h1")) || meta(doc, "og:title");
   const ogImage = meta(doc, "og:image");
@@ -127,6 +130,7 @@ export function platform(doc: Document, html: string, url: string): Platform {
     return "amazon";
   }
   if (BOL_HOST_RE.test(hosts)) return "bol.com";
+  if (WALMART_HOST_RE.test(hosts)) return "walmart";
   if (SHOPIFY_RE.test(html)) return "shopify";
   if (WOO_RE.test(html)) return "woocommerce";
   return "generic";
@@ -222,15 +226,27 @@ function timers(doc: Document, facts: PageFacts): void {
   facts.timers = dedupe(found).slice(0, 50);
 }
 
-function matches(re: RegExp, value: string): string[] {
-  return Array.from(value.matchAll(re), (m) => squash(m[0]));
+/**
+ * The keyword plus its sentence (up to `before`/`after` chars either side). Widening by slicing instead of a
+ * leading `[^.]{0,80}` in the pattern keeps matching linear and finds keywords that share a sentence.
+ */
+function snippets(re: RegExp, value: string, before: number, after: number): string[] {
+  return Array.from(value.matchAll(re), (m) => {
+    const start = m.index;
+    const end = start + m[0].length;
+    let head = value.slice(Math.max(start - before, 0), start);
+    const tail = value.slice(end, Math.min(end + after, value.length));
+    if (head.includes(".")) head = head.slice(head.lastIndexOf(".") + 1);
+    const stop = tail.indexOf(".");
+    return squash(head + m[0] + (stop >= 0 ? tail.slice(0, stop) : tail));
+  });
 }
 
 function textSignals(doc: Document, facts: PageFacts): void {
   const all = text(doc.documentElement);
-  facts.fee_mentions = dedupe(matches(FEE_RE, all)).slice(0, MAX_SNIPPETS);
+  facts.fee_mentions = dedupe(snippets(FEE_RE, all, 80, 80)).slice(0, MAX_SNIPPETS);
   facts.vat_ids = dedupe(vatIds(all)).slice(0, 10);
-  facts.legal_mentions = dedupe(matches(LEGAL_RE, all)).slice(0, MAX_SNIPPETS);
+  facts.legal_mentions = dedupe(snippets(LEGAL_RE, all, 60, 100)).slice(0, MAX_SNIPPETS);
 }
 
 function vatIds(value: string): string[] {

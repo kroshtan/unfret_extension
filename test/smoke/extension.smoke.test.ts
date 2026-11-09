@@ -130,10 +130,14 @@ describe("the shipped extension (no host permissions)", () => {
     );
     expect(rules).toHaveLength(1);
     const patterns = JSON.stringify(rules[0]?.conditions).match(/"urlMatches":"([^"]+)"/gu) ?? [];
-    expect(patterns).toHaveLength(2);
+    expect(patterns).toHaveLength(3); // Amazon, bol.com, Walmart
     expect(JSON.stringify(rules[0]?.actions)).toContain("SetIcon");
     const amazon = JSON.parse(`{${patterns[0] ?? ""}}`) as { urlMatches: string };
     expect(new RegExp(amazon.urlMatches, "u").test(AMAZON_URL)).toBe(true);
+    const walmart = JSON.parse(`{${patterns[2] ?? ""}}`) as { urlMatches: string };
+    expect(new RegExp(walmart.urlMatches, "u").test("https://www.walmart.com/ip/Lamp/11381374703")).toBe(
+      true,
+    );
   });
 
   it("can't read a shop page on its own", async () => {

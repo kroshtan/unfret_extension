@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { SseParser } from "../src/api/sse.js";
 import { badgeFor, light } from "../src/background/badge.js";
 import { acceptSessionMessage } from "../src/content/relay.js";
+import { extractFacts } from "../src/extract/generic.js";
 import { parseCount, parseDate, parseNumber, parsePrice, parseRating } from "../src/extract/parse.js";
 import { pyJsonLength } from "../src/extract/pyjson.js";
 import { checksText } from "../src/popup/view.js";
@@ -184,6 +185,45 @@ describe("settings", () => {
   });
 });
 
+describe("marketplace extractors", () => {
+  const facts = (html: string, url: string) =>
+    extractFacts(new DOMParser().parseFromString(html, "text/html"), html, url);
+
+  it("reads Walmart's page data over a protection plan's JSON-LD price", () => {
+    const data = {
+      props: {
+        pageProps: {
+          initialData: {
+            data: {
+              product: {
+                name: "Apple AirPods 4",
+                priceInfo: { currentPrice: { price: 89, currencyUnit: "USD" }, wasPrice: { price: 129.99 } },
+                sellerDisplayName: "Walmart.com",
+                fulfillmentType: "FC",
+              },
+            },
+          },
+        },
+      },
+    };
+    const ld = { "@type": "Product", name: "Apple AirPods 4", offers: [{ price: 16, priceCurrency: "USD" }] };
+    const html =
+      `<html><head><script type="application/ld+json">${JSON.stringify(ld)}</script></head><body>` +
+      `<script id="__NEXT_DATA__" type="application/json">${JSON.stringify(data)}</script></body></html>`;
+    const f = facts(html, "https://www.walmart.com/ip/Apple-AirPods-4/11381374703");
+    expect([f.platform, f.price, f.list_price, f.currency]).toEqual(["walmart", 89, 129.99, "USD"]);
+    expect([f.seller, f.ships_from]).toEqual(["Walmart.com", "Walmart"]);
+  });
+
+  it("reads Amazon's 'Ships from and sold by' line", () => {
+    const html =
+      '<html><body><div id="dp"><span id="productTitle">Lamp</span>' +
+      '<div id="merchant-info">Ships from and sold by Lumen Home Goods.</div></div></body></html>';
+    const f = facts(html, "https://www.amazon.com/dp/B0TEST0001");
+    expect([f.ships_from, f.seller]).toEqual(["Lumen Home Goods", "Lumen Home Goods"]);
+  });
+});
+
 describe("sites", () => {
   it("recognises marketplace product pages", () => {
     expect(isMarketplaceProduct("https://www.amazon.de/dp/B0TEST1234")).toBe(true);
@@ -191,6 +231,10 @@ describe("sites", () => {
     expect(isMarketplaceProduct("https://www.amazon.com/s?k=earbuds")).toBe(false);
     expect(isMarketplaceProduct("https://www.bol.com/nl/nl/p/koffiezetapparaat/9300000/")).toBe(true);
     expect(isMarketplaceProduct("https://notamazon.com/dp/B0TEST1234")).toBe(false);
+    expect(isMarketplaceProduct("https://www.walmart.com/ip/Apple-AirPods-4/11381374703")).toBe(true);
+    expect(isMarketplaceProduct("https://www.walmart.com/ip/11381374703")).toBe(true);
+    expect(isMarketplaceProduct("https://www.walmart.com/search?q=airpods")).toBe(false);
+    expect(isMarketplaceProduct("https://notwalmart.com/ip/x/11381374703")).toBe(false);
   });
 
   it("knows which pages can be analysed", () => {

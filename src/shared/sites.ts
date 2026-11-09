@@ -16,6 +16,7 @@ export function marketplaceUrlPatterns(): string[] {
   return [
     `${host(sites.amazon)}(?:[^?#]*/)?(?:dp|gp/product|gp/aw/d)/[A-Z0-9]{10}`,
     `${host(sites.bol)}(?:[^?#]*/)?p/[^/?#]+/[0-9]+`,
+    `${host(sites.walmart)}ip/(?:[^/?#]+/)?[0-9]+`,
   ];
 }
 

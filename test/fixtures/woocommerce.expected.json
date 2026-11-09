@@ -53,7 +53,8 @@
   "script: var end = new Date().getTime() + 600000; setInterval(function () { var hours = 0, minutes = 9, seconds = 59; render(hours, minutes, seconds); }, 1000);"
  ],
  "fee_mentions": [
-  "zzgl. Versand und Bearbeitungsgebühr von 2,95 €"
+  "zzgl. Versand und Bearbeitungsgebühr von 2,95 €",
+  "Versand und Bearbeitungsgebühr von 2,95 €"
  ],
  "vat_ids": [
   "DE123456789"

@@ -5,5 +5,8 @@
   "bolcom": "https://www.bol.com/nl/nl/p/koffiezetapparaat/9300000/",
   "woocommerce": "https://gadget-handel.example/produkt/massagepistole",
   "generic-graph": "https://www.zentrashop.example/products/zentra-lamp?variant=1",
-  "empty": ""
+  "empty": "",
+  "amazon-com-buybox": "https://www.amazon.com/dp/B0TESTUS01",
+  "walmart": "https://www.walmart.com/ip/Apple-AirPods-4/11381374703",
+  "walmart-marketplace": "https://www.walmart.com/ip/-/11826501717"
 }
