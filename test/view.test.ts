@@ -4,8 +4,8 @@ import en from "../src/_locales/en/messages.json";
 import nl from "../src/_locales/nl/messages.json";
 import type { AnalysisResult } from "../src/api/client.js";
 import { format, t } from "../src/shared/i18n.js";
+import { bandOf } from "../src/shared/bands.js";
 import {
-  bandOf,
   buildChecklist,
   CHECKLIST,
   checklistDone,
@@ -142,7 +142,7 @@ describe("result view", () => {
 
   it("still works with an older server that sends no verdict", () => {
     const root = rendered({ score: 30, explanation: "Several warning signs." }, "en");
-    expect(bandOf({ score: 30, explanation: "" })).toBe("careful");
+    expect(bandOf({ score: 30 })).toBe("careful");
     expect(root.querySelector(".verdict .label")?.textContent).toBe("Some warning signs");
     expect(root.querySelector(".headline")?.textContent).toBe("Several warning signs.");
   });

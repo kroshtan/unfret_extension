@@ -1,25 +1,8 @@
 /** Presentation for the popup: the result view and the progress checklist (pure DOM, tested in jsdom). */
 
-import type { AnalysisResult, Band, Flag } from "../api/client.js";
+import type { AnalysisResult, Flag } from "../api/client.js";
+import { BAND_SYMBOL, bandOf } from "../shared/bands.js";
 import { type Language, type MessageKey, t } from "../shared/i18n.js";
-
-/** The band for a result: the server's verdict, or the same thresholds from the score for an older server. */
-export function bandOf(result: AnalysisResult): Band | null {
-  if (result.score < 0) return null;
-  if (result.verdict) return result.verdict.band;
-  if (result.score >= 80) return "reliable";
-  if (result.score >= 50) return "concerns";
-  if (result.score >= 25) return "careful";
-  return "junk_or_scam";
-}
-
-/** A symbol per band, so the verdict never relies on colour alone. */
-export const BAND_SYMBOL: Record<Band, string> = {
-  reliable: "✓",
-  concerns: "!",
-  careful: "⚠",
-  junk_or_scam: "✕",
-};
 
 export function checksText(checks: number, language?: Language): string {
   return checks === 1 ? t("checks_left_one", [], language) : t("checks_left", [checks], language);

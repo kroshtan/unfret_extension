@@ -107,7 +107,6 @@ export async function startMockApi(): Promise<MockApi> {
           suggested_packs: [{ checks: 10, lamports: 15_000_000 }],
           hot_wallet: "HotWa11etHotWa11etHotWa11etHotWa11etHotWa11",
           network: "solana-devnet",
-          trial_checks: 5,
         });
         return;
       }

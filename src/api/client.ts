@@ -36,7 +36,6 @@ export interface Pricing {
   analysis_lamports: number;
   /** null while buying credits is switched off on the server. */
   hot_wallet: string | null;
-  trial_checks?: number;
   suggested_packs?: { checks: number; lamports: number }[];
   network?: string;
 }

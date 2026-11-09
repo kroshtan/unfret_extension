@@ -4,6 +4,7 @@
  */
 
 import type { AnalysisResult } from "../api/client.js";
+import { BAND_SYMBOL, bandOf } from "../shared/bands.js";
 import type { TabState } from "../shared/messages.js";
 
 export const GREEN = "#1e7d32";
@@ -22,26 +23,6 @@ export function light(result: Pick<AnalysisResult, "score" | "verdict">): "green
   return "red";
 }
 
-type Band = "reliable" | "concerns" | "careful" | "junk_or_scam";
-
-/** The verdict band: the server's when it sent one, else from the same score thresholds; null when not assessed. */
-export function bandOf(result: Pick<AnalysisResult, "score" | "verdict">): Band | null {
-  if (result.score < 0) return null;
-  return (
-    result.verdict?.band ??
-    (result.score >= 80
-      ? "reliable"
-      : result.score >= 50
-        ? "concerns"
-        : result.score >= 25
-          ? "careful"
-          : "junk_or_scam")
-  );
-}
-
-/** One symbol per verdict label: Looks fine, A few things to check, Some warning signs, Many warning signs. */
-const SYMBOL: Record<Band, string> = { reliable: "✓", concerns: "?", careful: "!", junk_or_scam: "!!" };
-
 /**
  * The badge for a state. Red is only ever a low result: account, credit and network problems clear the badge
  * (the popup explains them), so a red badge never means "something went wrong on our side".
@@ -54,7 +35,7 @@ export function badgeFor(state: TabState): { text: string; color: string } | nul
     case "done": {
       const band = bandOf(state.result);
       const colour = { green: GREEN, amber: AMBER, red: RED, none: GREY }[light(state.result)];
-      return { text: band === null ? "–" : SYMBOL[band], color: colour };
+      return { text: band === null ? "–" : BAND_SYMBOL[band], color: colour };
     }
     case "error":
       return { text: "", color: GREY };

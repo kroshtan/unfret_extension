@@ -217,7 +217,7 @@
     "description": "Consent screen, panel 3 title."
   },
   "consent_pay_body": {
-    "message": "Log in met een Solana-wallet of gebruik een API-sleutel, en betaal met vooraf gekochte checks. Een nieuwe wallet krijgt mogelijk een paar gratis checks om het te proberen.",
+    "message": "Log in met een Solana-wallet of gebruik een API-sleutel, en betaal met vooraf gekochte checks.",
     "description": "Consent screen, panel 3."
   },
   "consent_privacy": {
