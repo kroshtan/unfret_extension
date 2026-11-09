@@ -31,7 +31,7 @@ Privacy voorop
 • Geen tracking, geen advertenties, geen affiliate-links, geen browsegeschiedenis.
 
 Betalen
-Controles zijn vooraf betaald en kosten centen per stuk. Log in met een Solana-wallet of gebruik een API-sleutel, en koop controles met USDC of SOL (betalen met een kaart komt eraan). Een wallet die nieuw is bij Unfret krijgt een paar gratis controles om het te proberen. Unfret krijgt nooit toegang tot je geld: inloggen is een gratis bericht, geen transactie.
+Controles betaal je vooraf, in pakketten van 25, 50 of 100 (20 cent per controle met USDC of SOL, iets meer met een kaart, plus btw waar die geldt). Log in met een Solana-wallet of gebruik een API-sleutel, die je ook met een kaart kunt opwaarderen. Unfret krijgt nooit toegang tot je geld: inloggen is een gratis bericht, geen transactie.
 
 Werkt op Amazon, bol.com en de meeste webwinkels. De code is open source (MIT).
 

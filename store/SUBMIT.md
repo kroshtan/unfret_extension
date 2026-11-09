@@ -4,12 +4,14 @@ Everything Claude could prepare is in this folder. These are the steps only you 
 
 ## Before you upload
 
-- [ ] **Mainnet cutover done.** The store build talks to https://unfret.kroshtan.com, so production must be on the
-      release that has the rename, the softer labels and the admin grant endpoint (backend PR #42), started by you with
-      the Deploy production workflow.
+- [ ] **Production on the current backend, on mainnet.** The store build talks to https://unfret.kroshtan.com, so
+      production must run the release with no trial, the pack prices, card payments and the admin grant endpoint,
+      started by you with the Deploy production workflow.
+- [ ] **Card payments live on production** (Polar ID check done, production token and webhook set). Until then,
+      take "which you can also top up by card" and "a little more by card" out of both listing texts.
 - [ ] **Review the privacy statement** at https://unfret.kroshtan.com/privacy (the store links to it, and its wording on
       Scaleway still needs your check).
-- [ ] **Approve the icon and images**: `icons/icon-128.png`, `store/assets/promo-small-440x280.png`,
+- [x] **Approve the icon and images** (approved 2026-11-09): `icons/icon-128.png`, `store/assets/promo-small-440x280.png`,
       `store/assets/promo-marquee-1400x560.png`, `store/screenshots/*.png`. Re-render with `make icons` and
       `make screenshots` after changing `brand/*.svg` or the popup.
 - [ ] **Build the package**: `make release` writes `dist/release/unfret-chrome-<version>.zip` (the store zip: no
@@ -35,4 +37,4 @@ Everything Claude could prepare is in this folder. These are the steps only you 
 
 - The store version gets its own extension ID. The self-hosted channel (https://unfret.kroshtan.com/extension) keeps
   ID `kpllgmbgfmnlpnmkibmhflkafhilckfe`; both talk to the same API, and accounts work in both.
-- When card payments go live, update "card payments are on the way" in both listing texts.
+- When the store version is live, retire the self-hosted production channel (the dev channel stays, by policy).

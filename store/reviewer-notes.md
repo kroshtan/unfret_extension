@@ -4,8 +4,8 @@ Paste the block below into the dashboard's "Test instructions" field, with a rea
 
 ## Creating the reviewer's test key (operator, once per review)
 
-Production (https://unfret.kroshtan.com) must run a release that includes the admin grant endpoint (backend PR #42)
-before this works.
+Production (https://unfret.kroshtan.com) must run the current backend release (the admin grant endpoint and the
+pack prices) before this works.
 
 1. Open https://unfret.kroshtan.com/checkout?for=key, choose **Create a key**, and save the key (`ufk_…`) and its
    recovery code. Don't pay.
@@ -30,7 +30,7 @@ use the test API key below.
 
 1. Install the extension and pin it to the toolbar.
 2. Click the Unfret icon and read the first-run screen, then click "I agree".
-3. Click "Settings", paste this key under "Use an API key instead" and click "Use this key":
+3. In the popup, click "API key", paste this key and click "Use this key":
    ufk_<REPLACE WITH THE TEST KEY>
    The key holds about 20 checks.
 4. Open a product page, for example any product on https://www.amazon.com or https://www.bol.com, click the Unfret
