@@ -22,6 +22,7 @@ import {
   saveSession,
   type Session,
 } from "../shared/settings.js";
+import { KEY_FAILURE, signInWithKey } from "../shared/key-sign-in.js";
 import { isAnalysable } from "../shared/sites.js";
 import { buildChecklist, checklistDone, checksText, renderResult, updateChecklist } from "./view.js";
 
@@ -204,6 +205,8 @@ function renderAccount(): void {
   show("account-until", Boolean(session) && !usingKey);
   show("sign-in", !session);
   show("sign-in-phone", !session);
+  show("sign-in-key", !session);
+  if (session) show("key", false);
   show("sign-out", Boolean(session));
   show("buy", Boolean(session) && purchasesOn);
   el("credits").textContent = checks === undefined ? "" : checksText(checks);
@@ -345,6 +348,35 @@ async function init(): Promise<void> {
   });
   el("sign-in-phone").addEventListener("click", () => {
     void startPhoneSignIn();
+  });
+  el("sign-in-key").addEventListener("click", () => {
+    show("key", true);
+    el("key-status").textContent = "";
+    el("key-input").focus();
+  });
+  el("key-cancel").addEventListener("click", () => {
+    show("key", false);
+  });
+  el("key-get").addEventListener("click", (event) => {
+    event.preventDefault();
+    openTab("/checkout?for=key");
+  });
+  const useKey = async (): Promise<void> => {
+    const field = el("key-input") as HTMLInputElement;
+    const result = await signInWithKey(apiBase, field.value);
+    if (!result.ok) {
+      el("key-status").textContent = t(KEY_FAILURE[result.reason]);
+      return;
+    }
+    field.value = "";
+    session = result.session;
+    expired = false;
+    checks = result.checks;
+    renderAccount();
+  };
+  el("key-use").addEventListener("click", () => void useKey());
+  el("key-input").addEventListener("keydown", (event) => {
+    if (event.key === "Enter") void useKey();
   });
   el("phone-retry").addEventListener("click", () => {
     void startPhoneSignIn();

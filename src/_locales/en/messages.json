@@ -31,6 +31,18 @@
     "message": "Wallet in this browser",
     "description": "Button."
   },
+  "sign_in_key": {
+    "message": "API key",
+    "description": "Popup sign-in choice: use an API key instead of a wallet."
+  },
+  "key_heading": {
+    "message": "Sign in with an API key",
+    "description": "Popup heading."
+  },
+  "key_get": {
+    "message": "No key yet? Get one on the checkout page",
+    "description": "Link to buying checks for a new key."
+  },
   "sign_in_phone": {
     "message": "Wallet on your phone",
     "description": "Button."
@@ -372,7 +384,7 @@
     "description": "Options heading."
   },
   "opt_key_help": {
-    "message": "An API key is an alternative to a wallet: buy checks for it with SOL, USDC (or later a card) on the checkout page and paste it here. It is kept only in this browser.",
+    "message": "An API key is an alternative to a wallet: buy checks for it with a card, SOL or USDC on the checkout page and paste it here. It is kept only in this browser.",
     "description": "Options help text."
   },
   "opt_key_label": {

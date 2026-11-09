@@ -1,7 +1,7 @@
 /** Options: the API base URL (production by default, a local origin for development), an API key, signing out. */
 
-import { ApiError, VeridexApi } from "../api/client.js";
 import { checksText } from "../popup/view.js";
+import { KEY_FAILURE, signInWithKey } from "../shared/key-sign-in.js";
 import { localise, t, uiLanguage } from "../shared/i18n.js";
 import {
   accountLabel,
@@ -9,12 +9,10 @@ import {
   DEFAULT_API_BASE,
   isDevBase,
   isKeySession,
-  keySession,
   loadSettings,
   normaliseApiBase,
   PRIVACY_URL,
   saveApiBase,
-  saveSession,
   shortAddress,
 } from "../shared/settings.js";
 
@@ -47,20 +45,13 @@ async function renderAccount(): Promise<void> {
 /** Check a pasted API key with the server (its balance), then use it in place of a wallet sign-in. */
 async function useKey(value: string): Promise<void> {
   const status = el("key-status");
-  const session = keySession(value);
-  if (!session) {
-    status.textContent = t("opt_key_invalid");
-    return;
-  }
   const { apiBase } = await loadSettings();
-  try {
-    const credits = await new VeridexApi(apiBase, session.token).credits();
-    await saveSession(session);
+  const result = await signInWithKey(apiBase, value);
+  if (result.ok) {
     input("api-key").value = "";
-    status.textContent = t("opt_key_saved", [accountLabel(session), checksText(credits.checks_remaining)]);
-  } catch (error) {
-    status.textContent =
-      error instanceof ApiError && error.needsSignIn ? t("opt_key_rejected") : t("offline");
+    status.textContent = t("opt_key_saved", [accountLabel(result.session), checksText(result.checks)]);
+  } else {
+    status.textContent = t(KEY_FAILURE[result.reason]);
   }
   await renderAccount();
 }

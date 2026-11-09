@@ -279,3 +279,13 @@ describe("presentation", () => {
     expect(badgeFor(error)).toEqual({ text: "", color: "#5f6368" });
   });
 });
+
+describe("signing in with an API key", () => {
+  it("refuses something that isn't a key without asking the server", async () => {
+    const { signInWithKey } = await import("../src/shared/key-sign-in.js");
+    expect(await signInWithKey("https://unfret.kroshtan.com", "not-a-key")).toEqual({
+      ok: false,
+      reason: "invalid",
+    });
+  });
+});
