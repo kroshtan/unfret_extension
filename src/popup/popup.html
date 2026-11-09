@@ -10,8 +10,31 @@
   <body>
     <header class="bar">
       <h1>Veridex</h1>
-      <a id="options" href="#" class="link" data-i18n="settings">Settings</a>
+      <nav class="row">
+        <a id="about" href="#" class="link" data-i18n="about">About &amp; privacy</a>
+        <a id="options" href="#" class="link" data-i18n="settings">Settings</a>
+      </nav>
     </header>
+
+    <section id="consent" class="card" aria-labelledby="consent-heading" hidden>
+      <h2 id="consent-heading" data-i18n="consent_heading">Before your first check</h2>
+      <h3 data-i18n="consent_what_title">What Veridex does</h3>
+      <p class="small" data-i18n="consent_what_body"></p>
+      <h3 data-i18n="consent_sent_title">What is sent, and when</h3>
+      <p class="small" data-i18n="consent_sent_body"></p>
+      <h3 data-i18n="consent_pay_title">Paying for checks</h3>
+      <p class="small" data-i18n="consent_pay_body"></p>
+      <p class="small">
+        <a id="privacy" href="#" class="link" data-i18n="consent_privacy">Read the privacy statement</a>
+      </p>
+      <p id="consent-agreed" class="muted small" hidden data-i18n="consent_agreed"></p>
+      <div class="row">
+        <button id="consent-agree" type="button" class="primary" data-i18n="consent_agree">I agree</button>
+        <button id="consent-close" type="button" class="secondary" hidden data-i18n="consent_close">
+          Close
+        </button>
+      </div>
+    </section>
 
     <section id="account" class="card" data-i18n-label="account_label" aria-label="Account">
       <p id="account-status">Not signed in.</p>

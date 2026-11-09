@@ -19,7 +19,7 @@ import {
   type TabState,
 } from "../shared/messages.js";
 import { t } from "../shared/i18n.js";
-import { isDevBase, loadSettings, parseSession, saveSession } from "../shared/settings.js";
+import { consentGiven, isDevBase, loadSettings, parseSession, saveSession } from "../shared/settings.js";
 import { isAnalysable } from "../shared/sites.js";
 import { badgeFor } from "./badge.js";
 import { registerMarketplaceHint } from "./icon-hint.js";
@@ -121,10 +121,33 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 
 // ── Analysis ─────────────────────────────────────────────────────────────────
 
+/** Tabs with an analysis starting or running; checked and set synchronously, before any await. */
+const inFlight = new Set<number>();
+
 async function analyse(tabId: number): Promise<void> {
+  // Two "analyze" messages in quick succession (a double click, two popups) used to both pass a status check
+  // that only changed after `await loadSettings()`, and both were charged.
+  if (inFlight.has(tabId)) return;
+  inFlight.add(tabId);
+  try {
+    await runAnalysis(tabId);
+  } finally {
+    inFlight.delete(tabId);
+  }
+}
+
+/** Uploaded text is capped: the server reads the first 20,000 characters, and sending more only costs bandwidth. */
+export const MAX_UPLOAD_TEXT_CHARS = 24_000;
+
+async function runAnalysis(tabId: number): Promise<void> {
   const current = states.get(tabId);
   if (current?.status === "extracting" || current?.status === "analysing") return;
   const { apiBase, session } = await loadSettings();
+  if (!(await consentGiven())) {
+    // Nothing leaves the browser before the consent screen was accepted, whoever asks.
+    setState(tabId, { status: "error", message: t("hint_consent"), needsSignIn: false, needsCredits: false });
+    return;
+  }
   if (!session) {
     setState(tabId, {
       status: "error",
@@ -151,7 +174,8 @@ async function analyse(tabId: number): Promise<void> {
     const api = new VeridexApi(apiBase, session.token);
     let state: Extract<TabState, { status: "analysing" }> = { status: "analysing", findings: [], steps: [] };
     setState(tabId, state);
-    const body = { url: facts.url, page_facts: facts, ...(text ? { page_content: text } : {}) };
+    const upload = text.slice(0, MAX_UPLOAD_TEXT_CHARS);
+    const body = { url: facts.url, page_facts: facts, ...(upload ? { page_content: upload } : {}) };
     for await (const event of api.analyze(body)) {
       if (event.kind === "page_type") state = { ...state, pageType: event.pageType };
       else if (event.kind === "step") state = { ...state, steps: [...(state.steps ?? []), event.skill] };

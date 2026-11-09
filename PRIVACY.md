@@ -1,6 +1,6 @@
 # Veridex privacy policy (browser extension)
 
-_Last updated: 8 November 2026. Draft for the store listings; to be reviewed before publication._
+_Last updated: 9 November 2026 (version 0.5.0). Draft for the store listings; to be reviewed before publication._
 
 Veridex is made by Kroshtan (Floris van Beers, the Netherlands).
 
@@ -20,7 +20,7 @@ see the page or its address.
 
 ## What is sent, and to whom
 
-Only to the Veridex API (`veridex.kroshtan.com`, hosted in the EU), when you click Analyse:
+Only to the Veridex API (`unfret.kroshtan.com`, hosted in the EU), when you click Analyse:
 
 - the page address and the product facts and text described above;
 - your session token, which identifies the Solana wallet you signed in with.
@@ -38,8 +38,18 @@ The extension asks Veridex for results in your browser's language (Dutch or Engl
 other thing it sends.
 
 On the server: your wallet address and its credit balance. The server does not keep the addresses or contents of
-the pages you analyse, and does not link what you analysed to your wallet. (See the Veridex privacy statement for
-the server side.)
+the pages you analyse, and does not link what you analysed to your wallet. For product pages with a public product
+number (an Amazon ASIN, a bol.com ID or a barcode) it keeps an anonymous price observation for 90 days: a one-way
+hash of the shop's domain and that number, the day, the price and the claimed "was" price, with no address, wallet,
+IP address or time of day. That is how Veridex tells whether a "was" price was ever really charged. The product
+photo itself (the image only, fetched by the server) is looked up with Google Cloud Vision to find copies on
+wholesale sites. The full server-side statement: <https://unfret.kroshtan.com/privacy>.
+
+## Your consent
+
+The first time you open the extension it explains what it does, what is sent and when, and how paying works, and
+analyses nothing until you click **I agree**. Your agreement (and which version of that screen you agreed to) is
+stored in your browser. You can reread it any time under **About & privacy** in the popup.
 
 ## Signing in
 

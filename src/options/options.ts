@@ -1,11 +1,14 @@
 /** Options: the API base URL (production by default, a local origin for development) and signing out. */
 
+import { localise, t, uiLanguage } from "../shared/i18n.js";
 import {
   clearSession,
   DEFAULT_API_BASE,
+  DEV_API_BASE,
   isDevBase,
   loadSettings,
   normaliseApiBase,
+  PRIVACY_URL,
   saveApiBase,
   shortAddress,
 } from "../shared/settings.js";
@@ -25,8 +28,11 @@ function input(id: string): HTMLInputElement {
 async function renderAccount(): Promise<void> {
   const { session } = await loadSettings();
   el("account-status").textContent = session
-    ? `Signed in as ${shortAddress(session.address)} until ${new Date(session.expiresAt).toLocaleDateString()}.`
-    : "Not signed in.";
+    ? t("opt_signed_in", [
+        shortAddress(session.address),
+        new Date(session.expiresAt).toLocaleDateString(uiLanguage()),
+      ])
+    : t("opt_not_signed_in");
   el("sign-out").hidden = !session;
 }
 
@@ -35,7 +41,7 @@ async function save(value: string): Promise<void> {
   const wanted = value.trim();
   const normalised = normaliseApiBase(wanted);
   if (wanted && normalised === DEFAULT_API_BASE && new URL(DEFAULT_API_BASE).origin !== safeOrigin(wanted)) {
-    status.textContent = "Only https:// URLs, or http://localhost / http://127.0.0.1, are allowed.";
+    status.textContent = t("opt_only_https");
     return;
   }
   if (isDevBase(normalised)) {
@@ -43,7 +49,7 @@ async function save(value: string): Promise<void> {
     const { protocol, hostname } = new URL(normalised);
     const granted = await chrome.permissions.request({ origins: [`${protocol}//${hostname}/*`] });
     if (!granted) {
-      status.textContent = "Access to that address was not allowed; keeping the previous server.";
+      status.textContent = t("opt_denied");
       return;
     }
   }
@@ -53,7 +59,7 @@ async function save(value: string): Promise<void> {
   // A different server means a different account: sign out.
   if (stored !== previous) await clearSession();
   await renderAccount();
-  status.textContent = `Saved. Using ${stored}.`;
+  status.textContent = t("opt_saved", [stored]);
 }
 
 function safeOrigin(value: string): string {
@@ -65,11 +71,15 @@ function safeOrigin(value: string): string {
 }
 
 async function init(): Promise<void> {
+  document.documentElement.lang = uiLanguage();
+  localise(document);
+  el("privacy-link").setAttribute("href", PRIVACY_URL);
   const { apiBase } = await loadSettings();
   input("api-base").value = apiBase;
   await renderAccount();
   el("save").addEventListener("click", () => void save(input("api-base").value));
   el("reset").addEventListener("click", () => void save(DEFAULT_API_BASE));
+  el("use-dev").addEventListener("click", () => void save(DEV_API_BASE));
   el("sign-out").addEventListener("click", () => {
     void clearSession().then(renderAccount);
   });

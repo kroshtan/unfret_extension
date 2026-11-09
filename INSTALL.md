@@ -2,18 +2,18 @@
 
 Veridex is distributed **from its own server**, not from Google's or Mozilla's store:
 
-- Signed package: `https://veridex.kroshtan.com/extension/veridex-<version>.crx`
-- Update manifest: `https://veridex.kroshtan.com/extension/updates.xml`
+- Signed package: `https://unfret.kroshtan.com/extension/veridex-<version>.crx`
+- Update manifest: `https://unfret.kroshtan.com/extension/updates.xml`
 - Extension ID: `kpllgmbgfmnlpnmkibmhflkafhilckfe` (fixed by the signing key)
 
-The install page, <https://veridex.kroshtan.com/extension>, has the same instructions, filled in for the current release.
+The install page, <https://unfret.kroshtan.com/extension>, has the same instructions, filled in for the current release.
 
 Chromium browsers only install extensions from outside the Chrome Web Store through a **browser policy** or **developer
 mode**. What that means per platform:
 
 | Browser and OS                                             | How                              | Automatic updates                |
 | ---------------------------------------------------------- | -------------------------------- | -------------------------------- |
-| Brave, Chromium, Chrome on **Linux**                       | Policy (one command, below)      | Yes, from veridex.kroshtan.com   |
+| Brave, Chromium, Chrome on **Linux**                       | Policy (one command, below)      | Yes, from unfret.kroshtan.com    |
 | **ungoogled-chromium** (any OS)                            | A flag, then open the `.crx`     | Yes, via the update manifest     |
 | Windows, macOS, **managed** device (Active Directory, MDM) | Policy, set by the administrator | Yes                              |
 | Windows, macOS, personal device                            | Developer mode ("Load unpacked") | No; install new versions by hand |
@@ -21,11 +21,11 @@ mode**. What that means per platform:
 ## Linux: Brave, Chromium, Chrome
 
 Chromium-based browsers read policies from JSON files in a `managed` directory. This installs Veridex and keeps it
-updated from veridex.kroshtan.com:
+updated from unfret.kroshtan.com:
 
 ```bash
 # Brave
-sudo mkdir -p /etc/brave/policies/managed && echo '{"ExtensionInstallForcelist":["kpllgmbgfmnlpnmkibmhflkafhilckfe;https://veridex.kroshtan.com/extension/updates.xml"]}' | sudo tee /etc/brave/policies/managed/veridex.json > /dev/null
+sudo mkdir -p /etc/brave/policies/managed && echo '{"ExtensionInstallForcelist":["kpllgmbgfmnlpnmkibmhflkafhilckfe;https://unfret.kroshtan.com/extension/updates.xml"]}' | sudo tee /etc/brave/policies/managed/veridex.json > /dev/null
 
 # Chromium: same JSON in /etc/chromium/policies/managed/veridex.json
 # Google Chrome: same JSON in /etc/opt/chrome/policies/managed/veridex.json

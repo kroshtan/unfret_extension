@@ -1,6 +1,6 @@
 // Build the extension from one source tree:
 //   dist/chrome             Chromium, store variant (no update_url; Chrome Web Store if ever listed) + its zip
-//   dist/chrome-selfhosted  Chromium, self-hosted variant: update_url on veridex.kroshtan.com and the public `key`,
+//   dist/chrome-selfhosted  Chromium, self-hosted variant: update_url on unfret.kroshtan.com and the public `key`,
 //                           so the ID is the one the signed CRX has (needs release/public-key.b64, see crx-key.mjs)
 //   dist/firefox            Firefox (built, not published) + its zip
 //   node scripts/build.mjs          production (minified)

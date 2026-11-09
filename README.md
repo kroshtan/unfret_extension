@@ -9,7 +9,7 @@ third-party requests: the extension talks to the Veridex API and nothing else.
 
 **Install:** Veridex is distributed from its own server as a signed, reproducible CRX with automatic updates, not
 through Google's or Mozilla's store. See [INSTALL.md](INSTALL.md) (Brave, Chromium and Chrome on Linux;
-ungoogled-chromium; Windows and macOS) or <https://veridex.kroshtan.com/extension>.
+ungoogled-chromium; Windows and macOS) or <https://unfret.kroshtan.com/extension>.
 
 ## How it works
 
@@ -28,7 +28,7 @@ toolbar click ─► popup ─► background ─► inject extract.js into the t
   the current state of checkboxes, and countdowns read twice a few seconds apart.
 - **Only facts and cleaned product text are sent**, never the raw page: account menus, delivery addresses,
   greetings, forms and inputs are stripped from a copy of the page first.
-- **Sign-in is Sign-In With Solana.** "Sign in" opens `https://veridex.kroshtan.com/connect`; after you sign a
+- **Sign-in is Sign-In With Solana.** "Sign in" opens `https://unfret.kroshtan.com/connect`; after you sign a
   message in your wallet, that page posts the session to itself and the extension's content script (injected only
   there) relays it. The relay accepts it only from that window on the configured Veridex origin, and the
   background checks the sender again. Signing grants no spending rights. "Buy checks" opens `/checkout`.
@@ -58,7 +58,7 @@ test/           unit, parity (jsdom vs the Python extractors), mock API; smoke/ 
 | `scripting`                                         | Inject the extractor into that tab; register the relay for a dev API origin |
 | `storage`                                           | Your session (token, wallet address, expiry) and settings; nothing else     |
 | `declarativeContent` (Chromium)                     | The browser marks the icon on marketplace product pages; no page access     |
-| `https://veridex.kroshtan.com/connect*`             | The sign-in relay on the Veridex sign-in page (the API itself is CORS)      |
+| `https://unfret.kroshtan.com/connect*`              | The sign-in relay on the Veridex sign-in page (the API itself is CORS)      |
 | optional `http://localhost/*`, `http://127.0.0.1/*` | Only if you point the extension at a local dev server                       |
 
 ## Development

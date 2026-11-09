@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
-    <title>Veridex settings</title>
+    <title data-i18n="opt_title">Veridex settings</title>
     <link rel="stylesheet" href="../shared/ui.css" />
     <style>
       main {
@@ -24,35 +24,34 @@
   </head>
   <body>
     <main>
-      <h1 style="margin: 8px 12px">Veridex settings</h1>
+      <h1 style="margin: 8px 12px" data-i18n="opt_title">Veridex settings</h1>
 
       <section class="card" aria-labelledby="account-heading">
-        <h2 id="account-heading">Account</h2>
-        <p id="account-status">Not signed in.</p>
-        <button id="sign-out" type="button" hidden>Sign out</button>
+        <h2 id="account-heading" data-i18n="opt_account">Account</h2>
+        <p id="account-status"></p>
+        <button id="sign-out" type="button" hidden data-i18n="sign_out">Sign out</button>
       </section>
 
       <section class="card" aria-labelledby="server-heading">
-        <h2 id="server-heading">Server</h2>
-        <label for="api-base">API base URL</label>
+        <h2 id="server-heading" data-i18n="opt_server">Server</h2>
+        <label for="api-base" data-i18n="opt_api_base">API base URL</label>
         <input id="api-base" type="url" spellcheck="false" autocomplete="off" />
         <div class="row">
-          <button id="save" type="button">Save</button>
-          <button id="reset" type="button">Use the default</button>
+          <button id="save" type="button" data-i18n="opt_save">Save</button>
+          <button id="reset" type="button" data-i18n="opt_reset">Use the default</button>
+          <button id="use-dev" type="button" data-i18n="opt_use_dev">Use the dev server</button>
         </div>
         <p id="server-status" class="muted small" role="status"></p>
-        <p class="muted small">
-          The default is https://veridex.kroshtan.com. For development, http://localhost or http://127.0.0.1
-          (any port) can be used; the browser asks you to allow access to it.
-        </p>
+        <p class="muted small" data-i18n="opt_server_help"></p>
       </section>
 
       <section class="card" aria-labelledby="privacy-heading">
-        <h2 id="privacy-heading">Privacy</h2>
+        <h2 id="privacy-heading" data-i18n="opt_privacy">Privacy</h2>
+        <p data-i18n="opt_privacy_body"></p>
         <p>
-          Veridex reads a page only when you click "Analyse this page". It then sends the product facts and
-          the page's visible product text (without account menus, addresses or forms) to the Veridex server.
-          It stores only your sign-in session and these settings in your browser, and no analysis history.
+          <a id="privacy-link" class="link" target="_blank" rel="noopener" data-i18n="consent_privacy"
+            >Read the privacy statement</a
+          >
         </p>
       </section>
     </main>

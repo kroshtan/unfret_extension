@@ -14,6 +14,9 @@ import {
   clearSession,
   expireSession,
   loadSettings,
+  consentGiven,
+  giveConsent,
+  PRIVACY_URL,
   saveSession,
   type Session,
   shortAddress,
@@ -46,6 +49,15 @@ let analysable = false;
 let busy = false;
 let port: chrome.runtime.Port | undefined;
 let purchasesOn = false;
+let consented = false;
+
+/** The consent screen: shown until accepted, and from "About & privacy" any time after. */
+function showConsent(visible: boolean): void {
+  show("consent", visible);
+  show("consent-agree", !consented);
+  show("consent-agreed", consented);
+  show("consent-close", consented);
+}
 
 function openTab(path: string): void {
   void chrome.tabs.create({ url: `${apiBase}${path}` });
@@ -198,14 +210,16 @@ function renderAccount(): void {
   const noChecks = Boolean(session) && checks === 0;
   const analyse = button("analyse");
   analyse.textContent = busy ? t("analysing") : noChecks ? t("buy_to_analyse") : t("analyse");
-  analyse.disabled = busy || !session || !analysable || (noChecks && !purchasesOn);
-  el("hint").textContent = !analysable
-    ? t("hint_not_analysable")
-    : !session
-      ? t("hint_sign_in")
-      : noChecks
-        ? t("hint_no_checks")
-        : t("hint_ready");
+  analyse.disabled = busy || !consented || !session || !analysable || (noChecks && !purchasesOn);
+  el("hint").textContent = !consented
+    ? t("hint_consent")
+    : !analysable
+      ? t("hint_not_analysable")
+      : !session
+        ? t("hint_sign_in")
+        : noChecks
+          ? t("hint_no_checks")
+          : t("hint_ready");
 }
 
 function render(state: TabState): void {
@@ -238,6 +252,26 @@ async function init(): Promise<void> {
   document.documentElement.lang = uiLanguage();
   localise(document);
   ({ apiBase, session, expired } = await loadSettings());
+  consented = await consentGiven();
+  showConsent(!consented);
+  el("about").addEventListener("click", (event) => {
+    event.preventDefault();
+    showConsent(el("consent").hidden === true);
+  });
+  el("privacy").addEventListener("click", (event) => {
+    event.preventDefault();
+    void chrome.tabs.create({ url: PRIVACY_URL });
+  });
+  el("consent-agree").addEventListener("click", () => {
+    void giveConsent().then(() => {
+      consented = true;
+      showConsent(false);
+      renderAccount();
+    });
+  });
+  el("consent-close").addEventListener("click", () => {
+    showConsent(false);
+  });
   // `?tab=<id>` shows a given tab's analysis (the popup opened as a page, e.g. in tests); else the active tab.
   const forced = Number(new URLSearchParams(location.search).get("tab"));
   const [tab] =
@@ -295,11 +329,15 @@ async function init(): Promise<void> {
   });
   port.postMessage({ type: "watch", tabId } satisfies PopupRequest);
   el("analyse").addEventListener("click", () => {
+    if (busy || !consented) return; // a second click before the first one's state arrives must not charge twice
     if (session && checks === 0) {
       if (purchasesOn) openTab("/checkout");
       return;
     }
-    if (tabId !== undefined) port?.postMessage({ type: "analyze", tabId } satisfies PopupRequest);
+    if (tabId === undefined) return;
+    busy = true; // synchronously: the button is disabled before any message round trip
+    renderAccount();
+    port?.postMessage({ type: "analyze", tabId } satisfies PopupRequest);
   });
 }
 

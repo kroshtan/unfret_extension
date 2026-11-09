@@ -21,10 +21,14 @@ describe("manifest permissions", () => {
     const m = manifest(browser, options);
     expect(m.permissions).toEqual(["activeTab", "storage", "scripting", "declarativeContent"]);
     expect(m).not.toHaveProperty("host_permissions");
-    expect(m.optional_host_permissions).toEqual(["http://localhost/*", "http://127.0.0.1/*"]);
+    expect(m.optional_host_permissions).toEqual([
+      "https://dev.unfret.kroshtan.com/*",
+      "http://localhost/*",
+      "http://127.0.0.1/*",
+    ]);
     expect(m.content_scripts).toEqual([
       {
-        matches: ["https://veridex.kroshtan.com/connect*"],
+        matches: ["https://unfret.kroshtan.com/connect*"],
         js: ["connect-relay.js"],
         run_at: "document_start",
       },
@@ -48,7 +52,7 @@ describe("manifest permissions", () => {
 
   it("the self-hosted build carries the update URL and key", () => {
     const m = manifest("chrome-selfhosted", options);
-    expect(m.update_url).toBe("https://veridex.kroshtan.com/extension/updates.xml");
+    expect(m.update_url).toBe("https://unfret.kroshtan.com/extension/updates.xml");
     expect(m.key).toBe("PUBLICKEY");
   });
 });

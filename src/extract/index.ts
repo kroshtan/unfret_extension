@@ -10,6 +10,9 @@ import { cleanText } from "./clean.js";
 import { extractFacts } from "./generic.js";
 import { liveCheckedStates, liveHiddenText, observeTimers } from "./live.js";
 
+/** How long countdowns are watched: long enough to see a second tick go by, short enough not to keep you waiting. */
+export const TIMER_WAIT_MS = 1_200;
+
 export interface Extraction {
   facts: PageFacts;
   text: string;
@@ -32,7 +35,11 @@ export async function extractPage(
     facts.hidden_text = [...facts.hidden_text, ...liveHiddenText(doc, facts.hidden_text)].slice(0, 100);
     const states = liveCheckedStates(doc);
     facts.checkboxes = facts.checkboxes.map((box, i) => ({ ...box, checked: states[i] ?? box.checked }));
-    await observeTimers(doc, facts, options.timerWaitMs ?? 2500);
+    // The first reading happens now; the text is cleaned while the countdowns run, then they're read again.
+    const timers = observeTimers(doc, facts, options.timerWaitMs ?? TIMER_WAIT_MS);
+    const text = cleanText(doc.querySelector("body") ?? doc.documentElement);
+    await timers;
+    return { facts, text };
   }
   return { facts, text: cleanText(doc.querySelector("body") ?? doc.documentElement) };
 }

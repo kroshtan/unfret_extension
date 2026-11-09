@@ -38,7 +38,10 @@ const SHOPIFY_RE = /cdn\.shopify\.com|Shopify\.theme|myshopify\.com/iu;
 const WOO_RE = /woocommerce|wp-content\/plugins\/woocommerce/iu;
 const AMAZON_HOST_RE = /(?:^|[\s.])amazon\.[a-z.]+/u;
 const BOL_HOST_RE = /(?:^|[\s.])bol\.com/u;
-const COMPARE_AT_RE = /"compare_at_price"\s*:\s*"?(\d+(?:\.\d+)?)"?/u;
+const COMPARE_AT_RE = /"compare_at_price"\s*:\s*("?)(\d+(?:\.\d+)?)\1/gu;
+const VARIANT_PRICE_RE = /"price"\s*:\s*("?)(\d+(?:\.\d+)?)\1/gu;
+const VARIANT_ID_RE = /"id"\s*:\s*"?(\d{6,})/gu;
+const VARIANT_WINDOW = 1_500; // chars around a compare-at price that belong to the same variant object
 const SKIP_HIDDEN = new Set([
   "script",
   "style",
@@ -108,7 +111,7 @@ export function extractFacts(doc: Document, html: string, url = ""): PageFacts {
   structuredData(doc, facts);
   if (facts.platform === "amazon") amazon.extract(doc, facts);
   else if (facts.platform === "bol.com") bolcom.extract(doc, facts);
-  else if (facts.platform === "shopify") shopify(html, facts);
+  else if (facts.platform === "shopify") shopify(html, facts, url);
   if (!facts.title) facts.title = text(doc.querySelector("h1")) || meta(doc, "og:title");
   const ogImage = meta(doc, "og:image");
   if (facts.image_urls.length === 0 && ogImage) facts.image_urls = [urljoin(url, ogImage)];
@@ -373,18 +376,58 @@ function microdataReviews(doc: Document, facts: PageFacts): void {
   }
 }
 
-function shopify(html: string, facts: PageFacts): void {
-  // The struck-through "was" price. Shopify's product JSON stores it in cents; only accept a value that is at
-  // least the listed price, so a mismatched or empty compare-at price is never reported as a discount.
-  const m = COMPARE_AT_RE.exec(html);
-  if (facts.list_price !== null || facts.price === null || !m) return;
-  const cents = Number(m[1]);
-  for (const candidate of [Math.round(cents) / 100, cents]) {
-    if (candidate > facts.price) {
-      facts.list_price = candidate;
-      return;
-    }
+function shopifyAmount(digits: string): number {
+  // Integer amounts in Shopify's product JSON are cents; a decimal ("29.99", from a theme's money filter) is already
+  // in the currency. An integer is never read as whole units: that turned "2495" into a 99% discount.
+  return digits.includes(".") ? Number(digits) : Number((Number.parseInt(digits, 10) / 100).toFixed(2));
+}
+
+/**
+ * The struck-through "was" price of the variant on show, as the backend's `shopify_compare_at` computes it: bound
+ * to the `?variant=` in the URL, else to the variant whose own price is the listed price; without either, only a
+ * compare-at price every variant shares counts. A value at or below the listed price is never a discount.
+ */
+export function shopifyCompareAt(html: string, price: number, url = ""): number | null {
+  let variant = "";
+  try {
+    variant = new URL(url).searchParams.get("variant") ?? "";
+  } catch {
+    // no URL: bind by price only
   }
+  const candidates: { was: number; isVariant: boolean; ownPrice: boolean }[] = [];
+  for (const m of html.matchAll(COMPARE_AT_RE)) {
+    const at = m.index;
+    const lo = Math.max(at - VARIANT_WINDOW, 0);
+    const ids = Array.from(html.slice(lo, at).matchAll(VARIANT_ID_RE), (id) => id[1]);
+    let nearest: RegExpExecArray | null = null;
+    let distance = Infinity;
+    const window = html.slice(lo, at + m[0].length + VARIANT_WINDOW);
+    for (const p of window.matchAll(VARIANT_PRICE_RE)) {
+      const d = Math.abs(lo + p.index - at);
+      if (d < distance) {
+        distance = d;
+        nearest = p;
+      }
+    }
+    const own = nearest?.[2] !== undefined ? shopifyAmount(nearest[2]) : null;
+    candidates.push({
+      was: shopifyAmount(m[2] ?? "0"),
+      isVariant: variant !== "" && ids.at(-1) === variant,
+      ownPrice: own === price,
+    });
+  }
+  if (candidates.length === 0) return null;
+  const bound = candidates.filter((c) => c.isVariant);
+  const chosen = bound.length > 0 ? bound : candidates.filter((c) => c.ownPrice);
+  const values = new Set((chosen.length > 0 ? chosen : candidates).map((c) => c.was));
+  if (values.size !== 1) return null; // variants disagree and none is the one on show
+  const [was] = values;
+  return was !== undefined && was > price ? was : null;
+}
+
+function shopify(html: string, facts: PageFacts, url: string): void {
+  if (facts.list_price === null && facts.price !== null)
+    facts.list_price = shopifyCompareAt(html, facts.price, url);
 }
 
 /** The content of the first `<meta property=key>`, else of the first `<meta name=key>` (as the backend looks). */
