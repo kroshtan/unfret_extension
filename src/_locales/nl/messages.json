@@ -21,10 +21,10 @@
     "message": "Ingelogd tot $1"
   },
   "sign_in_wallet": {
-    "message": "Inloggen met een Solana-wallet"
+    "message": "Wallet in deze browser"
   },
   "sign_in_phone": {
-    "message": "Inloggen met je telefoon"
+    "message": "Wallet op je telefoon"
   },
   "sign_out": {
     "message": "Uitloggen"
@@ -39,7 +39,7 @@
     "message": "Nog $1 checks"
   },
   "phone_heading": {
-    "message": "Inloggen met je telefoon"
+    "message": "Wallet op je telefoon"
   },
   "phone_help": {
     "message": "Scan dit met je telefoon en open de pagina in je wallet-app (Phantom, Solflare…). Opent je camera een gewone browser, dan biedt de pagina aan zichzelf in je wallet te openen."

@@ -28,11 +28,11 @@
     "description": "$1 is a date."
   },
   "sign_in_wallet": {
-    "message": "Sign in with a Solana wallet",
+    "message": "Wallet in this browser",
     "description": "Button."
   },
   "sign_in_phone": {
-    "message": "Sign in with phone",
+    "message": "Wallet on your phone",
     "description": "Button."
   },
   "sign_out": {
@@ -52,7 +52,7 @@
     "description": "Credits line; $1 is a number."
   },
   "phone_heading": {
-    "message": "Sign in with your phone",
+    "message": "Wallet on your phone",
     "description": "Heading."
   },
   "phone_help": {

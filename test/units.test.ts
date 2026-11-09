@@ -263,9 +263,13 @@ describe("presentation", () => {
       }),
     ).toBe("amber");
     expect(badgeFor({ status: "done", findings: [], result: { score: 18, explanation: "" } })).toEqual({
-      text: "18",
+      text: "!!",
       color: "#c62828",
     });
+    // The badge shows the verdict as a symbol, never the score: the popup speaks in words.
+    const badge = (score: number): string | undefined =>
+      badgeFor({ status: "done", findings: [], result: { score, explanation: "" } })?.text;
+    expect([badge(85), badge(60), badge(30), badge(10), badge(-1)]).toEqual(["✓", "?", "!", "!!", "–"]);
     expect(badgeFor({ status: "idle" })).toBeNull();
     // Account, credit and network problems aren't a red "!": the badge clears and the popup explains.
     const error = { status: "error", message: "x", needsSignIn: true, needsCredits: false } as const;
