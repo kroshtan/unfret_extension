@@ -23,6 +23,18 @@
   "sign_in_wallet": {
     "message": "Wallet in deze browser"
   },
+  "sign_in_key": {
+    "message": "API-sleutel",
+    "description": "Popup sign-in choice: use an API key instead of a wallet."
+  },
+  "key_heading": {
+    "message": "Inloggen met een API-sleutel",
+    "description": "Popup heading."
+  },
+  "key_get": {
+    "message": "Nog geen sleutel? Haal er een op de betaalpagina",
+    "description": "Link to buying checks for a new key."
+  },
   "sign_in_phone": {
     "message": "Wallet op je telefoon"
   },
@@ -309,7 +321,7 @@
     "description": "Options heading."
   },
   "opt_key_help": {
-    "message": "Een API-sleutel is een alternatief voor een wallet: koop er controles voor met SOL, USDC (of later een kaart) op de betaalpagina en plak hem hier. Hij wordt alleen in deze browser bewaard.",
+    "message": "Een API-sleutel is een alternatief voor een wallet: koop er checks voor met een kaart, SOL of USDC op de betaalpagina en plak hem hier. Hij wordt alleen in deze browser bewaard.",
     "description": "Options help text."
   },
   "opt_key_label": {

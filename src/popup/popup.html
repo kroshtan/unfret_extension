@@ -47,9 +47,22 @@
         <button id="sign-in-phone" type="button" class="secondary" data-i18n="sign_in_phone">
           Sign in with phone
         </button>
+        <button id="sign-in-key" type="button" class="secondary" data-i18n="sign_in_key">API key</button>
         <button id="buy" type="button" class="secondary" hidden data-i18n="buy_checks">Buy checks</button>
         <button id="sign-out" type="button" class="secondary" hidden data-i18n="sign_out">Sign out</button>
       </div>
+    </section>
+
+    <section id="key" class="card" aria-labelledby="key-heading" hidden>
+      <h2 id="key-heading" data-i18n="key_heading">Sign in with an API key</h2>
+      <label for="key-input" class="small" data-i18n="opt_key_label">API key</label>
+      <input id="key-input" type="password" spellcheck="false" autocomplete="off" placeholder="ufk_…" />
+      <p id="key-status" class="muted small" role="status" aria-live="polite"></p>
+      <div class="row">
+        <button id="key-use" type="button" class="primary" data-i18n="opt_key_use">Use this key</button>
+        <button id="key-cancel" type="button" class="secondary" data-i18n="cancel">Cancel</button>
+      </div>
+      <p class="small"><a id="key-get" class="link" href="#" data-i18n="key_get">Get a key</a></p>
     </section>
 
     <section id="phone" class="card" aria-labelledby="phone-heading" hidden>
