@@ -36,14 +36,14 @@ icons:  ## Render the icons and store promo images from brand/*.svg (needs `npx 
 screenshots: build  ## Render the Chrome Web Store screenshots into store/screenshots (needs `npx playwright install chromium`)
 	node scripts/screenshots.mjs
 
-crx-key:  ## Create the CRX signing key once (VERIDEX_CRX_KEY, default ~/kroshtan_secrets/veridex-extension-crx.pem)
-	node scripts/crx-key.mjs
+crx-key:  ## Create a CRX signing key once (production; DEV=1 for Unfret Dev). Keys live in ~/kroshtan_secrets
+	node scripts/crx-key.mjs $(if $(DEV),--dev)
 
 release: build  ## Signed self-hosted release in dist/release: CRX, updates.xml, store zip, SHA256SUMS
 	node scripts/release.mjs
 
-verify-release: build  ## Check a published CRX against your own build: make verify-release CRX=path/to/file.crx
-	node scripts/verify-release.mjs $(CRX)
+verify-release: build  ## Check a published CRX against your own build: make verify-release CRX=file.crx [DEV=1]
+	node scripts/verify-release.mjs $(if $(DEV),--dev) $(CRX)
 
 clean:  ## Remove build output
 	rm -rf dist coverage

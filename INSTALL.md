@@ -72,8 +72,10 @@ file.
 ## For maintainers: making a release
 
 1. Bump `version` in `package.json`.
-2. `make release`. It needs the signing key at `$VERIDEX_CRX_KEY` (default `~/kroshtan_secrets/veridex-extension-crx.pem`;
-   create it once with `make crx-key`, and back it up: losing it changes the extension ID, and existing installs stop
-   receiving updates).
+2. `make release`. It needs both signing keys: production's at `$VERIDEX_CRX_KEY` (default
+   `~/kroshtan_secrets/veridex-extension-crx.pem`) and Unfret Dev's at `$UNFRET_DEV_CRX_KEY` (default
+   `~/kroshtan_secrets/unfret-dev-crx.pem`). Each is created once with `make crx-key` (`DEV=1` for the dev one); back
+   them up: losing one changes that extension's ID, and existing installs stop receiving updates.
 3. Copy `dist/release/*` into the backend's `src/veridex/static/extension/` and ship it. Browsers pick the new version
-   up from `updates.xml` within a few hours.
+   up from `updates.xml` (Unfret Dev: `updates-dev.xml`) within a few hours. Check a published Unfret Dev package with
+   `make verify-release DEV=1 CRX=…`.
