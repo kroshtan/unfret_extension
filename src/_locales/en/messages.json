@@ -340,7 +340,7 @@
     "description": "Options help text. $1 is the default API base."
   },
   "opt_only_https": {
-    "message": "Only https:// URLs, or http://localhost / http://127.0.0.1, are allowed.",
+    "message": "Only the default, or a local server on http://localhost / http://127.0.0.1, can be used.",
     "description": "Options validation error."
   },
   "opt_denied": {

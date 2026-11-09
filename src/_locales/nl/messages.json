@@ -277,7 +277,7 @@
     "description": "Options help text. $1 is the default API base."
   },
   "opt_only_https": {
-    "message": "Alleen https://-adressen, of http://localhost / http://127.0.0.1, zijn toegestaan.",
+    "message": "Alleen de standaard, of een lokale server op http://localhost / http://127.0.0.1, kan worden gebruikt.",
     "description": "Options validation error."
   },
   "opt_denied": {

@@ -50,13 +50,17 @@ interface Stored {
 
 const BASE58_ADDRESS_RE = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/u;
 
-/** The API base, normalised (no trailing slash); falls back to production for anything unexpected. */
+/**
+ * The API base, normalised (no trailing slash): this build's own API or a local dev server, and the default for
+ * anything else. The extension pages can reach nothing else (CSP), so a stored dev-deployment URL from before Unfret
+ * Dev existed (0.8.0) falls back to the default here.
+ */
 export function normaliseApiBase(value: string | undefined): string {
   if (!value) return DEFAULT_API_BASE;
   try {
     const url = new URL(value);
-    const isDev = DEV_ORIGINS.some((o) => url.origin === o || url.origin.startsWith(`${o}:`));
-    if (url.protocol !== "https:" && !isDev) return DEFAULT_API_BASE;
+    const isLocal = DEV_ORIGINS.some((o) => url.origin === o || url.origin.startsWith(`${o}:`));
+    if (!isLocal) return DEFAULT_API_BASE;
     return url.origin;
   } catch {
     return DEFAULT_API_BASE;
