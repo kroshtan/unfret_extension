@@ -235,9 +235,7 @@ describe("with the access a click grants (activeTab)", () => {
     expect(body.page_facts.title).toMatch(/^NOVAXEL Smart Watch/u);
     expect(body.page_content).not.toMatch(/Jane/u);
     // Score 18: the verdict symbol, not the number (0.7.2).
-    expect(await granted.worker.evaluate((id) => chrome.action.getBadgeText({ tabId: id }), tabId)).toBe(
-      "!!",
-    );
+    expect(await granted.worker.evaluate((id) => chrome.action.getBadgeText({ tabId: id }), tabId)).toBe("✕");
   });
 
   it("keeps the result when the service worker sleeps, and shows it as a shopper reads it (English)", async () => {

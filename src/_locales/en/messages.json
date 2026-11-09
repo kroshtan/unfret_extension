@@ -280,7 +280,7 @@
     "description": "Consent screen, panel 3 title."
   },
   "consent_pay_body": {
-    "message": "Sign in with a Solana wallet, or use an API key, and use prepaid checks. A new wallet may get a few free checks to try it.",
+    "message": "Sign in with a Solana wallet, or use an API key, and use prepaid checks.",
     "description": "Consent screen, panel 3."
   },
   "consent_privacy": {
