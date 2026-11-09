@@ -360,7 +360,115 @@
     "description": "Options heading."
   },
   "opt_privacy_body": {
-    "message": "Veridex reads a page only when you click \"Analyse this page\". It then sends the product facts and the page's visible product text (without account menus, addresses or forms) to the Veridex server. It stores only your sign-in session, your consent and these settings in your browser, and no analysis history.",
+    "message": "Veridex reads a page only when you click \"Analyse this page\". It then sends the product facts and the page's visible product text (without account menus, addresses or forms) to the Veridex server. It stores only your sign-in session or API key, your consent and these settings in your browser, and no analysis history. A page is shared for review only when you report a result as wrong and agree.",
     "description": "Options privacy text."
+  },
+  "signed_in_key": {
+    "message": "Using API key $1",
+    "description": "$1 is the key's public ID."
+  },
+  "opt_using_key": {
+    "message": "Using API key $1.",
+    "description": "Options account status; $1 is the key's public ID."
+  },
+  "opt_key_heading": {
+    "message": "Use an API key instead",
+    "description": "Options heading."
+  },
+  "opt_key_help": {
+    "message": "An API key is an alternative to a wallet: buy checks for it with SOL, USDC (or later a card) on the checkout page and paste it here. It is kept only in this browser.",
+    "description": "Options help text."
+  },
+  "opt_key_label": {
+    "message": "API key",
+    "description": "Label of the API key field."
+  },
+  "opt_key_use": {
+    "message": "Use this key",
+    "description": "Button."
+  },
+  "opt_key_get": {
+    "message": "Get or top up a key",
+    "description": "Link to the checkout page for API keys."
+  },
+  "opt_key_invalid": {
+    "message": "That isn't an API key (it starts with ufk_).",
+    "description": "Options validation error."
+  },
+  "opt_key_rejected": {
+    "message": "The server doesn't know this key (or it was replaced with its recovery code).",
+    "description": "Options error."
+  },
+  "opt_key_saved": {
+    "message": "Saved. Using API key $1: $2.",
+    "description": "$1 key ID, $2 checks left."
+  },
+  "report_open": {
+    "message": "This is wrong",
+    "description": "Link under a result that opens the report form."
+  },
+  "report_heading": {
+    "message": "What is this page really?",
+    "description": "Report form heading."
+  },
+  "report_real_brand": {
+    "message": "A real brand or shop",
+    "description": "Report reason."
+  },
+  "report_scam": {
+    "message": "A scam",
+    "description": "Report reason."
+  },
+  "report_junk": {
+    "message": "Junk or dropshipping",
+    "description": "Report reason."
+  },
+  "report_other": {
+    "message": "Something else",
+    "description": "Report reason."
+  },
+  "report_consent": {
+    "message": "Sending this shares this one check's product facts, page text and result with Unfret for review. Personal details are removed first; once reviewed, it is kept without any link to you. If the score was far off, you get 3 free checks.",
+    "description": "Consent text in the report form."
+  },
+  "report_send": {
+    "message": "Send report",
+    "description": "Button."
+  },
+  "report_sending": {
+    "message": "Sending…",
+    "description": "Report status."
+  },
+  "report_queued": {
+    "message": "Thanks! We'll review this page. If we got it badly wrong, you get free checks.",
+    "description": "Report sent."
+  },
+  "report_already_reported": {
+    "message": "Thanks! Someone reported this page first; your report counts as confirmation.",
+    "description": "Report outcome."
+  },
+  "report_already_known": {
+    "message": "Thanks! We reviewed this page recently.",
+    "description": "Report outcome."
+  },
+  "report_limit": {
+    "message": "You've used this month's reports. Thank you!",
+    "description": "Report refused."
+  },
+  "report_twice": {
+    "message": "You've already reported this page.",
+    "description": "Report refused."
+  },
+  "report_queue_full": {
+    "message": "Our review queue is full right now; please try again in a few days.",
+    "description": "Report refused."
+  },
+  "report_too_old": {
+    "message": "This check can't be reported any more; check the page again first.",
+    "description": "Report refused."
+  },
+  "report_failed": {
+    "message": "The report didn't go through. Please try again later.",
+    "description": "Report failed."
   }
 }

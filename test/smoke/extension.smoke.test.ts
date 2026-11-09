@@ -253,6 +253,60 @@ describe("with the access a click grants (activeTab)", () => {
   });
 });
 
+describe("reports and API keys", () => {
+  it("reports a wrong result with the analysed request, only after choosing a reason", async () => {
+    const extensionId = new URL(granted.worker.url()).host;
+    const page = await granted.context.newPage();
+    await page.goto(`chrome-extension://${extensionId}/popup/popup.html?tab=${analysedTab}`);
+    await page.click("#report-open");
+    expect(await page.isDisabled("#report-send")).toBe(true); // a reason first
+    expect(await page.textContent("#report")).toMatch(
+      /this one check's product facts, page text and result/u,
+    );
+    await page.check('#report input[value="real_brand"]');
+    await page.click("#report-send");
+    await page.waitForFunction(() =>
+      document.querySelector("#report-status")?.textContent.startsWith("Thanks"),
+    );
+
+    const sent = api.requests.find((r) => r.path === "/v1/reports");
+    const analysed = api.requests.find((r) => r.path === "/v1/analyze/stream");
+    expect(sent?.auth).toBe("Bearer good-token-xxxxxxxxxxxxxxxxxxxx");
+    expect(sent?.body).toMatchObject({
+      report_token: "report-token.mac",
+      reason: "real_brand",
+      consent: true,
+      request: analysed?.body as object,
+      explanation: "Generic product, inflated discount, implausibly fast reviews.",
+    });
+    expect(await page.isVisible("#report-open")).toBe(false); // one report per check
+    await page.close();
+  });
+
+  it("uses a pasted API key instead of a wallet", async () => {
+    const extensionId = new URL(granted.worker.url()).host;
+    const page = await granted.context.newPage();
+    await page.goto(`chrome-extension://${extensionId}/options/options.html`);
+    await page.fill("#api-key", "not a key");
+    await page.click("#key-use");
+    await page.waitForFunction(() => document.querySelector("#key-status")?.textContent !== "");
+    expect(await page.textContent("#key-status")).toMatch(/isn't an API key/u);
+
+    const key = `ufk_abcdefghij_${"a".repeat(52)}`;
+    await page.fill("#api-key", key);
+    await page.click("#key-use");
+    await page.waitForFunction(() => document.querySelector("#key-status")?.textContent.startsWith("Saved"));
+    expect(await page.textContent("#account-status")).toBe("Using API key abcdefghij.");
+    expect(await page.inputValue("#api-key")).toBe(""); // not left on screen
+    expect(api.requests.at(-1)).toMatchObject({ path: "/v1/credits", auth: `Bearer ${key}` });
+    const stored = await granted.worker.evaluate(
+      async () => (await chrome.storage.local.get("session")).session,
+    );
+    expect(stored).toMatchObject({ token: key, address: "key:abcdefghij", kind: "key" });
+    await page.close();
+  });
+});
+
 /** Open the popup as a page for `tabId` and read what a shopper sees. */
 async function renderedPopup(
   browser: { context: BrowserContext; worker: Worker },

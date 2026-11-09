@@ -48,6 +48,35 @@ describe("VeridexApi against a mock server", () => {
     expect(api.requests.at(-1)?.body).toMatchObject({ url: "https://www.amazon.com/dp/B0TEST1234" });
   });
 
+  it("reports a result with its token and the request exactly as analysed", async () => {
+    const body = { url: "https://www.amazon.com/dp/B0TEST1234", page_content: "Wool sweater" };
+    const result = { score: 80, explanation: "Looks legitimate.", report_token: "tok.mac" };
+
+    const sent = await new VeridexApi(api.url, "ufk_abcdefghij_" + "a".repeat(52)).report(
+      body,
+      result,
+      "scam",
+    );
+
+    expect(sent.status).toBe("queued");
+    expect(api.requests.at(-1)).toMatchObject({
+      path: "/v1/reports",
+      auth: "Bearer ufk_abcdefghij_" + "a".repeat(52),
+      body: {
+        report_token: "tok.mac",
+        reason: "scam",
+        consent: true,
+        request: body,
+        explanation: "Looks legitimate.",
+      },
+    });
+    const refused = await new VeridexApi(api.url, "limited")
+      .report(body, result, "junk")
+      .catch((e: unknown) => e);
+    expect(refused).toBeInstanceOf(ApiError);
+    expect((refused as ApiError).code).toBe("REPORT_LIMIT");
+  });
+
   it("asks for the verdict in the user's language", async () => {
     await new VeridexApi(api.url, "good", undefined, "nl").credits();
     expect(api.requests.at(-1)?.language).toBe("nl");

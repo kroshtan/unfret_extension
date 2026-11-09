@@ -1,15 +1,21 @@
-/** Options: the API base URL (production by default, a local origin for development) and signing out. */
+/** Options: the API base URL (production by default, a local origin for development), an API key, signing out. */
 
+import { ApiError, VeridexApi } from "../api/client.js";
+import { checksText } from "../popup/view.js";
 import { localise, t, uiLanguage } from "../shared/i18n.js";
 import {
+  accountLabel,
   clearSession,
   DEFAULT_API_BASE,
   DEV_API_BASE,
   isDevBase,
+  isKeySession,
+  keySession,
   loadSettings,
   normaliseApiBase,
   PRIVACY_URL,
   saveApiBase,
+  saveSession,
   shortAddress,
 } from "../shared/settings.js";
 
@@ -26,14 +32,38 @@ function input(id: string): HTMLInputElement {
 }
 
 async function renderAccount(): Promise<void> {
-  const { session } = await loadSettings();
-  el("account-status").textContent = session
-    ? t("opt_signed_in", [
-        shortAddress(session.address),
-        new Date(session.expiresAt).toLocaleDateString(uiLanguage()),
-      ])
-    : t("opt_not_signed_in");
+  const { apiBase, session } = await loadSettings();
+  el("account-status").textContent = !session
+    ? t("opt_not_signed_in")
+    : isKeySession(session)
+      ? t("opt_using_key", [accountLabel(session)])
+      : t("opt_signed_in", [
+          shortAddress(session.address),
+          new Date(session.expiresAt).toLocaleDateString(uiLanguage()),
+        ]);
   el("sign-out").hidden = !session;
+  el("key-get").setAttribute("href", `${apiBase}/checkout?for=key`);
+}
+
+/** Check a pasted API key with the server (its balance), then use it in place of a wallet sign-in. */
+async function useKey(value: string): Promise<void> {
+  const status = el("key-status");
+  const session = keySession(value);
+  if (!session) {
+    status.textContent = t("opt_key_invalid");
+    return;
+  }
+  const { apiBase } = await loadSettings();
+  try {
+    const credits = await new VeridexApi(apiBase, session.token).credits();
+    await saveSession(session);
+    input("api-key").value = "";
+    status.textContent = t("opt_key_saved", [accountLabel(session), checksText(credits.checks_remaining)]);
+  } catch (error) {
+    status.textContent =
+      error instanceof ApiError && error.needsSignIn ? t("opt_key_rejected") : t("offline");
+  }
+  await renderAccount();
 }
 
 async function save(value: string): Promise<void> {
@@ -80,6 +110,7 @@ async function init(): Promise<void> {
   el("save").addEventListener("click", () => void save(input("api-base").value));
   el("reset").addEventListener("click", () => void save(DEFAULT_API_BASE));
   el("use-dev").addEventListener("click", () => void save(DEV_API_BASE));
+  el("key-use").addEventListener("click", () => void useKey(input("api-key").value));
   el("sign-out").addEventListener("click", () => {
     void clearSession().then(renderAccount);
   });

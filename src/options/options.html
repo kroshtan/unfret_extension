@@ -16,7 +16,8 @@
         font-weight: 600;
         margin-bottom: 4px;
       }
-      #api-base {
+      #api-base,
+      #api-key {
         width: 100%;
         margin-bottom: 8px;
       }
@@ -30,6 +31,20 @@
         <h2 id="account-heading" data-i18n="opt_account">Account</h2>
         <p id="account-status"></p>
         <button id="sign-out" type="button" hidden data-i18n="sign_out">Sign out</button>
+      </section>
+
+      <section class="card" aria-labelledby="key-heading">
+        <h2 id="key-heading" data-i18n="opt_key_heading">Use an API key instead</h2>
+        <p class="muted small" data-i18n="opt_key_help"></p>
+        <label for="api-key" data-i18n="opt_key_label">API key</label>
+        <input id="api-key" type="password" spellcheck="false" autocomplete="off" placeholder="ufk_…" />
+        <div class="row">
+          <button id="key-use" type="button" data-i18n="opt_key_use">Use this key</button>
+          <a id="key-get" class="link" target="_blank" rel="noopener" data-i18n="opt_key_get"
+            >Get or top up a key</a
+          >
+        </div>
+        <p id="key-status" class="muted small" role="status"></p>
       </section>
 
       <section class="card" aria-labelledby="server-heading">

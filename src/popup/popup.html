@@ -88,6 +88,35 @@
       hidden
     >
       <div id="result-body"></div>
+      <p id="report-open-row" class="small" hidden>
+        <a id="report-open" href="#" class="link" data-i18n="report_open">This is wrong</a>
+      </p>
+      <form id="report" hidden>
+        <fieldset>
+          <legend data-i18n="report_heading">What is this page really?</legend>
+          <label
+            ><input type="radio" name="reason" value="real_brand" />
+            <span data-i18n="report_real_brand"></span
+          ></label>
+          <label
+            ><input type="radio" name="reason" value="scam" /> <span data-i18n="report_scam"></span
+          ></label>
+          <label
+            ><input type="radio" name="reason" value="junk" /> <span data-i18n="report_junk"></span
+          ></label>
+          <label
+            ><input type="radio" name="reason" value="other" /> <span data-i18n="report_other"></span
+          ></label>
+        </fieldset>
+        <p class="muted small" data-i18n="report_consent"></p>
+        <div class="row">
+          <button id="report-send" type="submit" class="secondary" disabled data-i18n="report_send">
+            Send report
+          </button>
+          <button id="report-cancel" type="button" class="secondary" data-i18n="cancel">Cancel</button>
+        </div>
+      </form>
+      <p id="report-status" class="muted small" role="status" aria-live="polite" hidden></p>
     </section>
 
     <section id="error" class="card error" role="alert" hidden>
