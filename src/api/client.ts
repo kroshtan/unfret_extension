@@ -79,6 +79,8 @@ export interface VerdictReason {
   title: string;
   detail: string;
   severity: "high" | "medium" | "low";
+  /** Up to three thumbnails of matching photos (photo-reuse evidence), served by the API itself. */
+  thumbnails?: string[];
 }
 
 export interface VerdictPositive {

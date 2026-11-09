@@ -246,7 +246,7 @@ describe("with the access a click grants (activeTab)", () => {
     expect(api.requests.find((r) => r.path === "/v1/analyze/stream")?.language).toBe("en");
 
     const view = await renderedPopup(granted, tabId);
-    expect(view.label).toBe("Likely junk or a scam");
+    expect(view.label).toBe("Many warning signs");
     expect(view.headings).toEqual(["What we noticed"]);
     expect(view.reasons).toEqual(["Suspicious number of reviews"]);
     expect(view.text).not.toMatch(/listing\.|=\s*\d/u);
@@ -378,7 +378,7 @@ describe("in Dutch", () => {
 
     const view = await renderedPopup(dutch, tabId);
     expect(view.lang).toBe("nl");
-    expect(view.label).toBe("Waarschijnlijk rommel of oplichting");
+    expect(view.label).toBe("Veel waarschuwingssignalen");
     expect(view.headings).toEqual(["Wat ons opviel"]);
     expect(view.reasons).toEqual(["Verdacht veel reviews"]);
   });

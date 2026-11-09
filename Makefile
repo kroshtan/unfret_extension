@@ -1,4 +1,4 @@
-.PHONY: help install lint typecheck test smoke build build-dev parity icons crx-key release verify-release clean
+.PHONY: help install lint typecheck test smoke build build-dev parity icons screenshots crx-key release verify-release clean
 .DEFAULT_GOAL := help
 
 BACKEND ?= $(HOME)/repos/veridex_backend
@@ -30,8 +30,11 @@ build-dev:  ## Unminified builds with source maps
 parity:  ## Regenerate parity expectations with the backend's Python extractors (BACKEND=path)
 	$(BACKEND)/.venv/bin/python scripts/gen_parity.py
 
-icons:  ## Regenerate the placeholder icons
+icons:  ## Render the icons and store promo images from brand/*.svg (needs `npx playwright install chromium`)
 	node scripts/icons.mjs
+
+screenshots: build  ## Render the Chrome Web Store screenshots into store/screenshots (needs `npx playwright install chromium`)
+	node scripts/screenshots.mjs
 
 crx-key:  ## Create the CRX signing key once (VERIDEX_CRX_KEY, default ~/kroshtan_secrets/veridex-extension-crx.pem)
 	node scripts/crx-key.mjs

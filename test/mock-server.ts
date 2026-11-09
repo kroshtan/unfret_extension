@@ -28,7 +28,7 @@ export const PAIRED_SESSION = {
 /** The verdict the mock analysis returns, in the language asked for with Accept-Language. */
 export const ENGLISH_VERDICT = {
   band: "junk_or_scam",
-  label: "Likely junk or a scam",
+  label: "Many warning signs",
   headline: "Thousands of reviews on a six-week-old listing and an inflated discount.",
   reasons: [
     {
@@ -44,7 +44,7 @@ export const ENGLISH_VERDICT = {
 
 export const DUTCH_VERDICT = {
   band: "junk_or_scam",
-  label: "Waarschijnlijk rommel of oplichting",
+  label: "Veel waarschuwingssignalen",
   headline: "Duizenden reviews voor een product van zes weken oud en een opgeblazen korting.",
   reasons: [
     {

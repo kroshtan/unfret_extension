@@ -1,5 +1,5 @@
 // Check that a published CRX is genuine and built from this source, without the signing key:
-//   npm run build && node scripts/verify-release.mjs path/to/veridex-<version>.crx
+//   npm run build && node scripts/verify-release.mjs path/to/unfret-<version>.crx
 // It verifies the CRX signature, that its ID is the one in release/extension-id.txt, and that the ZIP inside is
 // byte-identical to the ZIP of your own dist/chrome-selfhosted build.
 import { readFileSync } from "node:fs";

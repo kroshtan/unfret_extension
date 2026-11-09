@@ -88,7 +88,7 @@
     "description": "Status."
   },
   "offline": {
-    "message": "Couldn't reach Veridex. Check your connection.",
+    "message": "Couldn't reach Unfret. Check your connection.",
     "description": "Network error."
   },
   "try_again": {
@@ -104,7 +104,7 @@
     "description": "Accessible name of the analyse section."
   },
   "analyse": {
-    "message": "Analyse this page",
+    "message": "Check this page",
     "description": "Main button."
   },
   "analysing": {
@@ -112,19 +112,19 @@
     "description": "Main button while busy."
   },
   "buy_to_analyse": {
-    "message": "Buy checks to analyse",
+    "message": "Buy checks to start",
     "description": "Main button with no checks left."
   },
   "hint_ready": {
-    "message": "One check per analysis. Nothing is sent until you click.",
+    "message": "One check per page. Nothing is sent until you click.",
     "description": "Hint under the main button."
   },
   "hint_not_analysable": {
-    "message": "This page can't be analysed.",
+    "message": "This page can't be checked.",
     "description": "Hint under the main button."
   },
   "hint_sign_in": {
-    "message": "Sign in to analyse this page.",
+    "message": "Sign in to check this page.",
     "description": "Hint."
   },
   "hint_no_checks": {
@@ -208,19 +208,19 @@
     "description": "Score label for -1."
   },
   "band_reliable": {
-    "message": "Looks reliable",
+    "message": "Looks fine",
     "description": "Fallback band label."
   },
   "band_concerns": {
-    "message": "Some concerns",
+    "message": "A few things to check",
     "description": "Fallback band label."
   },
   "band_careful": {
-    "message": "Be careful",
+    "message": "Some warning signs",
     "description": "Fallback band label."
   },
   "band_junk_or_scam": {
-    "message": "Likely junk or a scam",
+    "message": "Many warning signs",
     "description": "Fallback band label."
   },
   "error_sign_in_first": {
@@ -228,15 +228,15 @@
     "description": "Error."
   },
   "error_cant_analyse": {
-    "message": "This page can't be analysed.",
+    "message": "This page can't be checked.",
     "description": "Error."
   },
   "error_click_first": {
-    "message": "Click the Veridex button on the page you want to analyse, then try again.",
+    "message": "Click the Unfret button on the page you want to check, then try again.",
     "description": "Error."
   },
   "error_service_off": {
-    "message": "Veridex checks aren't available right now. Please try again later.",
+    "message": "Unfret checks aren't available right now. Please try again later.",
     "description": "Error."
   },
   "error_failed": {
@@ -260,11 +260,11 @@
     "description": "Heading of the first-run consent screen."
   },
   "consent_what_title": {
-    "message": "What Veridex does",
+    "message": "What Unfret does",
     "description": "Consent screen, panel 1 title."
   },
   "consent_what_body": {
-    "message": "Veridex checks product pages for scam shops, generic factory goods sold as a brand, fake discounts and pushy tricks such as fake countdowns, and explains what it found in plain words.",
+    "message": "Unfret checks product pages for scam shops, generic factory goods sold as a brand, fake discounts and pushy tricks such as fake countdowns, and explains what it found in plain words.",
     "description": "Consent screen, panel 1."
   },
   "consent_sent_title": {
@@ -272,7 +272,7 @@
     "description": "Consent screen, panel 2 title."
   },
   "consent_sent_body": {
-    "message": "Only when you click “Analyse this page”: the product facts and the cleaned visible text of that page go to unfret.kroshtan.com. Never your account details or anything you typed. Page addresses aren't stored, nothing is sold and there are no affiliate links. Product prices are kept anonymously for 90 days to spot fake discounts.",
+    "message": "Only when you click “Check this page”: the product facts and the cleaned visible text of that page go to unfret.kroshtan.com. Never your account details or anything you typed. Page addresses aren't stored, nothing is sold and there are no affiliate links. Product prices are kept anonymously for 90 days to spot fake discounts.",
     "description": "Consent screen, panel 2."
   },
   "consent_pay_title": {
@@ -280,7 +280,7 @@
     "description": "Consent screen, panel 3 title."
   },
   "consent_pay_body": {
-    "message": "You sign in with a Solana wallet and use prepaid checks. A new wallet may get a free trial check.",
+    "message": "Sign in with a Solana wallet, or use an API key, and use prepaid checks. A new wallet may get a few free checks to try it.",
     "description": "Consent screen, panel 3."
   },
   "consent_privacy": {
@@ -300,11 +300,11 @@
     "description": "Button that closes the reopened consent screen."
   },
   "hint_consent": {
-    "message": "Read how Veridex works above and click I agree to start.",
+    "message": "Read how Unfret works above and click I agree to start.",
     "description": "Hint under the Analyse button before consent."
   },
   "opt_title": {
-    "message": "Veridex settings",
+    "message": "Unfret settings",
     "description": "Options page title."
   },
   "opt_account": {
@@ -360,7 +360,7 @@
     "description": "Options heading."
   },
   "opt_privacy_body": {
-    "message": "Veridex reads a page only when you click \"Analyse this page\". It then sends the product facts and the page's visible product text (without account menus, addresses or forms) to the Veridex server. It stores only your sign-in session or API key, your consent and these settings in your browser, and no analysis history. A page is shared for review only when you report a result as wrong and agree.",
+    "message": "Unfret reads a page only when you click \"Check this page\". It then sends the product facts and the page's visible product text (without account menus, addresses or forms) to the Unfret server. It stores only your sign-in session or API key, your consent and these settings in your browser, and no analysis history. A page is shared for review only when you report a result as wrong and agree.",
     "description": "Options privacy text."
   },
   "signed_in_key": {
@@ -470,5 +470,9 @@
   "report_failed": {
     "message": "The report didn't go through. Please try again later.",
     "description": "Report failed."
+  },
+  "thumb_alt": {
+    "message": "A matching photo on another shop",
+    "description": "Alt text of a thumbnail of a matching product photo."
   }
 }
