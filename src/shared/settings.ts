@@ -1,11 +1,14 @@
 /**
- * The only things the extension stores: the API base URL, the session (token, wallet address, expiry) and whether
- * the last session expired (so the popup can say so). No browsing data, no analysis results, no history.
+ * The only things the extension stores: the API base URL, the session (token, wallet address, expiry), whether
+ * the last session expired (so the popup can say so) and which version of the consent screen was accepted. No
+ * browsing data, no analysis results, no history.
  */
 
-export const DEFAULT_API_BASE = "https://veridex.kroshtan.com";
+export const DEFAULT_API_BASE = "https://unfret.kroshtan.com";
 /** Origins allowed as a development override (they need an optional host permission). */
 export const DEV_ORIGINS = ["http://localhost", "http://127.0.0.1"];
+/** The dev deployment: its connect page gets the sign-in relay once its optional host permission is granted. */
+export const DEV_API_BASE = "https://dev.unfret.kroshtan.com";
 
 export interface Session {
   token: string;
@@ -86,6 +89,20 @@ export async function clearSession(): Promise<void> {
 export async function expireSession(): Promise<void> {
   await chrome.storage.local.remove("session");
   await chrome.storage.local.set({ sessionExpired: true });
+}
+
+/** Bump when what the consent screen says changes materially: everyone is asked again. */
+export const CONSENT_VERSION = 1;
+export const PRIVACY_URL = "https://unfret.kroshtan.com/privacy";
+
+/** Whether the current consent screen was accepted. */
+export async function consentGiven(): Promise<boolean> {
+  const stored = await chrome.storage.local.get<{ consent?: { version?: unknown } }>("consent");
+  return stored.consent?.version === CONSENT_VERSION;
+}
+
+export async function giveConsent(): Promise<void> {
+  await chrome.storage.local.set({ consent: { version: CONSENT_VERSION } });
 }
 
 export function shortAddress(address: string): string {

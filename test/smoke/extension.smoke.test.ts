@@ -48,7 +48,7 @@ async function launch(
   await context.route("https://www.amazon.com/**", (route) =>
     route.fulfill({ contentType: "text/html", body: fixture("amazon-com.html") }),
   );
-  await context.route("https://veridex.kroshtan.com/connect**", (route) =>
+  await context.route("https://unfret.kroshtan.com/connect**", (route) =>
     route.fulfill({ contentType: "text/html", body: CONNECT_PAGE }),
   );
   const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent("serviceworker"));
@@ -108,7 +108,7 @@ describe("the shipped extension (no host permissions)", () => {
 
   it("stores the session the connect page relays", async () => {
     const page = await plain.context.newPage();
-    await page.goto("https://veridex.kroshtan.com/connect");
+    await page.goto("https://unfret.kroshtan.com/connect");
     await page.waitForFunction(() => document.title === "received", undefined, { timeout: 10_000 });
     const stored = await plain.worker.evaluate(() => chrome.storage.local.get("session"));
     expect(stored.session).toMatchObject({ address: ADDRESS });
@@ -174,12 +174,31 @@ describe("with the access a click grants (activeTab)", () => {
     expect(text).not.toMatch(/Jane|Deliver to/u);
   });
 
+  it("opens on the consent screen, with Analyse disabled until I agree", async () => {
+    const extensionId = new URL(granted.worker.url()).host;
+    const popup = await granted.context.newPage();
+    await popup.goto(`chrome-extension://${extensionId}/popup/popup.html`);
+    await popup.waitForSelector("#consent:not([hidden])");
+    const before = await popup.evaluate(() => ({
+      disabled: (document.querySelector("#analyse") as HTMLButtonElement).disabled,
+      text: document.querySelector("#consent")?.textContent ?? "",
+    }));
+    expect(before.disabled).toBe(true);
+    expect(before.text).toContain("unfret.kroshtan.com");
+    await popup.click("#consent-agree");
+    await popup.waitForSelector("#consent", { state: "hidden" });
+    const stored = await granted.worker.evaluate(() => chrome.storage.local.get("consent"));
+    expect(stored.consent).toEqual({ version: 1 });
+    await popup.close();
+  });
+
   it("runs a full analysis through the background against the API", async () => {
     await granted.worker.evaluate(
       ({ base, address }) =>
         chrome.storage.local.set({
           apiBase: base,
           session: { token: `good-token-${"x".repeat(20)}`, address, expiresAt: "2999-01-01T00:00:00.000Z" },
+          consent: { version: 1 },
         }),
       { base: api.url, address: ADDRESS },
     );
@@ -279,6 +298,7 @@ describe("in Dutch", () => {
         chrome.storage.local.set({
           apiBase: base,
           session: { token: `good-token-${"x".repeat(20)}`, address, expiresAt: "2999-01-01T00:00:00.000Z" },
+          consent: { version: 1 },
         }),
       { base: api.url, address: ADDRESS },
     );

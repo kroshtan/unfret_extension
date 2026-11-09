@@ -4,9 +4,11 @@
 // granted by the user's click on the toolbar button; the marketplace icon hint is set by the browser itself through
 // declarativeContent (Chromium only), which needs no host access and shows no install warning.
 
-export const API_ORIGIN = "https://veridex.kroshtan.com";
+export const API_ORIGIN = "https://unfret.kroshtan.com";
 export const UPDATE_URL = `${API_ORIGIN}/extension/updates.xml`;
-export const DEV_PERMISSIONS = ["http://localhost/*", "http://127.0.0.1/*"];
+// The dev deployment and a local server: optional, asked for only when chosen in the options (no install warning).
+export const DEV_API_ORIGIN = "https://dev.unfret.kroshtan.com";
+export const DEV_PERMISSIONS = [`${DEV_API_ORIGIN}/*`, "http://localhost/*", "http://127.0.0.1/*"];
 
 const ICONS = {
   16: "icons/icon-16.png",
@@ -39,8 +41,8 @@ export function manifest(browser, { version, description, publicKey }) {
       { matches: [`${API_ORIGIN}/connect*`], js: ["connect-relay.js"], run_at: "document_start" },
     ],
     content_security_policy: {
-      // Extension pages may only talk to the Veridex API (or a local dev server).
-      extension_pages: `script-src 'self'; object-src 'self'; connect-src ${API_ORIGIN} http://localhost:* http://127.0.0.1:*`,
+      // Extension pages may only talk to the Veridex API (or the dev deployment, or a local dev server).
+      extension_pages: `script-src 'self'; object-src 'self'; connect-src ${API_ORIGIN} ${DEV_API_ORIGIN} http://localhost:* http://127.0.0.1:*`,
     },
   };
   if (browser === "chrome") {

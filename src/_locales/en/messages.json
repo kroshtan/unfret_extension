@@ -250,5 +250,117 @@
   "sign_in_again": {
     "message": "Sign in again",
     "description": "Button."
+  },
+  "about": {
+    "message": "About & privacy",
+    "description": "Link in the popup header that reopens the consent screen."
+  },
+  "consent_heading": {
+    "message": "Before your first check",
+    "description": "Heading of the first-run consent screen."
+  },
+  "consent_what_title": {
+    "message": "What Veridex does",
+    "description": "Consent screen, panel 1 title."
+  },
+  "consent_what_body": {
+    "message": "Veridex checks product pages for scam shops, generic factory goods sold as a brand, fake discounts and pushy tricks such as fake countdowns, and explains what it found in plain words.",
+    "description": "Consent screen, panel 1."
+  },
+  "consent_sent_title": {
+    "message": "What is sent, and when",
+    "description": "Consent screen, panel 2 title."
+  },
+  "consent_sent_body": {
+    "message": "Only when you click “Analyse this page”: the product facts and the cleaned visible text of that page go to unfret.kroshtan.com. Never your account details or anything you typed. Page addresses aren't stored, nothing is sold and there are no affiliate links. Product prices are kept anonymously for 90 days to spot fake discounts.",
+    "description": "Consent screen, panel 2."
+  },
+  "consent_pay_title": {
+    "message": "Paying for checks",
+    "description": "Consent screen, panel 3 title."
+  },
+  "consent_pay_body": {
+    "message": "You sign in with a Solana wallet and use prepaid checks. A new wallet may get a free trial check.",
+    "description": "Consent screen, panel 3."
+  },
+  "consent_privacy": {
+    "message": "Read the privacy statement",
+    "description": "Link to the privacy statement."
+  },
+  "consent_agree": {
+    "message": "I agree",
+    "description": "Button that accepts the consent screen."
+  },
+  "consent_agreed": {
+    "message": "You agreed to this.",
+    "description": "Shown when the consent screen is reopened."
+  },
+  "consent_close": {
+    "message": "Close",
+    "description": "Button that closes the reopened consent screen."
+  },
+  "hint_consent": {
+    "message": "Read how Veridex works above and click I agree to start.",
+    "description": "Hint under the Analyse button before consent."
+  },
+  "opt_title": {
+    "message": "Veridex settings",
+    "description": "Options page title."
+  },
+  "opt_account": {
+    "message": "Account",
+    "description": "Options heading."
+  },
+  "opt_not_signed_in": {
+    "message": "Not signed in.",
+    "description": "Options account status."
+  },
+  "opt_signed_in": {
+    "message": "Signed in as $1 until $2.",
+    "description": "$1 wallet address, $2 date."
+  },
+  "opt_server": {
+    "message": "Server",
+    "description": "Options heading."
+  },
+  "opt_api_base": {
+    "message": "API base URL",
+    "description": "Label of the API base field."
+  },
+  "opt_save": {
+    "message": "Save",
+    "description": "Button."
+  },
+  "opt_reset": {
+    "message": "Use the default",
+    "description": "Button."
+  },
+  "opt_use_dev": {
+    "message": "Use the dev server",
+    "description": "Button that switches to the dev deployment."
+  },
+  "opt_server_help": {
+    "message": "The default is https://unfret.kroshtan.com. For development, the dev server (https://dev.unfret.kroshtan.com), http://localhost or http://127.0.0.1 (any port) can be used; the browser asks you to allow access to it.",
+    "description": "Options help text."
+  },
+  "opt_only_https": {
+    "message": "Only https:// URLs, or http://localhost / http://127.0.0.1, are allowed.",
+    "description": "Options validation error."
+  },
+  "opt_denied": {
+    "message": "Access to that address was not allowed; keeping the previous server.",
+    "description": "Options: permission denied."
+  },
+  "opt_saved": {
+    "message": "Saved. Using $1.",
+    "description": "$1 is the API base."
+  },
+  "opt_privacy": {
+    "message": "Privacy",
+    "description": "Options heading."
+  },
+  "opt_privacy_body": {
+    "message": "Veridex reads a page only when you click \"Analyse this page\". It then sends the product facts and the page's visible product text (without account menus, addresses or forms) to the Veridex server. It stores only your sign-in session, your consent and these settings in your browser, and no analysis history.",
+    "description": "Options privacy text."
   }
 }

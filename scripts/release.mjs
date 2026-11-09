@@ -16,7 +16,7 @@ import { zipBuffer } from "./zip.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
-const BASE_URL = "https://veridex.kroshtan.com/extension";
+const BASE_URL = "https://unfret.kroshtan.com/extension";
 const MIN_CHROME = "116";
 
 export function updatesXml(id, version, codebase) {

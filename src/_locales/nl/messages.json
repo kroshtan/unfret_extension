@@ -187,5 +187,117 @@
   },
   "sign_in_again": {
     "message": "Opnieuw inloggen"
+  },
+  "about": {
+    "message": "Over & privacy",
+    "description": "Link in the popup header that reopens the consent screen."
+  },
+  "consent_heading": {
+    "message": "Voor je eerste check",
+    "description": "Heading of the first-run consent screen."
+  },
+  "consent_what_title": {
+    "message": "Wat Veridex doet",
+    "description": "Consent screen, panel 1 title."
+  },
+  "consent_what_body": {
+    "message": "Veridex controleert productpagina's op nepwinkels, generieke fabrieksspullen onder een merknaam, nepkortingen en trucs zoals neppe afteltimers, en legt in gewone woorden uit wat het vond.",
+    "description": "Consent screen, panel 1."
+  },
+  "consent_sent_title": {
+    "message": "Wat er verstuurd wordt, en wanneer",
+    "description": "Consent screen, panel 2 title."
+  },
+  "consent_sent_body": {
+    "message": "Alleen als je op “Deze pagina controleren” klikt: de productgegevens en de opgeschoonde zichtbare tekst van die pagina gaan naar unfret.kroshtan.com. Nooit je accountgegevens of wat je intypte. Pagina-adressen worden niet bewaard, er wordt niets verkocht en er zijn geen affiliate-links. Productprijzen worden 90 dagen anoniem bewaard om nepkortingen te herkennen.",
+    "description": "Consent screen, panel 2."
+  },
+  "consent_pay_title": {
+    "message": "Betalen voor checks",
+    "description": "Consent screen, panel 3 title."
+  },
+  "consent_pay_body": {
+    "message": "Je logt in met een Solana-wallet en gebruikt vooraf betaalde checks. Een nieuwe wallet krijgt mogelijk een gratis proefcheck.",
+    "description": "Consent screen, panel 3."
+  },
+  "consent_privacy": {
+    "message": "Lees de privacyverklaring",
+    "description": "Link to the privacy statement."
+  },
+  "consent_agree": {
+    "message": "Akkoord",
+    "description": "Button that accepts the consent screen."
+  },
+  "consent_agreed": {
+    "message": "Je bent hiermee akkoord gegaan.",
+    "description": "Shown when the consent screen is reopened."
+  },
+  "consent_close": {
+    "message": "Sluiten",
+    "description": "Button that closes the reopened consent screen."
+  },
+  "hint_consent": {
+    "message": "Lees hierboven hoe Veridex werkt en klik op Akkoord om te beginnen.",
+    "description": "Hint under the Analyse button before consent."
+  },
+  "opt_title": {
+    "message": "Veridex-instellingen",
+    "description": "Options page title."
+  },
+  "opt_account": {
+    "message": "Account",
+    "description": "Options heading."
+  },
+  "opt_not_signed_in": {
+    "message": "Niet ingelogd.",
+    "description": "Options account status."
+  },
+  "opt_signed_in": {
+    "message": "Ingelogd als $1 tot $2.",
+    "description": "$1 wallet address, $2 date."
+  },
+  "opt_server": {
+    "message": "Server",
+    "description": "Options heading."
+  },
+  "opt_api_base": {
+    "message": "Adres van de API",
+    "description": "Label of the API base field."
+  },
+  "opt_save": {
+    "message": "Opslaan",
+    "description": "Button."
+  },
+  "opt_reset": {
+    "message": "Standaard gebruiken",
+    "description": "Button."
+  },
+  "opt_use_dev": {
+    "message": "Dev-server gebruiken",
+    "description": "Button that switches to the dev deployment."
+  },
+  "opt_server_help": {
+    "message": "Standaard is dit https://unfret.kroshtan.com. Voor ontwikkeling kun je de dev-server (https://dev.unfret.kroshtan.com), http://localhost of http://127.0.0.1 (elke poort) gebruiken; de browser vraagt je dan om toegang.",
+    "description": "Options help text."
+  },
+  "opt_only_https": {
+    "message": "Alleen https://-adressen, of http://localhost / http://127.0.0.1, zijn toegestaan.",
+    "description": "Options validation error."
+  },
+  "opt_denied": {
+    "message": "Toegang tot dat adres is niet toegestaan; de vorige server blijft in gebruik.",
+    "description": "Options: permission denied."
+  },
+  "opt_saved": {
+    "message": "Opgeslagen. Nu in gebruik: $1.",
+    "description": "$1 is the API base."
+  },
+  "opt_privacy": {
+    "message": "Privacy",
+    "description": "Options heading."
+  },
+  "opt_privacy_body": {
+    "message": "Veridex leest een pagina alleen als je op \"Deze pagina controleren\" klikt. Dan stuurt het de productgegevens en de zichtbare producttekst (zonder accountmenu's, adressen of formulieren) naar de Veridex-server. In je browser bewaart het alleen je inlogsessie, je akkoord en deze instellingen, en geen geschiedenis van analyses.",
+    "description": "Options privacy text."
   }
 }

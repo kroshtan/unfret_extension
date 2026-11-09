@@ -1,5 +1,5 @@
 /**
- * Content script on the Veridex connect page only (`https://veridex.kroshtan.com/connect*`, or the dev origin).
+ * Content script on the Veridex connect page only (`https://unfret.kroshtan.com/connect*`, or the dev origin).
  * Relays the session the page posts after sign-in to the extension; the background checks the sender again.
  */
 
