@@ -272,13 +272,9 @@
     "message": "Standaard gebruiken",
     "description": "Button."
   },
-  "opt_use_dev": {
-    "message": "Dev-server gebruiken",
-    "description": "Button that switches to the dev deployment."
-  },
   "opt_server_help": {
-    "message": "Standaard is dit https://unfret.kroshtan.com. Voor ontwikkeling kun je de dev-server (https://dev.unfret.kroshtan.com), http://localhost of http://127.0.0.1 (elke poort) gebruiken; de browser vraagt je dan om toegang.",
-    "description": "Options help text."
+    "message": "Standaard is dit $1. Voor ontwikkeling kun je http://localhost of http://127.0.0.1 (elke poort) gebruiken; de browser vraagt je dan om toegang. Testen tegen de dev-omgeving gaat met de aparte extensie Unfret Dev.",
+    "description": "Options help text. $1 is the default API base."
   },
   "opt_only_https": {
     "message": "Alleen https://-adressen, of http://localhost / http://127.0.0.1, zijn toegestaan.",

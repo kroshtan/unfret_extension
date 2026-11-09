@@ -7,7 +7,6 @@ import {
   accountLabel,
   clearSession,
   DEFAULT_API_BASE,
-  DEV_API_BASE,
   isDevBase,
   isKeySession,
   keySession,
@@ -104,12 +103,12 @@ async function init(): Promise<void> {
   document.documentElement.lang = uiLanguage();
   localise(document);
   el("privacy-link").setAttribute("href", PRIVACY_URL);
+  el("server-help").textContent = t("opt_server_help", [DEFAULT_API_BASE]);
   const { apiBase } = await loadSettings();
   input("api-base").value = apiBase;
   await renderAccount();
   el("save").addEventListener("click", () => void save(input("api-base").value));
   el("reset").addEventListener("click", () => void save(DEFAULT_API_BASE));
-  el("use-dev").addEventListener("click", () => void save(DEV_API_BASE));
   el("key-use").addEventListener("click", () => void useKey(input("api-key").value));
   el("sign-out").addEventListener("click", () => {
     void clearSession().then(renderAccount);

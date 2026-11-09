@@ -335,13 +335,9 @@
     "message": "Use the default",
     "description": "Button."
   },
-  "opt_use_dev": {
-    "message": "Use the dev server",
-    "description": "Button that switches to the dev deployment."
-  },
   "opt_server_help": {
-    "message": "The default is https://unfret.kroshtan.com. For development, the dev server (https://dev.unfret.kroshtan.com), http://localhost or http://127.0.0.1 (any port) can be used; the browser asks you to allow access to it.",
-    "description": "Options help text."
+    "message": "The default is $1. For development, http://localhost or http://127.0.0.1 (any port) can be used; the browser asks you to allow access to it. Testing against the dev deployment is done with the separate Unfret Dev extension.",
+    "description": "Options help text. $1 is the default API base."
   },
   "opt_only_https": {
     "message": "Only https:// URLs, or http://localhost / http://127.0.0.1, are allowed.",

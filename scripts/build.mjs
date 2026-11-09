@@ -2,6 +2,8 @@
 //   dist/chrome             Chromium, store variant (no update_url; Chrome Web Store if ever listed) + its zip
 //   dist/chrome-selfhosted  Chromium, self-hosted variant: update_url on unfret.kroshtan.com and the public `key`,
 //                           so the ID is the one the signed CRX has (needs release/public-key.b64, see crx-key.mjs)
+//   dist/chrome-dev         "Unfret Dev": its own key and ID, grey DEV icon, update_url and API on the dev deployment
+//                           (needs release/dev-public-key.b64, `node scripts/crx-key.mjs --dev`)
 //   dist/firefox            Firefox (built, not published) + its zip
 //   node scripts/build.mjs          production (minified)
 //   node scripts/build.mjs --dev    readable, with source maps
@@ -11,14 +13,18 @@ import { fileURLToPath } from "node:url";
 
 import { build } from "esbuild";
 
-import { manifest as manifestFor } from "./manifest.mjs";
+import { CHANNELS } from "./channels.mjs";
+import { apiOrigin, manifest as manifestFor } from "./manifest.mjs";
 import { zipDirectory } from "./zip.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const dev = process.argv.includes("--dev");
 const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
 
-const PUBLIC_KEY_FILE = join(root, "release", "public-key.b64");
+const PUBLIC_KEY_FILE = {
+  "chrome-selfhosted": CHANNELS.production.publicKeyFile,
+  "chrome-dev": CHANNELS.dev.publicKeyFile,
+};
 
 const entries = {
   background: "src/background/index.ts",
@@ -30,8 +36,8 @@ const entries = {
 const statics = ["popup/popup.html", "popup/popup.css", "options/options.html", "shared/ui.css"];
 
 function manifest(browser) {
-  const publicKey =
-    browser === "chrome-selfhosted" ? readFileSync(PUBLIC_KEY_FILE, "utf8").trim() : undefined;
+  const keyFile = PUBLIC_KEY_FILE[browser];
+  const publicKey = keyFile ? readFileSync(keyFile, "utf8").trim() : undefined;
   return manifestFor(browser, { version: pkg.version, description: pkg.description, publicKey });
 }
 
@@ -48,20 +54,25 @@ async function buildFor(browser) {
     minify: !dev,
     sourcemap: dev ? "inline" : false,
     legalComments: "none",
+    define: { __UNFRET_API__: JSON.stringify(apiOrigin(browser)) },
     logLevel: "warning",
   });
   for (const file of statics) cpSync(join(root, "src", file), join(out, file));
   cpSync(join(root, "src", "_locales"), join(out, "_locales"), { recursive: true });
-  cpSync(join(root, "icons"), join(out, "icons"), { recursive: true });
+  cpSync(join(root, browser === "chrome-dev" ? "icons-dev" : "icons"), join(out, "icons"), {
+    recursive: true,
+  });
   writeFileSync(join(out, "manifest.json"), JSON.stringify(manifest(browser), null, 2) + "\n");
-  // The self-hosted variant ships as a signed CRX (scripts/release.mjs), not a zip.
-  if (!dev && browser !== "chrome-selfhosted") {
+  // The self-hosted variants ship as signed CRXs (scripts/release.mjs), not zips.
+  if (!dev && !(browser in PUBLIC_KEY_FILE)) {
     zipDirectory(out, join(root, "dist", `unfret-${browser}-${pkg.version}.zip`));
   }
   console.log(`built dist/${browser}${dev ? " (dev)" : ""}`);
 }
 
 await buildFor("chrome");
-if (existsSync(PUBLIC_KEY_FILE)) await buildFor("chrome-selfhosted");
-else console.log("skipped dist/chrome-selfhosted: no release/public-key.b64 (run `make crx-key`)");
+for (const [browser, keyFile] of Object.entries(PUBLIC_KEY_FILE)) {
+  if (existsSync(keyFile)) await buildFor(browser);
+  else console.log(`skipped dist/${browser}: no ${keyFile} (run \`make crx-key\`)`);
+}
 await buildFor("firefox");

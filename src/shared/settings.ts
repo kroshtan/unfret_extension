@@ -4,11 +4,12 @@
  * was accepted. No browsing data, no analysis results, no history.
  */
 
-export const DEFAULT_API_BASE = "https://unfret.kroshtan.com";
+// Set by the build: the dev deployment for "Unfret Dev", production for everything else (and in tests).
+declare const __UNFRET_API__: string | undefined;
+export const DEFAULT_API_BASE =
+  typeof __UNFRET_API__ === "string" ? __UNFRET_API__ : "https://unfret.kroshtan.com";
 /** Origins allowed as a development override (they need an optional host permission). */
 export const DEV_ORIGINS = ["http://localhost", "http://127.0.0.1"];
-/** The dev deployment: its connect page gets the sign-in relay once its optional host permission is granted. */
-export const DEV_API_BASE = "https://dev.unfret.kroshtan.com";
 
 export interface Session {
   /** A wallet's session token, or an API key (`ufk_…`): both are sent as `Authorization: Bearer`. */
@@ -118,7 +119,7 @@ export async function expireSession(): Promise<void> {
 
 /** Bump when what the consent screen says changes materially: everyone is asked again. */
 export const CONSENT_VERSION = 1;
-export const PRIVACY_URL = "https://unfret.kroshtan.com/privacy";
+export const PRIVACY_URL = `${DEFAULT_API_BASE}/privacy`;
 
 /** Whether the current consent screen was accepted. */
 export async function consentGiven(): Promise<boolean> {

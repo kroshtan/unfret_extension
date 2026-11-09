@@ -1,4 +1,5 @@
-// Render the brand assets from the SVG sources in brand/: the toolbar and store icons (icons/icon-*.png) and the
+// Render the brand assets from the SVG sources in brand/: the toolbar and store icons (icons/icon-*.png), Unfret Dev's
+// grey icons with a DEV label (icons-dev/icon-*.png) and the
 // Chrome Web Store promo images (store/assets). Uses the Chromium that Playwright installs for the smoke tests
 // (`npx playwright install chromium`); the PNGs are committed, so a normal build needs none of this.
 import { readFileSync, mkdirSync } from "node:fs";
@@ -42,6 +43,15 @@ try {
       `<body style="margin:0;background:transparent"><img src="${src}" width="${art}" height="${art}" style="display:block;margin:${pad}px"></body>`,
     );
     await page.screenshot({ path: join(root, "icons", `icon-${size}.png`), omitBackground: true });
+    // Unfret Dev: the same mark in grey, with a DEV label along the bottom (just grey at 16 px, too small for text).
+    const label = size >= 32 ? Math.round(size * 0.36) : 0;
+    await page.setContent(
+      `<body style="margin:0;background:transparent;position:relative;width:${size}px;height:${size}px">
+      <img src="${src}" width="${art}" height="${art}" style="display:block;margin:${pad}px;filter:grayscale(1) brightness(0.9)">
+      ${label ? `<div style="position:absolute;left:${pad}px;right:${pad}px;bottom:${pad}px;height:${label}px;background:#b42318;color:#fff;font:700 ${Math.round(label * 0.8)}px/${label}px ${FONT};text-align:center;border-radius:${Math.round(label * 0.2)}px">DEV</div>` : ""}</body>`,
+    );
+    mkdirSync(join(root, "icons-dev"), { recursive: true });
+    await page.screenshot({ path: join(root, "icons-dev", `icon-${size}.png`), omitBackground: true });
     await page.close();
   }
   mkdirSync(join(root, "store", "assets"), { recursive: true });
@@ -57,4 +67,4 @@ try {
 } finally {
   await browser.close();
 }
-console.log("rendered icons/icon-{16,32,48,128}.png and store/assets/promo-*.png");
+console.log("rendered icons/icon-{16,32,48,128}.png, icons-dev/ and store/assets/promo-*.png");

@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { DEV_PERMISSIONS, manifest } from "../scripts/manifest.mjs";
+import { LOCAL_PERMISSIONS, manifest } from "../scripts/manifest.mjs";
 import { shopifyCompareAt } from "../src/extract/generic.js";
 import { TIMER_WAIT_MS } from "../src/extract/index.js";
 import { t } from "../src/shared/i18n.js";
@@ -12,7 +12,6 @@ import {
   CONSENT_VERSION,
   consentGiven,
   DEFAULT_API_BASE,
-  DEV_API_BASE,
   giveConsent,
   isDevBase,
   PRIVACY_URL,
@@ -97,15 +96,15 @@ describe("timers and hosts", () => {
     expect(TIMER_WAIT_MS).toBe(1_200);
   });
 
-  it("the dev server is an optional permission, reachable from the extension pages", () => {
+  it("production never reaches the dev deployment (that is Unfret Dev's job); a local server stays optional", () => {
     const m = manifest("chrome", { version: "0.5.0", description: "x" }) as {
       optional_host_permissions: string[];
       content_security_policy: { extension_pages: string };
     };
-    expect(DEV_PERMISSIONS[0]).toBe(`${DEV_API_BASE}/*`);
-    expect(m.optional_host_permissions).toContain("https://dev.unfret.kroshtan.com/*");
-    expect(m.content_security_policy.extension_pages).toContain(DEV_API_BASE);
+    expect(m.optional_host_permissions).toEqual(LOCAL_PERMISSIONS);
+    expect(m.content_security_policy.extension_pages).not.toContain("dev.unfret");
     expect(DEFAULT_API_BASE).toBe("https://unfret.kroshtan.com");
-    expect(isDevBase(DEV_API_BASE)).toBe(true);
+    expect(isDevBase("http://localhost:8080")).toBe(true);
+    expect(isDevBase(DEFAULT_API_BASE)).toBe(false);
   });
 });

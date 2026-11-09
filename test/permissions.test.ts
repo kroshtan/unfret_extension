@@ -21,11 +21,7 @@ describe("manifest permissions", () => {
     const m = manifest(browser, options);
     expect(m.permissions).toEqual(["activeTab", "storage", "scripting", "declarativeContent"]);
     expect(m).not.toHaveProperty("host_permissions");
-    expect(m.optional_host_permissions).toEqual([
-      "https://dev.unfret.kroshtan.com/*",
-      "http://localhost/*",
-      "http://127.0.0.1/*",
-    ]);
+    expect(m.optional_host_permissions).toEqual(["http://localhost/*", "http://127.0.0.1/*"]);
     expect(m.content_scripts).toEqual([
       {
         matches: ["https://unfret.kroshtan.com/connect*"],
@@ -54,6 +50,25 @@ describe("manifest permissions", () => {
     const m = manifest("chrome-selfhosted", options);
     expect(m.update_url).toBe("https://unfret.kroshtan.com/extension/updates.xml");
     expect(m.key).toBe("PUBLICKEY");
+  });
+
+  it("Unfret Dev is its own extension, on the dev deployment only", () => {
+    const m = manifest("chrome-dev", { ...options, publicKey: "DEVKEY" }) as Record<string, unknown> & {
+      action: { default_title: string };
+      content_scripts: { matches: string[] }[];
+      content_security_policy: { extension_pages: string };
+      permissions: string[];
+    };
+    expect(m.name).toBe("Unfret Dev");
+    expect(m.action.default_title).toBe("Unfret Dev");
+    expect(m.key).toBe("DEVKEY");
+    expect(m.update_url).toBe("https://dev.unfret.kroshtan.com/extension/updates-dev.xml");
+    expect(m.content_scripts[0]?.matches).toEqual(["https://dev.unfret.kroshtan.com/connect*"]);
+    expect(m.content_security_policy.extension_pages).toContain(
+      "connect-src https://dev.unfret.kroshtan.com ",
+    );
+    expect(m.content_security_policy.extension_pages).not.toContain("https://unfret.kroshtan.com");
+    expect(m.permissions).toEqual(manifest("chrome-selfhosted", options).permissions);
   });
 });
 

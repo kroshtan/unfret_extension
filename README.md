@@ -81,9 +81,13 @@ Load unpacked:
 To use a local backend, open the extension's settings and set the API base to e.g. `http://localhost:8080`
 (the browser asks for access to that address).
 
-`make build` writes three builds: `dist/chrome` (the store variant, zipped as `dist/unfret-chrome-<version>.zip`),
-`dist/chrome-selfhosted` (with the update URL and public key, signed into a CRX by `make release`) and
-`dist/firefox` (built, not published). The version comes from `package.json`. `make release` produces the signed
+`make build` writes four builds: `dist/chrome` (the store variant, zipped as `dist/unfret-chrome-<version>.zip`),
+`dist/chrome-selfhosted` (with the update URL and public key, signed into a CRX by `make release`), `dist/chrome-dev`
+and `dist/firefox` (built, not published).
+
+`dist/chrome-dev` is **Unfret Dev**: a separate extension (ID `phokojgbhkfcejnnocokabdjoljdfgpl`, grey icon with a
+DEV label) that talks only to the dev deployment (dev.unfret.kroshtan.com, devnet) and updates from there. Install it
+next to Unfret to test; the production extension never talks to dev. The version comes from `package.json`. `make release` produces the signed
 self-hosted release in `dist/release/` (see [INSTALL.md](INSTALL.md#for-maintainers-making-a-release)).
 
 ## Parity with the backend
