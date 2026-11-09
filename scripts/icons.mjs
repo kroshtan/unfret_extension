@@ -1,89 +1,60 @@
-// Generate placeholder toolbar icons (icons/icon-{16,32,48,128}.png): a white check mark on a blue rounded
-// square. Real branding is still to come; this keeps the build self-contained (no image tooling needed).
-import { mkdirSync, writeFileSync } from "node:fs";
+// Render the brand assets from the SVG sources in brand/: the toolbar and store icons (icons/icon-*.png) and the
+// Chrome Web Store promo images (store/assets). Uses the Chromium that Playwright installs for the smoke tests
+// (`npx playwright install chromium`); the PNGs are committed, so a normal build needs none of this.
+import { readFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { deflateSync } from "node:zlib";
+import { chromium } from "playwright";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const BLUE = [11, 87, 208];
-const WHITE = [255, 255, 255];
+const svg = (name) => readFileSync(join(root, "brand", name), "utf8");
+const dataUrl = (text) => `data:image/svg+xml;base64,${Buffer.from(text).toString("base64")}`;
+const MARK = dataUrl(svg("unfret.svg"));
+const SMALL = dataUrl(svg("unfret-small.svg"));
 
-function crc32(buffer) {
-  let c = 0xffffffff;
-  for (const byte of buffer) {
-    c ^= byte;
-    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+// Icon sizes: 16 px uses the simplified mark (the eyes vanish at that size). The 128 px icon keeps 16 px of
+// transparent padding around 96 px of artwork, as the Chrome Web Store asks.
+const ICONS = [
+  { size: 16, src: SMALL, pad: 0 },
+  { size: 32, src: MARK, pad: 0 },
+  { size: 48, src: MARK, pad: 0 },
+  { size: 128, src: MARK, pad: 16 },
+];
+
+const FONT = "system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', 'DejaVu Sans', Arial, sans-serif";
+
+function promo(width, height, { mark, title, line, sub }) {
+  return `<body style="margin:0;width:${width}px;height:${height}px;display:flex;align-items:center;justify-content:center;
+    gap:${Math.round(height * 0.09)}px;background:linear-gradient(135deg,#f3faf7,#dff1ea);font-family:${FONT};color:#123b32">
+    <img src="${MARK}" width="${mark}" height="${mark}">
+    <div><div style="font-size:${title}px;font-weight:700;letter-spacing:-0.02em;line-height:1">Unfret</div>
+    <div style="font-size:${line}px;margin-top:${Math.round(line * 0.5)}px;color:#1f5f50">Shop without the worry.</div>
+    ${sub ? `<div style="font-size:${sub}px;margin-top:${Math.round(sub * 0.6)}px;color:#3d6e62;max-width:${Math.round(width * 0.5)}px">Fake discounts, made-up brands, dropshipped goods and pushy tricks, spotted before you buy.</div>` : ""}
+    </div></body>`;
+}
+
+const browser = await chromium.launch();
+try {
+  for (const { size, src, pad } of ICONS) {
+    const page = await browser.newPage({ viewport: { width: size, height: size } });
+    const art = size - 2 * pad;
+    await page.setContent(
+      `<body style="margin:0;background:transparent"><img src="${src}" width="${art}" height="${art}" style="display:block;margin:${pad}px"></body>`,
+    );
+    await page.screenshot({ path: join(root, "icons", `icon-${size}.png`), omitBackground: true });
+    await page.close();
   }
-  return (c ^ 0xffffffff) >>> 0;
-}
-
-function chunk(type, data) {
-  const length = Buffer.alloc(4);
-  length.writeUInt32BE(data.length);
-  const body = Buffer.concat([Buffer.from(type), data]);
-  const crc = Buffer.alloc(4);
-  crc.writeUInt32BE(crc32(body));
-  return Buffer.concat([length, body, crc]);
-}
-
-function png(size, pixel) {
-  const raw = Buffer.alloc((size * 4 + 1) * size);
-  for (let y = 0; y < size; y++) {
-    raw[y * (size * 4 + 1)] = 0;
-    for (let x = 0; x < size; x++) raw.set(pixel(x, y), y * (size * 4 + 1) + 1 + x * 4);
+  mkdirSync(join(root, "store", "assets"), { recursive: true });
+  for (const [name, width, height, opts] of [
+    ["promo-small-440x280.png", 440, 280, { mark: 112, title: 52, line: 20 }],
+    ["promo-marquee-1400x560.png", 1400, 560, { mark: 240, title: 120, line: 44, sub: 28 }],
+  ]) {
+    const page = await browser.newPage({ viewport: { width, height } });
+    await page.setContent(promo(width, height, opts));
+    await page.screenshot({ path: join(root, "store", "assets", name) });
+    await page.close();
   }
-  const header = Buffer.alloc(13);
-  header.writeUInt32BE(size, 0);
-  header.writeUInt32BE(size, 4);
-  header.set([8, 6, 0, 0, 0], 8);
-  return Buffer.concat([
-    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
-    chunk("IHDR", header),
-    chunk("IDAT", deflateSync(raw)),
-    chunk("IEND", Buffer.alloc(0)),
-  ]);
+} finally {
+  await browser.close();
 }
-
-function segmentDistance(px, py, ax, ay, bx, by) {
-  const dx = bx - ax;
-  const dy = by - ay;
-  const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy)));
-  return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
-}
-
-function sample(u, v) {
-  // Unit square coordinates; returns [inside background, on check mark].
-  const r = 0.2;
-  const qx = Math.max(Math.abs(u - 0.5) - (0.5 - r), 0);
-  const qy = Math.max(Math.abs(v - 0.5) - (0.5 - r), 0);
-  const inside = Math.hypot(qx, qy) <= r;
-  const check =
-    Math.min(segmentDistance(u, v, 0.27, 0.52, 0.43, 0.68), segmentDistance(u, v, 0.43, 0.68, 0.75, 0.33)) <=
-    0.075;
-  return [inside, inside && check];
-}
-
-function icon(size) {
-  const ss = 4;
-  return png(size, (x, y) => {
-    let bg = 0;
-    let fg = 0;
-    for (let i = 0; i < ss; i++) {
-      for (let j = 0; j < ss; j++) {
-        const [inside, check] = sample((x + (i + 0.5) / ss) / size, (y + (j + 0.5) / ss) / size);
-        if (inside) bg++;
-        if (check) fg++;
-      }
-    }
-    const n = ss * ss;
-    const alpha = bg / n;
-    const mix = bg ? fg / bg : 0;
-    const rgb = BLUE.map((c, k) => Math.round(c + (WHITE[k] - c) * mix));
-    return [...rgb, Math.round(alpha * 255)];
-  });
-}
-
-mkdirSync(join(root, "icons"), { recursive: true });
-for (const size of [16, 32, 48, 128]) writeFileSync(join(root, `icons/icon-${size}.png`), icon(size));
-console.log("icons written");
+console.log("rendered icons/icon-{16,32,48,128}.png and store/assets/promo-*.png");

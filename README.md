@@ -1,14 +1,14 @@
-# Veridex browser extension
+# Unfret browser extension
 
 Risk signals for the product page you're looking at: Temu-grade listings on Amazon dressed up with thousands of
 five-star reviews, dropship stores, fake countdowns, pre-ticked add-ons and fees that only appear at checkout.
-Veridex reports evidence and a traffic-light score; it never calls a shop a scam.
+Unfret reports evidence and a plain-words verdict; it never calls a shop a scam.
 
 Chrome (Manifest V3) and Firefox, from one source. Vanilla TypeScript, no UI framework, no remote code, no
-third-party requests: the extension talks to the Veridex API and nothing else.
+third-party requests: the extension talks to the Unfret API and nothing else.
 
-**Install:** Veridex is distributed from its own server as a signed, reproducible CRX with automatic updates, not
-through Google's or Mozilla's store. See [INSTALL.md](INSTALL.md) (Brave, Chromium and Chrome on Linux;
+**Install:** Unfret is distributed from its own server as a signed, reproducible CRX with automatic updates, and is
+being submitted to the Chrome Web Store (the listing and its assets are in [store/](store/SUBMIT.md)). See [INSTALL.md](INSTALL.md) (Brave, Chromium and Chrome on Linux;
 ungoogled-chromium; Windows and macOS) or <https://unfret.kroshtan.com/extension>.
 
 ## How it works
@@ -30,7 +30,7 @@ toolbar click ─► popup ─► background ─► inject extract.js into the t
   greetings, forms and inputs are stripped from a copy of the page first.
 - **Sign-in is Sign-In With Solana.** "Sign in" opens `https://unfret.kroshtan.com/connect`; after you sign a
   message in your wallet, that page posts the session to itself and the extension's content script (injected only
-  there) relays it. The relay accepts it only from that window on the configured Veridex origin, and the
+  there) relays it. The relay accepts it only from that window on the configured Unfret origin, and the
   background checks the sender again. Signing grants no spending rights. "Buy checks" opens `/checkout`.
 
 The API contract is in the backend repository (credits door, contract v1).
@@ -58,7 +58,7 @@ test/           unit, parity (jsdom vs the Python extractors), mock API; smoke/ 
 | `scripting`                                         | Inject the extractor into that tab; register the relay for a dev API origin |
 | `storage`                                           | Your session (token, wallet address, expiry) and settings; nothing else     |
 | `declarativeContent` (Chromium)                     | The browser marks the icon on marketplace product pages; no page access     |
-| `https://unfret.kroshtan.com/connect*`              | The sign-in relay on the Veridex sign-in page (the API itself is CORS)      |
+| `https://unfret.kroshtan.com/connect*`              | The sign-in relay on the Unfret sign-in page (the API itself is CORS)       |
 | optional `http://localhost/*`, `http://127.0.0.1/*` | Only if you point the extension at a local dev server                       |
 
 ## Development
@@ -81,7 +81,7 @@ Load unpacked:
 To use a local backend, open the extension's settings and set the API base to e.g. `http://localhost:8080`
 (the browser asks for access to that address).
 
-`make build` writes three builds: `dist/chrome` (the store variant, zipped as `dist/veridex-chrome-<version>.zip`),
+`make build` writes three builds: `dist/chrome` (the store variant, zipped as `dist/unfret-chrome-<version>.zip`),
 `dist/chrome-selfhosted` (with the update URL and public key, signed into a CRX by `make release`) and
 `dist/firefox` (built, not published). The version comes from `package.json`. `make release` produces the signed
 self-hosted release in `dist/release/` (see [INSTALL.md](INSTALL.md#for-maintainers-making-a-release)).

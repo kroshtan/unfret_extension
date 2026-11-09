@@ -224,6 +224,15 @@ function renderAccount(): void {
           : t("hint_ready");
 }
 
+/** The origin of the API in use (thumbnails are only loaded from there). */
+function apiOrigin(): string | undefined {
+  try {
+    return new URL(apiBase).origin;
+  } catch {
+    return undefined;
+  }
+}
+
 function render(state: TabState): void {
   busy = state.status === "extracting" || state.status === "analysing";
   show("progress", busy);
@@ -239,7 +248,7 @@ function render(state: TabState): void {
     updateChecklist(steps, checklistDone(state.status === "analysing" ? (state.steps ?? []) : [], false));
   }
   if (state.status === "done") {
-    renderResult(el("result-body"), state.result);
+    renderResult(el("result-body"), state.result, undefined, apiOrigin());
     renderReport(state);
     if (state.result.balance_lamports !== undefined) void refreshCredits();
   } else if (state.status === "error") {

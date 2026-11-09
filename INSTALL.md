@@ -1,8 +1,8 @@
-# Installing Veridex
+# Installing Unfret
 
-Veridex is distributed **from its own server**, not from Google's or Mozilla's store:
+Unfret is distributed **from its own server** (and, once listed, the Chrome Web Store):
 
-- Signed package: `https://unfret.kroshtan.com/extension/veridex-<version>.crx`
+- Signed package: `https://unfret.kroshtan.com/extension/unfret-<version>.crx`
 - Update manifest: `https://unfret.kroshtan.com/extension/updates.xml`
 - Extension ID: `kpllgmbgfmnlpnmkibmhflkafhilckfe` (fixed by the signing key)
 
@@ -20,21 +20,21 @@ mode**. What that means per platform:
 
 ## Linux: Brave, Chromium, Chrome
 
-Chromium-based browsers read policies from JSON files in a `managed` directory. This installs Veridex and keeps it
+Chromium-based browsers read policies from JSON files in a `managed` directory. This installs Unfret and keeps it
 updated from unfret.kroshtan.com:
 
 ```bash
 # Brave
-sudo mkdir -p /etc/brave/policies/managed && echo '{"ExtensionInstallForcelist":["kpllgmbgfmnlpnmkibmhflkafhilckfe;https://unfret.kroshtan.com/extension/updates.xml"]}' | sudo tee /etc/brave/policies/managed/veridex.json > /dev/null
+sudo mkdir -p /etc/brave/policies/managed && sudo rm -f /etc/brave/policies/managed/veridex.json && echo '{"ExtensionInstallForcelist":["kpllgmbgfmnlpnmkibmhflkafhilckfe;https://unfret.kroshtan.com/extension/updates.xml"]}' | sudo tee /etc/brave/policies/managed/unfret.json > /dev/null
 
-# Chromium: same JSON in /etc/chromium/policies/managed/veridex.json
-# Google Chrome: same JSON in /etc/opt/chrome/policies/managed/veridex.json
+# Chromium: same JSON in /etc/chromium/policies/managed/unfret.json
+# Google Chrome: same JSON in /etc/opt/chrome/policies/managed/unfret.json
 ```
 
 Restart the browser, then check `brave://policy` (or `chrome://policy`) and `brave://extensions`.
 
 A force-installed extension can't be removed from the browser's extensions page. To uninstall, delete the policy file
-(`sudo rm /etc/brave/policies/managed/veridex.json`) and restart the browser.
+(`sudo rm /etc/brave/policies/managed/unfret.json`, or `veridex.json` for releases before 0.7.0) and restart the browser.
 
 ## ungoogled-chromium
 
@@ -49,7 +49,7 @@ versions the same way.
 On a personal Windows or macOS device, Chromium browsers refuse force-installed extensions from outside the Chrome Web
 Store unless the device is managed (joined to Active Directory, or enrolled in device management). The options:
 
-- **Developer mode:** download `veridex-chrome-<version>.zip` from the install page, unzip it, open
+- **Developer mode:** download `unfret-chrome-<version>.zip` from the install page, unzip it, open
   `brave://extensions` (or `chrome://extensions`), enable **Developer mode**, click **Load unpacked** and pick the
   folder. The browser shows a developer-mode notice, and there are no automatic updates.
 - **Managed devices:** an administrator adds the same `ExtensionInstallForcelist` entry (ID;update URL) through Group
@@ -62,7 +62,7 @@ Releases are reproducible. Anyone can check that a published CRX is genuine and 
 signing key:
 
 ```bash
-make install && make verify-release CRX=path/to/veridex-<version>.crx
+make install && make verify-release CRX=path/to/unfret-<version>.crx
 ```
 
 That checks the signature, that the ID is `kpllgmbgfmnlpnmkibmhflkafhilckfe` (`release/extension-id.txt`) and that the

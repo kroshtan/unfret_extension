@@ -1,7 +1,7 @@
 // Package a self-hosted release from a fresh production build (run `npm run build` first; `make release` does both):
-//   dist/release/veridex-<version>.crx       dist/chrome-selfhosted, signed with the key at $VERIDEX_CRX_KEY
+//   dist/release/unfret-<version>.crx        dist/chrome-selfhosted, signed with the key at $VERIDEX_CRX_KEY
 //   dist/release/updates.xml                 the update manifest Chromium polls (served at UPDATE_URL)
-//   dist/release/veridex-chrome-<version>.zip  the store-variant zip (for a store listing, if ever)
+//   dist/release/unfret-chrome-<version>.zip   the store-variant zip (the Chrome Web Store upload)
 //   dist/release/SHA256SUMS                  checksums of the above
 // Everything is deterministic: the same source, version and key give byte-identical files, so anyone can rebuild
 // and compare (scripts/verify-release.mjs).
@@ -47,8 +47,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const out = join(root, "dist", "release");
   rmSync(out, { recursive: true, force: true });
   mkdirSync(out, { recursive: true });
-  const crxName = `veridex-${pkg.version}.crx`;
-  const zipName = `veridex-chrome-${pkg.version}.zip`;
+  const crxName = `unfret-${pkg.version}.crx`;
+  const zipName = `unfret-chrome-${pkg.version}.zip`;
   writeFileSync(join(out, crxName), crx);
   writeFileSync(join(out, "updates.xml"), updatesXml(id, pkg.version, `${BASE_URL}/${crxName}`));
   copyFileSync(join(root, "dist", zipName), join(out, zipName));

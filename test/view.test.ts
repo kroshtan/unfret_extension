@@ -10,6 +10,7 @@ import {
   CHECKLIST,
   checklistDone,
   renderResult,
+  shownThumbnails,
   updateChecklist,
 } from "../src/popup/view.js";
 
@@ -19,7 +20,7 @@ const JUNK: AnalysisResult = {
   charged: true,
   verdict: {
     band: "junk_or_scam",
-    label: "Waarschijnlijk rommel of oplichting",
+    label: "Veel waarschuwingssignalen",
     headline: "Duizenden reviews voor een product van zes weken oud en een titel vol zoekwoorden.",
     reasons: [
       {
@@ -75,7 +76,7 @@ const RELIABLE: AnalysisResult = {
   charged: false,
   verdict: {
     band: "reliable",
-    label: "Looks reliable",
+    label: "Looks fine",
     headline: "A known brand sold by the brand itself; nothing worrying stood out.",
     reasons: [
       {
@@ -101,7 +102,7 @@ describe("result view", () => {
     const root = rendered(JUNK, "nl");
     const verdict = root.querySelector(".verdict");
     expect(verdict?.className).toBe("verdict junk_or_scam");
-    expect(root.querySelector(".verdict .label")?.textContent).toBe("Waarschijnlijk rommel of oplichting");
+    expect(root.querySelector(".verdict .label")?.textContent).toBe("Veel waarschuwingssignalen");
     expect(root.querySelector(".verdict .symbol")?.textContent).toBe("✕"); // not colour alone
     expect(root.querySelector(".headline")?.textContent).toContain("Duizenden reviews");
     const headings = [...root.querySelectorAll("h2")].map((h) => h.textContent);
@@ -142,8 +143,63 @@ describe("result view", () => {
   it("still works with an older server that sends no verdict", () => {
     const root = rendered({ score: 30, explanation: "Several warning signs." }, "en");
     expect(bandOf({ score: 30, explanation: "" })).toBe("careful");
-    expect(root.querySelector(".verdict .label")?.textContent).toBe("Be careful");
+    expect(root.querySelector(".verdict .label")?.textContent).toBe("Some warning signs");
     expect(root.querySelector(".headline")?.textContent).toBe("Several warning signs.");
+  });
+});
+
+describe("photo thumbnails", () => {
+  const API = "https://unfret.kroshtan.com";
+  const PHOTO: AnalysisResult = {
+    score: 20,
+    explanation: "",
+    verdict: {
+      band: "junk_or_scam",
+      label: "Many warning signs",
+      headline: "Many warning signs: photo used elsewhere.",
+      reasons: [
+        {
+          type: "photo_on_other_shops",
+          title: "Photo used by other shops",
+          detail: "The same photo is on 4 other shops.",
+          severity: "medium",
+          thumbnails: [
+            `${API}/v1/images/1/thumbnail.jpg`,
+            "https://evil.example/v1/images/2/thumbnail.jpg",
+            `${API}/v1/credits`,
+            `${API}/v1/images/3/thumbnail.jpg`,
+            "not a url",
+          ],
+        },
+      ],
+      positives: [],
+    },
+  };
+
+  it("shows only thumbnails from the API's own image proxy, at most three", () => {
+    expect(shownThumbnails(PHOTO.verdict?.reasons[0]?.thumbnails, API)).toEqual([
+      `${API}/v1/images/1/thumbnail.jpg`,
+      `${API}/v1/images/3/thumbnail.jpg`,
+    ]);
+    expect(shownThumbnails(PHOTO.verdict?.reasons[0]?.thumbnails, undefined)).toEqual([]);
+    expect(shownThumbnails(undefined, API)).toEqual([]);
+  });
+
+  it("renders them under the reason, without a referrer", () => {
+    const root = document.createElement("div");
+    renderResult(root, PHOTO, "en", API);
+    const imgs = [...root.querySelectorAll<HTMLImageElement>(".reasons li .thumbs img")];
+    expect(imgs.map((i) => i.getAttribute("src"))).toEqual([
+      `${API}/v1/images/1/thumbnail.jpg`,
+      `${API}/v1/images/3/thumbnail.jpg`,
+    ]);
+    expect(imgs.every((i) => i.referrerPolicy === "no-referrer" && i.alt.length > 0)).toBe(true);
+  });
+
+  it("renders no images without an API origin", () => {
+    const root = document.createElement("div");
+    renderResult(root, PHOTO, "en");
+    expect(root.querySelector(".thumbs")).toBeNull();
   });
 });
 

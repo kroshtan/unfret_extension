@@ -3,13 +3,13 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
-    <title>Veridex</title>
+    <title>Unfret</title>
     <link rel="stylesheet" href="../shared/ui.css" />
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
     <header class="bar">
-      <h1>Veridex</h1>
+      <h1 class="brand"><img src="../icons/icon-32.png" width="20" height="20" alt="" />Unfret</h1>
       <nav class="row">
         <a id="about" href="#" class="link" data-i18n="about">About &amp; privacy</a>
         <a id="options" href="#" class="link" data-i18n="settings">Settings</a>
@@ -18,7 +18,7 @@
 
     <section id="consent" class="card" aria-labelledby="consent-heading" hidden>
       <h2 id="consent-heading" data-i18n="consent_heading">Before your first check</h2>
-      <h3 data-i18n="consent_what_title">What Veridex does</h3>
+      <h3 data-i18n="consent_what_title">What Unfret does</h3>
       <p class="small" data-i18n="consent_what_body"></p>
       <h3 data-i18n="consent_sent_title">What is sent, and when</h3>
       <p class="small" data-i18n="consent_sent_body"></p>
@@ -68,9 +68,7 @@
     </section>
 
     <section class="card" data-i18n-label="page_label" aria-label="This page">
-      <button id="analyse" type="button" class="primary" disabled data-i18n="analyse">
-        Analyse this page
-      </button>
+      <button id="analyse" type="button" class="primary" disabled data-i18n="analyse">Check this page</button>
       <p id="hint" class="muted"></p>
     </section>
 

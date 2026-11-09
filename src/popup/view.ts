@@ -88,21 +88,73 @@ function flagLine(flag: Flag, language?: Language): HTMLLIElement {
   return li;
 }
 
+/** At most this many thumbnails per reason (the server sends up to three). */
+const MAX_THUMBNAILS = 3;
+
+/**
+ * The thumbnails of a reason that may be shown: only images from the API's own origin (its thumbnail proxy), so the
+ * popup never loads anything from the shops themselves and needs no extra permission.
+ */
+export function shownThumbnails(
+  urls: readonly string[] | undefined,
+  apiOrigin: string | undefined,
+): string[] {
+  if (!urls || !apiOrigin) return [];
+  return urls
+    .filter((url) => {
+      try {
+        const parsed = new URL(url);
+        return parsed.origin === apiOrigin && parsed.pathname.startsWith("/v1/images/");
+      } catch {
+        return false;
+      }
+    })
+    .slice(0, MAX_THUMBNAILS);
+}
+
+function thumbnails(urls: readonly string[], language?: Language): HTMLElement {
+  const row = element("div", "thumbs");
+  for (const url of urls) {
+    const img = document.createElement("img");
+    img.src = url;
+    img.alt = t("thumb_alt", [], language);
+    img.width = 64;
+    img.height = 64;
+    img.loading = "lazy";
+    img.referrerPolicy = "no-referrer";
+    img.addEventListener("error", () => {
+      img.remove();
+    });
+    row.append(img);
+  }
+  return row;
+}
+
 function list(
   className: string,
-  items: readonly { title: string; detail: string; cls?: string }[],
+  items: readonly { title: string; detail: string; cls?: string; thumbs?: readonly string[] }[],
+  language?: Language,
 ): HTMLElement {
   const ul = element("ul", className);
   for (const item of items) {
     const li = element("li", item.cls);
     li.append(element("strong", undefined, item.title), element("span", "detail", item.detail));
+    if (item.thumbs?.length) li.append(thumbnails(item.thumbs, language));
     ul.append(li);
   }
   return ul;
 }
 
-/** Fill `root` with the result: verdict label and headline, reasons, positives, the charge note and details. */
-export function renderResult(root: HTMLElement, result: AnalysisResult, language?: Language): void {
+/**
+ * Fill `root` with the result: verdict label and headline, reasons, positives, the charge note and details.
+ * `apiOrigin` is the origin of the API in use; reasons' thumbnails are shown only from there.
+ */
+export function renderResult(
+  root: HTMLElement,
+  result: AnalysisResult,
+  language?: Language,
+  apiOrigin?: string,
+): void {
   const band = bandOf(result);
   const verdict = result.verdict;
   const head = element("div", `verdict ${band ?? "none"}`);
@@ -117,7 +169,13 @@ export function renderResult(root: HTMLElement, result: AnalysisResult, language
         element("h2", undefined, t("concerns_heading", [], language)),
         list(
           "reasons",
-          verdict.reasons.map((r) => ({ title: r.title, detail: r.detail, cls: r.severity })),
+          verdict.reasons.map((r) => ({
+            title: r.title,
+            detail: r.detail,
+            cls: r.severity,
+            thumbs: shownThumbnails(r.thumbnails, apiOrigin),
+          })),
+          language,
         ),
       ]
     : [];

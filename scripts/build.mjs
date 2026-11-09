@@ -56,7 +56,7 @@ async function buildFor(browser) {
   writeFileSync(join(out, "manifest.json"), JSON.stringify(manifest(browser), null, 2) + "\n");
   // The self-hosted variant ships as a signed CRX (scripts/release.mjs), not a zip.
   if (!dev && browser !== "chrome-selfhosted") {
-    zipDirectory(out, join(root, "dist", `veridex-${browser}-${pkg.version}.zip`));
+    zipDirectory(out, join(root, "dist", `unfret-${browser}-${pkg.version}.zip`));
   }
   console.log(`built dist/${browser}${dev ? " (dev)" : ""}`);
 }

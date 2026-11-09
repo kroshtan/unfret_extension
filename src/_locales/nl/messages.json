@@ -66,7 +66,7 @@
     "message": "Te veel pogingen; wacht een paar minuten."
   },
   "offline": {
-    "message": "Veridex is niet bereikbaar. Controleer je verbinding."
+    "message": "Unfret is niet bereikbaar. Controleer je verbinding."
   },
   "try_again": {
     "message": "Opnieuw proberen"
@@ -78,7 +78,7 @@
     "message": "Deze pagina"
   },
   "analyse": {
-    "message": "Deze pagina controleren"
+    "message": "Controleer deze pagina"
   },
   "analysing": {
     "message": "Bezig met controleren…"
@@ -156,16 +156,16 @@
     "message": "Niet beoordeeld"
   },
   "band_reliable": {
-    "message": "Ziet er betrouwbaar uit"
+    "message": "Ziet er goed uit"
   },
   "band_concerns": {
-    "message": "Een paar aandachtspunten"
+    "message": "Een paar dingen om na te gaan"
   },
   "band_careful": {
-    "message": "Wees voorzichtig"
+    "message": "Een aantal waarschuwingssignalen"
   },
   "band_junk_or_scam": {
-    "message": "Waarschijnlijk rommel of oplichting"
+    "message": "Veel waarschuwingssignalen"
   },
   "error_sign_in_first": {
     "message": "Log eerst in."
@@ -174,10 +174,10 @@
     "message": "Deze pagina kan niet gecontroleerd worden."
   },
   "error_click_first": {
-    "message": "Klik op de Veridex-knop op de pagina die je wilt controleren en probeer het opnieuw."
+    "message": "Klik op de Unfret-knop op de pagina die je wilt controleren en probeer het opnieuw."
   },
   "error_service_off": {
-    "message": "Veridex-controles zijn nu niet beschikbaar. Probeer het later opnieuw."
+    "message": "Unfret-controles zijn nu niet beschikbaar. Probeer het later opnieuw."
   },
   "error_failed": {
     "message": "De controle is mislukt. Er is geen check gebruikt."
@@ -197,11 +197,11 @@
     "description": "Heading of the first-run consent screen."
   },
   "consent_what_title": {
-    "message": "Wat Veridex doet",
+    "message": "Wat Unfret doet",
     "description": "Consent screen, panel 1 title."
   },
   "consent_what_body": {
-    "message": "Veridex controleert productpagina's op nepwinkels, generieke fabrieksspullen onder een merknaam, nepkortingen en trucs zoals neppe afteltimers, en legt in gewone woorden uit wat het vond.",
+    "message": "Unfret controleert productpagina's op nepwinkels, generieke fabrieksspullen onder een merknaam, nepkortingen en trucs zoals neppe afteltimers, en legt in gewone woorden uit wat het vond.",
     "description": "Consent screen, panel 1."
   },
   "consent_sent_title": {
@@ -209,7 +209,7 @@
     "description": "Consent screen, panel 2 title."
   },
   "consent_sent_body": {
-    "message": "Alleen als je op “Deze pagina controleren” klikt: de productgegevens en de opgeschoonde zichtbare tekst van die pagina gaan naar unfret.kroshtan.com. Nooit je accountgegevens of wat je intypte. Pagina-adressen worden niet bewaard, er wordt niets verkocht en er zijn geen affiliate-links. Productprijzen worden 90 dagen anoniem bewaard om nepkortingen te herkennen.",
+    "message": "Alleen als je op “Controleer deze pagina” klikt: de productgegevens en de opgeschoonde zichtbare tekst van die pagina gaan naar unfret.kroshtan.com. Nooit je accountgegevens of wat je intypte. Pagina-adressen worden niet bewaard, er wordt niets verkocht en er zijn geen affiliate-links. Productprijzen worden 90 dagen anoniem bewaard om nepkortingen te herkennen.",
     "description": "Consent screen, panel 2."
   },
   "consent_pay_title": {
@@ -217,7 +217,7 @@
     "description": "Consent screen, panel 3 title."
   },
   "consent_pay_body": {
-    "message": "Je logt in met een Solana-wallet en gebruikt vooraf betaalde checks. Een nieuwe wallet krijgt mogelijk een gratis proefcheck.",
+    "message": "Log in met een Solana-wallet of gebruik een API-sleutel, en betaal met vooraf gekochte checks. Een nieuwe wallet krijgt mogelijk een paar gratis checks om het te proberen.",
     "description": "Consent screen, panel 3."
   },
   "consent_privacy": {
@@ -237,11 +237,11 @@
     "description": "Button that closes the reopened consent screen."
   },
   "hint_consent": {
-    "message": "Lees hierboven hoe Veridex werkt en klik op Akkoord om te beginnen.",
+    "message": "Lees hierboven hoe Unfret werkt en klik op Akkoord om te beginnen.",
     "description": "Hint under the Analyse button before consent."
   },
   "opt_title": {
-    "message": "Veridex-instellingen",
+    "message": "Unfret-instellingen",
     "description": "Options page title."
   },
   "opt_account": {
@@ -297,7 +297,7 @@
     "description": "Options heading."
   },
   "opt_privacy_body": {
-    "message": "Veridex leest een pagina alleen als je op \"Deze pagina controleren\" klikt. Dan stuurt het de productgegevens en de zichtbare producttekst (zonder accountmenu's, adressen of formulieren) naar de Veridex-server. In je browser bewaart het alleen je inlogsessie of API-sleutel, je akkoord en deze instellingen, en geen geschiedenis van analyses. Een pagina wordt alleen ter beoordeling gedeeld als je een uitslag als fout meldt en daarmee akkoord gaat.",
+    "message": "Unfret leest een pagina alleen als je op \"Controleer deze pagina\" klikt. Dan stuurt het de productgegevens en de zichtbare producttekst (zonder accountmenu's, adressen of formulieren) naar de Unfret-server. In je browser bewaart het alleen je inlogsessie of API-sleutel, je akkoord en deze instellingen, en geen geschiedenis van analyses. Een pagina wordt alleen ter beoordeling gedeeld als je een uitslag als fout meldt en daarmee akkoord gaat.",
     "description": "Options privacy text."
   },
   "signed_in_key": {
@@ -407,5 +407,9 @@
   "report_failed": {
     "message": "De melding is niet aangekomen. Probeer het later opnieuw.",
     "description": "Report failed."
+  },
+  "thumb_alt": {
+    "message": "Een overeenkomende foto in een andere winkel",
+    "description": "Alt text of a thumbnail of a matching product photo."
   }
 }

@@ -1,8 +1,8 @@
-# Veridex privacy policy (browser extension)
+# Unfret privacy policy (browser extension)
 
 _Last updated: 9 November 2026 (version 0.5.0). Draft for the store listings; to be reviewed before publication._
 
-Veridex is made by Kroshtan (Floris van Beers, the Netherlands).
+Unfret is made by Kroshtan (Floris van Beers, the Netherlands).
 
 ## What the extension reads
 
@@ -20,7 +20,7 @@ see the page or its address.
 
 ## What is sent, and to whom
 
-Only to the Veridex API (`unfret.kroshtan.com`, hosted in the EU), when you click Analyse:
+Only to the Unfret API (`unfret.kroshtan.com`, hosted in the EU), when you click "Check this page":
 
 - the page address and the product facts and text described above;
 - your session token, which identifies the Solana wallet you signed in with.
@@ -34,14 +34,14 @@ settings. Analysis results are kept only in memory (the browser's session storag
 extension's background process going to sleep); they are cleared when you leave the page or close the browser and
 are never written to disk.
 
-The extension asks Veridex for results in your browser's language (Dutch or English). That language is the only
+The extension asks Unfret for results in your browser's language (Dutch or English). That language is the only
 other thing it sends.
 
 On the server: your wallet address and its credit balance. The server does not keep the addresses or contents of
 the pages you analyse, and does not link what you analysed to your wallet. For product pages with a public product
 number (an Amazon ASIN, a bol.com ID or a barcode) it keeps an anonymous price observation for 90 days: a one-way
 hash of the shop's domain and that number, the day, the price and the claimed "was" price, with no address, wallet,
-IP address or time of day. That is how Veridex tells whether a "was" price was ever really charged. The product
+IP address or time of day. That is how Unfret tells whether a "was" price was ever really charged. The product
 photo itself (the image only, fetched by the server) is looked up with Google Cloud Vision to find copies on
 wholesale sites. The full server-side statement: <https://unfret.kroshtan.com/privacy>.
 
@@ -53,7 +53,7 @@ stored in your browser. You can reread it any time under **About & privacy** in 
 
 ## Signing in
 
-Signing in means signing a plain-text message with your Solana wallet. It costs nothing and gives Veridex no
+Signing in means signing a plain-text message with your Solana wallet. It costs nothing and gives Unfret no
 right to spend from your wallet. Buying checks is a separate transaction you approve in your wallet.
 
 ## Your choices
