@@ -28,7 +28,7 @@ type Band = "reliable" | "concerns" | "careful" | "junk_or_scam";
 export function bandOf(result: Pick<AnalysisResult, "score" | "verdict">): Band | null {
   if (result.score < 0) return null;
   return (
-    (result.verdict?.band as Band | undefined) ??
+    result.verdict?.band ??
     (result.score >= 80
       ? "reliable"
       : result.score >= 50
