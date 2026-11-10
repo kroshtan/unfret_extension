@@ -31,7 +31,14 @@ toolbar click ─► popup ─► background ─► inject extract.js into the t
 - **Sign-in is Sign-In With Solana.** "Sign in" opens `https://unfret.kroshtan.com/connect`; after you sign a
   message in your wallet, that page posts the session to itself and the extension's content script (injected only
   there) relays it. The relay accepts it only from that window on the configured Unfret origin, and the
-  background checks the sender again. Signing grants no spending rights. "Buy checks" opens `/checkout`.
+  background checks the sender again. Signing grants no spending rights. "Buy checks" opens `/checkout`, which also
+  shows the invite codes a pack comes with, once, after payment.
+- **"Have an invite?"** (popup and settings, when signed in) redeems a code onto the account in use
+  (`POST /v1/invites/redeem`, with its own sign-in); only a new wallet or a never-funded key can. The code isn't kept.
+- **"Share this result"** asks the API for a preview of the public page (`POST /v1/shares/preview`), and only on
+  "Share" makes it (`POST /v1/shares`), both **without** the sign-in, so the page names no account. The link and its
+  delete code stay with the tab's result in session memory.
+- **English only.** The extension's own text is English; the verdict's wording is the server's, shown as it comes.
 
 The API contract is in the backend repository (credits door, contract v1).
 

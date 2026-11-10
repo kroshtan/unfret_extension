@@ -2,6 +2,7 @@
 
 import { ApiError, VeridexApi } from "../api/client.js";
 import { keySession, saveSession, type Session } from "./settings.js";
+import { OFFLINE } from "./text.js";
 
 export type KeySignIn =
   { ok: true; session: Session; checks: number } | { ok: false; reason: "invalid" | "rejected" | "offline" };
@@ -19,9 +20,9 @@ export async function signInWithKey(apiBase: string, value: string): Promise<Key
   }
 }
 
-/** The message key for a failed key sign-in. */
+/** What to say about a failed key sign-in. */
 export const KEY_FAILURE = {
-  invalid: "opt_key_invalid",
-  rejected: "opt_key_rejected",
-  offline: "offline",
+  invalid: "That isn't an API key (it starts with ufk_).",
+  rejected: "The server doesn't know this key (or it was replaced with its recovery code).",
+  offline: OFFLINE,
 } as const;

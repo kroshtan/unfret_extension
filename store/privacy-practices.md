@@ -19,7 +19,8 @@ It collects the product facts (title, brand, seller, price, ratings, review text
 with account menus, addresses, forms and typed input removed. Nothing is injected anywhere else.
 
 **storage**: Stores the user's sign-in session or API key, their consent, their settings and the result of the last
-check per tab (session storage, cleared when the browser closes). No browsing history is stored.
+check per tab (session storage, cleared when the browser closes), with that result's shared link and delete code if the
+user shared it. No browsing history is stored.
 
 **declarativeContent**: Lets the browser itself show a small marker on the toolbar icon on supported marketplace
 product pages (Amazon, bol.com), so the user knows a check is possible there. The extension never sees those pages:
@@ -42,7 +43,9 @@ What the extension collects (tick these):
 - **Website content**: the product facts and cleaned visible text of a page, only when the user clicks "Check this
   page", sent to the Unfret API to produce the result.
 - **Web history**: the address of the page the user chose to check, sent with that check (not stored by the server,
-  never linked to the user).
+  never linked to the user). If the user shares a result (after a preview of the public page, and only on their
+  click), that address and the result go to the Unfret API without any sign-in, and become a public page with no
+  account attached, for 90 days.
 - **Authentication information**: the user's session token or API key, kept in the browser and sent to the Unfret
   API to pay for checks.
 

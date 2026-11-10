@@ -264,3 +264,50 @@ body {
 .brand img {
   border-radius: 5px;
 }
+
+/* "Have an invite?" under the account. */
+.invite {
+  margin-top: 8px;
+}
+.invite summary {
+  cursor: pointer;
+  color: var(--accent);
+}
+.invite label {
+  display: block;
+  font-weight: 600;
+  margin: 4px 0 2px;
+}
+.invite input {
+  width: 100%;
+  margin-bottom: 6px;
+}
+
+/* "Share this result": the preview is boxed apart from the result itself, as the page others will see. */
+#share-area {
+  margin-top: 8px;
+}
+.share-preview {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+}
+.share-preview > h2 {
+  margin-top: 0;
+}
+.share-title {
+  margin: 0;
+  font-weight: 600;
+}
+.share-meta,
+.share-link,
+.share-code {
+  overflow-wrap: anywhere;
+}
+.share-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+  user-select: all;
+}

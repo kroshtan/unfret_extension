@@ -1,18 +1,20 @@
 import { describe, expect, it } from "vitest";
 
-import en from "../src/_locales/en/messages.json";
-import nl from "../src/_locales/nl/messages.json";
+import { existsSync, readFileSync } from "node:fs";
+
 import type { AnalysisResult } from "../src/api/client.js";
-import { format, t } from "../src/shared/i18n.js";
+import { manifest } from "../scripts/manifest.mjs";
 import { bandOf } from "../src/shared/bands.js";
 import {
   buildChecklist,
   CHECKLIST,
   checklistDone,
   renderResult,
+  renderSharePreview,
   shownThumbnails,
   updateChecklist,
 } from "../src/popup/view.js";
+import { SHARE_PREVIEW } from "./mock-server.js";
 
 const JUNK: AnalysisResult = {
   score: 12,
@@ -91,30 +93,31 @@ const RELIABLE: AnalysisResult = {
   },
 };
 
-function rendered(result: AnalysisResult, language: "en" | "nl"): HTMLElement {
+function rendered(result: AnalysisResult): HTMLElement {
   const root = document.createElement("div");
-  renderResult(root, result, language);
+  renderResult(root, result);
   return root;
 }
 
 describe("result view", () => {
-  it("shows the verdict in words with a symbol, the headline and the reasons strongest first (nl)", () => {
-    const root = rendered(JUNK, "nl");
+  it("shows the server's verdict as it comes (here Dutch), a symbol, and the reasons strongest first", () => {
+    const root = rendered(JUNK);
     const verdict = root.querySelector(".verdict");
     expect(verdict?.className).toBe("verdict junk_or_scam");
     expect(root.querySelector(".verdict .label")?.textContent).toBe("Veel waarschuwingssignalen");
     expect(root.querySelector(".verdict .symbol")?.textContent).toBe("✕"); // not colour alone
     expect(root.querySelector(".headline")?.textContent).toContain("Duizenden reviews");
     const headings = [...root.querySelectorAll("h2")].map((h) => h.textContent);
-    expect(headings).toEqual(["Wat ons opviel", "Wat goed is"]); // concerns before positives
+    // The extension's own words are English; the verdict's text isn't translated.
+    expect(headings).toEqual(["What we noticed", "What looks good"]); // concerns before positives
     expect([...root.querySelectorAll(".reasons li strong")].map((s) => s.textContent)).toEqual([
       "Verdacht veel reviews",
       "Titel vol zoekwoorden",
     ]);
   });
 
-  it("puts what looks good first for a reliable result, and says when no check was used (en)", () => {
-    const root = rendered(RELIABLE, "en");
+  it("puts what looks good first for a reliable result, and says when no check was used", () => {
+    const root = rendered(RELIABLE);
     expect([...root.querySelectorAll("h2")].map((h) => h.textContent)).toEqual([
       "What looks good",
       "What we noticed",
@@ -123,25 +126,23 @@ describe("result view", () => {
   });
 
   it("keeps details behind a disclosure, with server labels and neutral context", () => {
-    const root = rendered(JUNK, "nl");
+    const root = rendered(JUNK);
     const details = root.querySelector("details");
-    expect(details?.querySelector("summary")?.textContent).toBe("Details tonen");
-    expect(details?.textContent).toContain("Model v1-20261108-C · zekerheid 79%");
+    expect(details?.querySelector("summary")?.textContent).toBe("Show details");
+    expect(details?.textContent).toContain("Model v1-20261108-C · confidence 79%");
     expect(details?.querySelector("li.context")?.textContent).toBe("Aanbod op een marktplaats");
     expect(details?.textContent).not.toMatch(/content\.|listing\.|=\s*\d/u); // no feature names or raw values
   });
 
   it("explains an unassessable page and a refund", () => {
-    const root = rendered(
-      { score: -1, explanation: "Er staat geen product op deze pagina", charged: false },
-      "nl",
-    );
-    expect(root.querySelector(".verdict .label")?.textContent).toBe("Niet beoordeeld");
-    expect(root.textContent).toContain("Er is geen check gebruikt.");
+    const root = rendered({ score: -1, explanation: "There's no product on this page", charged: false });
+    expect(root.querySelector(".verdict .label")?.textContent).toBe("Not assessed");
+    expect(root.textContent).toContain("No check was used.");
+    expect(root.querySelector("details")).toBeNull();
   });
 
   it("still works with an older server that sends no verdict", () => {
-    const root = rendered({ score: 30, explanation: "Several warning signs." }, "en");
+    const root = rendered({ score: 30, explanation: "Several warning signs." });
     expect(bandOf({ score: 30 })).toBe("careful");
     expect(root.querySelector(".verdict .label")?.textContent).toBe("Some warning signs");
     expect(root.querySelector(".headline")?.textContent).toBe("Several warning signs.");
@@ -187,7 +188,7 @@ describe("photo thumbnails", () => {
 
   it("renders them under the reason, without a referrer", () => {
     const root = document.createElement("div");
-    renderResult(root, PHOTO, "en", API);
+    renderResult(root, PHOTO, API);
     const imgs = [...root.querySelectorAll<HTMLImageElement>(".reasons li .thumbs img")];
     expect(imgs.map((i) => i.getAttribute("src"))).toEqual([
       `${API}/v1/images/1/thumbnail.jpg`,
@@ -198,7 +199,7 @@ describe("photo thumbnails", () => {
 
   it("renders no images without an API origin", () => {
     const root = document.createElement("div");
-    renderResult(root, PHOTO, "en");
+    renderResult(root, PHOTO);
     expect(root.querySelector(".thumbs")).toBeNull();
   });
 });
@@ -206,17 +207,17 @@ describe("photo thumbnails", () => {
 describe("progress checklist", () => {
   it("is a fixed list of plain items that tick off, updated in place", () => {
     const list = document.createElement("ul");
-    buildChecklist(list, "nl");
+    buildChecklist(list);
     expect([...list.children].map((li) => li.textContent)).toEqual([
       "Reviews",
-      "Verkoper",
-      "Prijs",
-      "Paginacode",
-      "Bedrijfsgegevens",
+      "Seller",
+      "Price",
+      "Page code",
+      "Company details",
     ]);
     const first = list.children[0];
-    updateChecklist(list, checklistDone(["reviews", "listing"], false), "nl");
-    buildChecklist(list, "nl"); // no rebuild: screen readers aren't re-read the list
+    updateChecklist(list, checklistDone(["reviews", "listing"], false));
+    buildChecklist(list); // no rebuild: screen readers aren't re-read the list
     expect(list.children[0]).toBe(first);
     expect([...list.children].map((li) => li.classList.contains("done"))).toEqual([
       true,
@@ -225,25 +226,47 @@ describe("progress checklist", () => {
       false,
       false,
     ]);
-    expect(list.children[0]?.getAttribute("aria-label")).toBe("Reviews: klaar");
-    updateChecklist(list, checklistDone([], true), "nl");
+    expect(list.children[0]?.getAttribute("aria-label")).toBe("Reviews: done");
+    updateChecklist(list, checklistDone([], true));
     expect(list.querySelectorAll(".done")).toHaveLength(CHECKLIST.length);
   });
 });
 
-describe("languages", () => {
-  it("has every message in English and Dutch, with the same placeholders", () => {
-    expect(Object.keys(nl).sort()).toEqual(Object.keys(en).sort());
-    for (const [key, value] of Object.entries(en)) {
-      const dutch = (nl as Record<string, { message: string }>)[key]?.message ?? "";
-      expect(dutch.match(/\$\d/gu) ?? [], key).toEqual(value.message.match(/\$\d/gu) ?? []);
-      expect(/^[A-Za-z0-9_]+$/u.test(key), key).toBe(true); // chrome.i18n key rules
-    }
-  });
+describe("share preview", () => {
+  const API = "https://unfret.kroshtan.com";
 
-  it("fills substitutions", () => {
-    expect(format("Model $1 · confidence $2%", ["v1", 79])).toBe("Model v1 · confidence 79%");
-    expect(t("signed_in_as", ["9xQe…VFin"], "nl")).toBe("Ingelogd als 9xQe…VFin");
-    expect(t("session_expired", [], "en")).toContain("your checks are still there");
+  it("shows exactly what becomes public: product, shop, day and the verdict, without a score", () => {
+    const root = document.createElement("div");
+    renderSharePreview(root, SHARE_PREVIEW, API);
+    expect(root.querySelector(".share-title")?.textContent).toBe("NOVAXEL Smart Watch");
+    expect(root.querySelector(".share-meta")?.textContent).toBe(
+      "amazon.com · https://www.amazon.com/dp/B0WATCH123",
+    );
+    expect(root.textContent).toContain(
+      "Checked by an Unfret user on 10 November 2026; the page may have changed.",
+    );
+    // The shared page's "warning" band looks like the popup's "Many warning signs".
+    expect(root.querySelector(".verdict")?.className).toBe("verdict junk_or_scam");
+    expect(root.querySelector(".verdict .symbol")?.textContent).toBe("✕");
+    expect(root.querySelector(".verdict .label")?.textContent).toBe("Many warning signs");
+    expect([...root.querySelectorAll(".reasons strong")].map((s) => s.textContent)).toEqual([
+      "Suspicious number of reviews",
+    ]);
+    expect(root.querySelector("details li")?.textContent).toBe("Steep discount"); // labels only, no evidence
+    expect(root.textContent).not.toMatch(/\b18\b|score/iu);
+  });
+});
+
+describe("English only", () => {
+  it("ships no translations: no _locales, and the manifest's text is plain English", () => {
+    expect(existsSync("src/_locales")).toBe(false);
+    const m = manifest("chrome", { version: "0.9.0", description: "Spot junk." });
+    expect(m).not.toHaveProperty("default_locale");
+    expect(m.description).toBe("Spot junk.");
+    for (const page of ["src/popup/popup.html", "src/options/options.html"]) {
+      const html = readFileSync(page, "utf8");
+      expect(html, page).not.toMatch(/data-i18n|__MSG_/u);
+      expect(html, page).toContain('<html lang="en">');
+    }
   });
 });

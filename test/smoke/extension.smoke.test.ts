@@ -17,7 +17,14 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import type { Extraction } from "../../src/extract/index.js";
 import type { TabState } from "../../src/shared/messages.js";
-import { type MockApi, startMockApi } from "../mock-server.js";
+import {
+  INVITE_OK,
+  INVITE_USED_CODE,
+  type MockApi,
+  SHARE_DELETE_CODE,
+  SHARE_ID,
+  startMockApi,
+} from "../mock-server.js";
 
 const root = join(import.meta.dirname, "..", "..");
 const shipped = join(root, "dist", "chrome");
@@ -338,7 +345,63 @@ async function renderedPopup(
   return view;
 }
 
-describe("in Dutch", () => {
+describe("sharing a result and redeeming an invite, in the popup", () => {
+  it("previews, then shares the result without the sign-in, and shows the link and delete code", async () => {
+    const extensionId = new URL(granted.worker.url()).host;
+    const page = await granted.context.newPage();
+    await page.goto(`chrome-extension://${extensionId}/popup/popup.html?tab=${analysedTab}`);
+    await page.click("#share-open");
+    await page.waitForSelector("#share-preview:not([hidden])");
+    expect(await page.textContent("#share-preview-body .share-title")).toBe("NOVAXEL Smart Watch");
+    expect(await page.textContent("#share-notice")).toMatch(/never says who checked/u);
+    const analysed = api.requests.find((r) => r.path === "/v1/analyze/stream")?.body as { url: string };
+    const preview = api.requests.find((r) => r.path === "/v1/shares/preview");
+    expect(preview?.auth).toBe("");
+    expect(preview?.body).toMatchObject({ share_token: "share-token.mac", url: analysed.url });
+    expect(api.requests.some((r) => r.path === "/v1/shares")).toBe(false); // nothing public before "Share"
+
+    await page.click("#share-confirm");
+    await page.waitForSelector("#share-done:not([hidden])");
+    expect(await page.textContent("#share-link")).toBe(`${api.url}/r/${SHARE_ID}`);
+    expect(await page.textContent("#share-code")).toBe(SHARE_DELETE_CODE);
+    expect(await page.textContent("#share-done")).toMatch(/Save it now: Unfret keeps only a fingerprint/u);
+    expect(api.requests.filter((r) => r.path === "/v1/shares")).toHaveLength(1);
+    expect(api.requests.find((r) => r.path === "/v1/shares")?.auth).toBe("");
+    expect(await page.isVisible("#share-open")).toBe(false); // one share per check
+    await page.close();
+  });
+
+  it("redeems an invite for the signed-in account and shows the new balance", async () => {
+    const extensionId = new URL(granted.worker.url()).host;
+    const page = await granted.context.newPage();
+    await page.goto(`chrome-extension://${extensionId}/popup/popup.html?tab=${analysedTab}`);
+    await page.click("#invite summary");
+    await page.fill("#invite-input", INVITE_USED_CODE);
+    await page.click("#invite-use");
+    await page.waitForFunction(() => document.querySelector("#invite-status")?.textContent !== "");
+    expect(await page.textContent("#invite-status")).toBe("This invite has already been used.");
+
+    await page.fill("#invite-input", INVITE_OK);
+    await page.click("#invite-use");
+    await page.waitForFunction(() => document.querySelector("#invite-status")?.textContent.startsWith("✓"));
+    expect(await page.textContent("#invite-status")).toBe("✓ 3 checks added.");
+    expect(await page.textContent("#credits")).toBe("3 checks left");
+    expect(await page.inputValue("#invite-input")).toBe("");
+    const redeemed = api.requests.filter((r) => r.path === "/v1/invites/redeem").at(-1);
+    // The account's own sign-in: the API key the previous test pasted (a new key, as an invite needs).
+    expect(redeemed?.auth).toBe(`Bearer ufk_abcdefghij_${"a".repeat(52)}`);
+    expect(redeemed?.body).toEqual({ code: INVITE_OK });
+    // The code isn't kept anywhere.
+    const stored = await granted.worker.evaluate(async () => ({
+      local: await chrome.storage.local.get(null),
+      session: await chrome.storage.session.get(null),
+    }));
+    expect(JSON.stringify(stored)).not.toContain("ufi_");
+    await page.close();
+  });
+});
+
+describe("in a Dutch browser", () => {
   let dutch: { context: BrowserContext; worker: Worker };
 
   beforeAll(async () => {
@@ -349,7 +412,7 @@ describe("in Dutch", () => {
     await dutch.context.close();
   });
 
-  it("asks for and shows the verdict in Dutch", async () => {
+  it("stays in English and asks for English", async () => {
     await dutch.worker.evaluate(
       ({ base, address }) =>
         chrome.storage.local.set({
@@ -377,12 +440,11 @@ describe("in Dutch", () => {
       tabId,
     );
     expect(state.status === "error" ? state.message : state.status).toBe("done");
-    expect(api.requests.filter((r) => r.path === "/v1/analyze/stream").at(-1)?.language).toBe("nl");
+    expect(api.requests.filter((r) => r.path === "/v1/analyze/stream").at(-1)?.language).toBe("en");
 
     const view = await renderedPopup(dutch, tabId);
-    expect(view.lang).toBe("nl");
-    expect(view.label).toBe("Veel waarschuwingssignalen");
-    expect(view.headings).toEqual(["Wat ons opviel"]);
-    expect(view.reasons).toEqual(["Verdacht veel reviews"]);
+    expect(view.lang).toBe("en");
+    expect(view.headings).toEqual(["What we noticed"]);
+    expect(view.analyse).toBe("Check this page");
   });
 });

@@ -37,9 +37,8 @@ export function manifest(browser, { version, description, publicKey }) {
     manifest_version: 3,
     name,
     version,
-    // Localised from _locales (nl, en); package.json keeps the English text for npm.
-    description: description && "__MSG_ext_description__",
-    default_locale: "en",
+    // The extension is in English only: package.json's description, as it is.
+    description,
     icons: ICONS,
     action: { default_popup: "popup/popup.html", default_title: name, default_icon: ICONS },
     options_ui: { page: "options/options.html", open_in_tab: true },

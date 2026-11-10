@@ -250,10 +250,9 @@ describe("sites", () => {
 });
 
 describe("presentation", () => {
-  it("counts checks in the user's language", () => {
-    expect(checksText(1, "en")).toBe("1 check left");
-    expect(checksText(4, "en")).toBe("4 checks left");
-    expect(checksText(4, "nl")).toBe("Nog 4 checks");
+  it("counts checks", () => {
+    expect(checksText(1)).toBe("1 check left");
+    expect(checksText(4)).toBe("4 checks left");
   });
 
   it("colours the badge like a traffic light, red only for low results", () => {

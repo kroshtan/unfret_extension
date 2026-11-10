@@ -1,12 +1,13 @@
 /** Options: the API base URL (production by default, a local origin for development), an API key, signing out. */
 
 import { checksText } from "../popup/view.js";
+import { inviteAdded, redeemInvite } from "../shared/invites.js";
 import { KEY_FAILURE, signInWithKey } from "../shared/key-sign-in.js";
-import { localise, t, uiLanguage } from "../shared/i18n.js";
 import {
   accountLabel,
   clearSession,
   DEFAULT_API_BASE,
+  expireSession,
   isDevBase,
   isKeySession,
   loadSettings,
@@ -31,14 +32,12 @@ function input(id: string): HTMLInputElement {
 async function renderAccount(): Promise<void> {
   const { apiBase, session } = await loadSettings();
   el("account-status").textContent = !session
-    ? t("opt_not_signed_in")
+    ? "Not signed in."
     : isKeySession(session)
-      ? t("opt_using_key", [accountLabel(session)])
-      : t("opt_signed_in", [
-          shortAddress(session.address),
-          new Date(session.expiresAt).toLocaleDateString(uiLanguage()),
-        ]);
+      ? `Using API key ${accountLabel(session)}.`
+      : `Signed in as ${shortAddress(session.address)} until ${new Date(session.expiresAt).toLocaleDateString("en")}.`;
   el("sign-out").hidden = !session;
+  el("invite").hidden = !session;
   el("key-get").setAttribute("href", `${apiBase}/checkout?for=key`);
 }
 
@@ -49,11 +48,29 @@ async function useKey(value: string): Promise<void> {
   const result = await signInWithKey(apiBase, value);
   if (result.ok) {
     input("api-key").value = "";
-    status.textContent = t("opt_key_saved", [accountLabel(result.session), checksText(result.checks)]);
+    status.textContent = `Saved. Using API key ${accountLabel(result.session)}: ${checksText(result.checks)}.`;
   } else {
-    status.textContent = t(KEY_FAILURE[result.reason]);
+    status.textContent = KEY_FAILURE[result.reason];
   }
   await renderAccount();
+}
+
+/** "Have an invite?": redeem a code for the account in use (only a new one, that never had checks). */
+async function useInvite(): Promise<void> {
+  const status = el("invite-status");
+  const { apiBase, session } = await loadSettings();
+  if (!session) return;
+  const outcome = await redeemInvite(apiBase, session.token, input("invite-input").value);
+  if (outcome.ok) {
+    input("invite-input").value = "";
+    status.textContent = `${inviteAdded(outcome.checksAdded)} ${checksText(outcome.checks)}.`;
+    return;
+  }
+  status.textContent = outcome.message;
+  if (outcome.signedOut) {
+    await expireSession();
+    await renderAccount();
+  }
 }
 
 async function save(value: string): Promise<void> {
@@ -61,7 +78,8 @@ async function save(value: string): Promise<void> {
   const wanted = value.trim();
   const normalised = normaliseApiBase(wanted);
   if (wanted && normalised === DEFAULT_API_BASE && new URL(DEFAULT_API_BASE).origin !== safeOrigin(wanted)) {
-    status.textContent = t("opt_only_https");
+    status.textContent =
+      "Only the default, or a local server on http://localhost / http://127.0.0.1, can be used.";
     return;
   }
   if (isDevBase(normalised)) {
@@ -69,7 +87,7 @@ async function save(value: string): Promise<void> {
     const { protocol, hostname } = new URL(normalised);
     const granted = await chrome.permissions.request({ origins: [`${protocol}//${hostname}/*`] });
     if (!granted) {
-      status.textContent = t("opt_denied");
+      status.textContent = "Access to that address was not allowed; keeping the previous server.";
       return;
     }
   }
@@ -79,7 +97,7 @@ async function save(value: string): Promise<void> {
   // A different server means a different account: sign out.
   if (stored !== previous) await clearSession();
   await renderAccount();
-  status.textContent = t("opt_saved", [stored]);
+  status.textContent = `Saved. Using ${stored}.`;
 }
 
 function safeOrigin(value: string): string {
@@ -91,16 +109,18 @@ function safeOrigin(value: string): string {
 }
 
 async function init(): Promise<void> {
-  document.documentElement.lang = uiLanguage();
-  localise(document);
   el("privacy-link").setAttribute("href", PRIVACY_URL);
-  el("server-help").textContent = t("opt_server_help", [DEFAULT_API_BASE]);
+  el("server-help").textContent =
+    `The default is ${DEFAULT_API_BASE}. For development, http://localhost or http://127.0.0.1 (any port) can be ` +
+    "used; the browser asks you to allow access to it. Testing against the dev deployment is done with the separate " +
+    "Unfret Dev extension.";
   const { apiBase } = await loadSettings();
   input("api-base").value = apiBase;
   await renderAccount();
   el("save").addEventListener("click", () => void save(input("api-base").value));
   el("reset").addEventListener("click", () => void save(DEFAULT_API_BASE));
   el("key-use").addEventListener("click", () => void useKey(input("api-key").value));
+  el("invite-use").addEventListener("click", () => void useInvite());
   el("sign-out").addEventListener("click", () => {
     void clearSession().then(renderAccount);
   });

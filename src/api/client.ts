@@ -4,7 +4,6 @@
  */
 
 import type { PageFacts } from "../shared/facts.js";
-import { uiLanguage } from "../shared/i18n.js";
 import { readEvents } from "./sse.js";
 
 export class ApiError extends Error {
@@ -66,7 +65,7 @@ export interface Flag {
   type: string;
   evidence: string;
   weight: number;
-  /** Human label from the server, in the requested language (never show `type`). */
+  /** Human label from the server (never show `type`). */
   label?: string;
   /** "context" flags describe the page (e.g. "Marketplace listing") and are shown neutrally. */
   kind?: "signal" | "context";
@@ -90,7 +89,7 @@ export interface VerdictPositive {
 
 export type Band = "reliable" | "concerns" | "careful" | "junk_or_scam";
 
-/** The shopper-facing verdict, in the language asked for with Accept-Language. */
+/** The shopper-facing verdict, as the server wrote it (shown as it comes, whatever its language). */
 export interface Verdict {
   band: Band;
   label: string;
@@ -111,6 +110,8 @@ export interface AnalysisResult {
   verdict?: Verdict;
   /** Lets this account report the result as wrong (POST /v1/reports) within 7 days. */
   report_token?: string;
+  /** Lets anyone holding the result share it as a public link (POST /v1/shares) within 7 days; names no account. */
+  share_token?: string;
 }
 
 export type ReportReason = "real_brand" | "scam" | "junk" | "other";
@@ -120,6 +121,67 @@ export interface ReportResponse {
   status: ReportOutcome;
   reports_used: number;
   reports_per_month: number;
+}
+
+/** What an invite added (POST /v1/invites/redeem). */
+export interface InviteRedeemed {
+  checks_added: number;
+  usd_micros_added: number;
+  balance_usd_micros: number;
+  checks_remaining: number;
+}
+
+/** A result to share: the check's share token, the url as it was analysed and the result as it came back. */
+export interface ShareRequest {
+  share_token: string;
+  url: string;
+  result: Pick<AnalysisResult, "score" | "explanation" | "assessment" | "verdict">;
+}
+
+export type SharedFlag = Pick<Flag, "label" | "evidence" | "kind">;
+
+/** The shared page's bands (the showcase's names: "warning" is the extension's `junk_or_scam`). */
+export type ShareBand = "reliable" | "concerns" | "careful" | "warning";
+
+/** Exactly what a share makes public (POST /v1/shares/preview): no score, no quotes from the page. */
+export interface SharePreview {
+  title: string;
+  host: string;
+  product_url: string;
+  checked_on: string;
+  checked_on_text: string;
+  band: ShareBand;
+  label: string;
+  symbol: string;
+  headline: string;
+  result: {
+    verdict?: {
+      band?: ShareBand;
+      label?: string;
+      symbol?: string;
+      headline?: string;
+      reasons?: {
+        title: string;
+        detail: string;
+        severity: VerdictReason["severity"];
+        thumbnails?: string[];
+      }[];
+      positives?: { title: string; detail: string }[];
+    };
+    /** Flags with their labels only (evidence is always empty on a shared page). */
+    assessment?: { flags?: SharedFlag[]; confidence?: number; model_version?: string };
+  };
+  /** What to tell the sharer before they confirm. */
+  notice: string;
+}
+
+/** A new share (POST /v1/shares): the delete code is shown this once. */
+export interface CreatedShare {
+  id: string;
+  /** The share's page on the API's own site, `/r/<id>`. */
+  link: string;
+  delete_code: string;
+  expires_at: string;
 }
 
 export interface Finding {
@@ -184,15 +246,14 @@ export class VeridexApi {
     private readonly base: string,
     private readonly token?: string,
     private readonly fetcher: FetchLike = (input, init) => fetch(input, init),
-    private readonly language: string = uiLanguage(),
   ) {}
 
   private headers(json: boolean): Record<string, string> {
     return {
       ...(json ? { "Content-Type": "application/json" } : {}),
       ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
-      // The verdict comes back in this language (nl or en).
-      "Accept-Language": this.language,
+      // The extension is in English. Whatever the server writes about a page is shown as it comes.
+      "Accept-Language": "en",
     };
   }
 
@@ -229,6 +290,55 @@ export class VeridexApi {
     });
     if (!response.ok) throw await errorFrom(response);
     return (await response.json()) as ReportResponse;
+  }
+
+  /**
+   * Redeem an invite someone gave the user for this account (the wallet's session or the API key): only a new account
+   * that never had checks can. Refusals come back as ApiError with the server's reason (INVALID_INVITE,
+   * UNKNOWN_INVITE, INVITE_USED, INVITE_NOT_FOR_THIS_ACCOUNT).
+   */
+  async redeemInvite(code: string): Promise<InviteRedeemed> {
+    const response = await this.fetcher(`${this.base}/v1/invites/redeem`, {
+      method: "POST",
+      headers: this.headers(true),
+      body: JSON.stringify({ code }),
+    });
+    if (!response.ok) throw await errorFrom(response);
+    return (await response.json()) as InviteRedeemed;
+  }
+
+  /**
+   * A share is anonymous: it goes without Authorization, whatever this client was made with, so nothing ties the
+   * public page to an account (the server refuses a share request that carries one).
+   */
+  private async postShare<T>(path: string, request: ShareRequest): Promise<T> {
+    const response = await this.fetcher(`${this.base}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Accept-Language": "en" },
+      body: JSON.stringify(request),
+      cache: "no-store",
+    });
+    if (!response.ok) throw await errorFrom(response);
+    return (await response.json()) as T;
+  }
+
+  /** Exactly what sharing this result would make public; stores nothing. */
+  sharePreview(request: ShareRequest): Promise<SharePreview> {
+    return this.postShare<SharePreview>("/v1/shares/preview", request);
+  }
+
+  /** Make the result public as `/r/<id>` for 90 days; the link must be a page on this API's own site. */
+  async createShare(request: ShareRequest): Promise<CreatedShare> {
+    const created = await this.postShare<CreatedShare>("/v1/shares", request);
+    if (
+      typeof created.link !== "string" ||
+      !/^\/r\/[A-Za-z0-9_-]+$/u.test(created.link) ||
+      typeof created.delete_code !== "string" ||
+      !created.delete_code
+    ) {
+      throw new ApiError(502, "BAD_SHARE", "The server sent an unexpected shared link.");
+    }
+    return created;
   }
 
   /** Start a phone sign-in; the connect URL must be on this API's origin (it goes into a QR code). */

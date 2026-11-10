@@ -18,9 +18,10 @@ import {
   type PopupRequest,
   type TabState,
 } from "../shared/messages.js";
-import { t } from "../shared/i18n.js";
 import { consentGiven, isDevBase, loadSettings, parseSession, saveSession } from "../shared/settings.js";
+import { createShare, previewShare, shareRequest } from "../shared/share.js";
 import { isAnalysable } from "../shared/sites.js";
+import { CONSENT_HINT, OFFLINE, SESSION_EXPIRED } from "../shared/text.js";
 import { badgeFor } from "./badge.js";
 import { registerMarketplaceHint } from "./icon-hint.js";
 import { extractFromTab } from "./inject.js";
@@ -145,13 +146,13 @@ async function runAnalysis(tabId: number): Promise<void> {
   const { apiBase, session } = await loadSettings();
   if (!(await consentGiven())) {
     // Nothing leaves the browser before the consent screen was accepted, whoever asks.
-    setState(tabId, { status: "error", message: t("hint_consent"), needsSignIn: false, needsCredits: false });
+    setState(tabId, { status: "error", message: CONSENT_HINT, needsSignIn: false, needsCredits: false });
     return;
   }
   if (!session) {
     setState(tabId, {
       status: "error",
-      message: t("error_sign_in_first"),
+      message: "Sign in first.",
       needsSignIn: true,
       needsCredits: false,
     });
@@ -162,7 +163,9 @@ async function runAnalysis(tabId: number): Promise<void> {
     setState(tabId, {
       status: "error",
       // No URL means no access yet: activeTab is granted by clicking the toolbar button on that page.
-      message: tab.url ? t("error_cant_analyse") : t("error_click_first"),
+      message: tab.url
+        ? "This page can't be checked."
+        : "Click the Unfret button on the page you want to check, then try again.",
       needsSignIn: false,
       needsCredits: false,
     });
@@ -188,16 +191,16 @@ async function runAnalysis(tabId: number): Promise<void> {
     }
   } catch (error) {
     const apiError = error instanceof ApiError ? error : null;
-    // The server's English detail isn't shown: every case gets plain text in the user's language.
+    // The server's technical detail isn't shown: every case gets plain words.
     const message = apiError?.serviceOff
-      ? t("error_service_off")
+      ? "Unfret checks aren't available right now. Please try again later."
       : apiError?.needsSignIn
-        ? t("session_expired")
+        ? SESSION_EXPIRED
         : apiError?.needsCredits
-          ? t("error_no_checks")
+          ? "You have no checks left."
           : apiError
-            ? t("error_failed")
-            : t("offline");
+            ? "The check failed. No check was used."
+            : OFFLINE;
     setState(tabId, {
       status: "error",
       message,
@@ -210,14 +213,28 @@ async function runAnalysis(tabId: number): Promise<void> {
 
 // ── Reports: "this is wrong" ────────────────────────────────────────────────
 
-/** The server's refusals, in plain words in the user's language. */
+/** The server's refusals, in plain words. */
 function reportError(error: unknown): string {
-  if (!(error instanceof ApiError)) return t("offline");
-  if (error.code === "REPORT_LIMIT") return t("report_limit");
-  if (error.code === "ALREADY_REPORTED_BY_YOU") return t("report_twice");
-  if (error.code === "QUEUE_FULL") return t("report_queue_full");
-  if (error.code === "BAD_REPORT_TOKEN") return t("report_too_old");
-  return t("report_failed");
+  if (!(error instanceof ApiError)) return OFFLINE;
+  if (error.code === "REPORT_LIMIT") return "You've used this month's reports. Thank you!";
+  if (error.code === "ALREADY_REPORTED_BY_YOU") return "You've already reported this page.";
+  if (error.code === "QUEUE_FULL")
+    return "Our review queue is full right now; please try again in a few days.";
+  if (error.code === "BAD_REPORT_TOKEN")
+    return "This check can't be reported any more; check the page again first.";
+  return "The report didn't go through. Please try again later.";
+}
+
+type DoneState = Extract<TabState, { status: "done" }>;
+
+/**
+ * Change a finished check's state, as it is now: a report and a share can run at the same time, and each must keep
+ * what the other did. Nothing happens when the tab has moved on (another check, or a navigation) in between.
+ */
+function updateDone(tabId: number, result: DoneState["result"], change: Partial<DoneState>): void {
+  const now = states.get(tabId);
+  if (now?.status !== "done" || now.result !== result) return;
+  setState(tabId, { ...now, ...change });
 }
 
 /** Send the finished check's request back as a report (the user consented in the popup, for this check only). */
@@ -227,13 +244,59 @@ async function report(tabId: number, reason: ReportReason): Promise<void> {
   if (state.report?.status === "sending" || state.report?.status === "sent") return;
   const { apiBase, session } = await loadSettings();
   if (!session) return;
-  setState(tabId, { ...state, report: { status: "sending" } });
+  updateDone(tabId, state.result, { report: { status: "sending" } });
   try {
     const sent = await new VeridexApi(apiBase, session.token).report(state.body, state.result, reason);
-    setState(tabId, { ...state, report: { status: "sent", outcome: sent.status } });
+    updateDone(tabId, state.result, { report: { status: "sent", outcome: sent.status } });
   } catch (error) {
-    setState(tabId, { ...state, report: { status: "error", message: reportError(error) } });
+    updateDone(tabId, state.result, { report: { status: "error", message: reportError(error) } });
   }
+}
+
+// ── "Share this result" ──────────────────────────────────────────────────────
+// Anonymous: the client is made without the session, and it never sends Authorization for a share anyway. Each step
+// reads the state, checks it and marks it in one synchronous run after its last await, so a double click can't send
+// twice.
+
+/** The tab's finished check as it is right now, once `stateOf` has loaded it from session storage if needed. */
+function doneNow(tabId: number): DoneState | undefined {
+  const state = states.get(tabId);
+  return state?.status === "done" ? state : undefined;
+}
+
+async function sharePreview(tabId: number): Promise<void> {
+  const { apiBase } = await loadSettings();
+  await stateOf(tabId);
+  const state = doneNow(tabId);
+  const request = state && shareRequest(state.body, state.result);
+  if (!state || !request) return;
+  if (state.share && !(state.share.status === "error" && !state.share.preview)) return;
+  updateDone(tabId, state.result, { share: { status: "loading" } });
+  updateDone(tabId, state.result, { share: await previewShare(new VeridexApi(apiBase), request) });
+}
+
+async function share(tabId: number): Promise<void> {
+  const { apiBase } = await loadSettings();
+  await stateOf(tabId);
+  const state = doneNow(tabId);
+  const request = state && shareRequest(state.body, state.result);
+  const now = state?.share;
+  // Only what the user saw in the preview, and only once.
+  const preview = now?.status === "preview" || now?.status === "error" ? now.preview : undefined;
+  if (!state || !request || !preview) return;
+  updateDone(tabId, state.result, { share: { status: "sharing", preview } });
+  updateDone(tabId, state.result, {
+    share: await createShare(new VeridexApi(apiBase), apiBase, request, preview),
+  });
+}
+
+async function shareCancel(tabId: number): Promise<void> {
+  await stateOf(tabId);
+  const state = doneNow(tabId);
+  if (!state?.share || state.share.status === "sharing" || state.share.status === "shared") return;
+  const rest: DoneState = { ...state };
+  delete rest.share;
+  setState(tabId, rest);
 }
 
 chrome.runtime.onConnect.addListener((port) => {
@@ -248,6 +311,9 @@ chrome.runtime.onConnect.addListener((port) => {
       port.postMessage({ type: "state", tabId: message.tabId, state } satisfies BackgroundUpdate);
       if (message.type === "analyze") void analyse(message.tabId);
       if (message.type === "report") void report(message.tabId, message.reason);
+      if (message.type === "share-preview") void sharePreview(message.tabId);
+      if (message.type === "share") void share(message.tabId);
+      if (message.type === "share-cancel") void shareCancel(message.tabId);
     });
   });
   port.onDisconnect.addListener(() => {
