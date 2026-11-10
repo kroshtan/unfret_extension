@@ -27,6 +27,10 @@ const VAT_CANDIDATE_RE =
   /(?<![A-Z0-9])(?:AT|BE|BG|CY|CZ|DE|DK|EE|EL|ES|FI|FR|HR|HU|IE|IT|LT|LU|LV|MT|NL|PL|PT|RO|SE|SI|SK|XI)[\s.]?[0-9A-Z][0-9A-Z\s.+*]{6,18}/gu;
 const LEGAL_RE =
   /(?:impressum|imprint|kvk|kamer van koophandel|handelsregister|registre du commerce|company number|registered in|chamber of commerce|withdraw(?:al)?|widerruf|herroeping|bedenktijd|rétractation|desistimiento|recesso|14[ -](?:day|dagen|tage|jours|días|giorni))/giu;
+// The copyright line ("© 2026 Acme Outdoor LLC. All rights reserved."): where a shop most often names its company.
+// It sits in the footer, which the page text the backend's skills read leaves out, so it travels with the facts.
+const COPYRIGHT_RE = /(?:\bcopyright\s*)?(?:©|\(c\)(?=\s*\d{4}))|\bcopyright(?=\s*\d{4})/giu;
+const MAX_COPYRIGHT = 3;
 const POLICY_KINDS: [string, RegExp][] = [
   ["refund", /refund|return|retour|widerruf|rétractation|devoluci|reso/iu],
   ["shipping", /shipping|delivery|verzend|versand|livraison|envío|spedizion/iu],
@@ -247,6 +251,11 @@ function textSignals(doc: Document, facts: PageFacts): void {
   facts.fee_mentions = dedupe(snippets(FEE_RE, all, 80, 80)).slice(0, MAX_SNIPPETS);
   facts.vat_ids = dedupe(vatIds(all)).slice(0, 10);
   facts.legal_mentions = dedupe(snippets(LEGAL_RE, all, 60, 100)).slice(0, MAX_SNIPPETS);
+  // Not cut at the first full stop like the legal snippets: "Co. LLC" and "L.L.C." have them inside the name.
+  const lines = Array.from(all.matchAll(COPYRIGHT_RE), (m) =>
+    squash(all.slice(m.index, m.index + m[0].length + 100)),
+  );
+  facts.copyright_lines = dedupe(lines).slice(0, MAX_COPYRIGHT);
 }
 
 function vatIds(value: string): string[] {

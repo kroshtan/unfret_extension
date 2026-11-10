@@ -33,6 +33,7 @@
  "fee_mentions": [],
  "vat_ids": [],
  "legal_mentions": [],
+ "copyright_lines": [],
  "policy_links": {},
  "image_urls": []
 }
