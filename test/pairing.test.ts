@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { ApiError, VeridexApi } from "../src/api/client.js";
+import { ApiError, UnfretApi } from "../src/api/client.js";
 import { waitForPairing } from "../src/shared/pairing.js";
 import { type MockApi, PAIRED_SESSION, startMockApi } from "./mock-server.js";
 
@@ -19,18 +19,18 @@ const FAR = "2099-01-01T00:05:00Z";
 
 describe("phone pairing", () => {
   it("starts a pairing on the API's own origin", async () => {
-    const pairing = await new VeridexApi(mock.url).startPairing();
+    const pairing = await new UnfretApi(mock.url).startPairing();
     expect(pairing.confirm_code).toBe("K7-4Q");
     expect(pairing.connect_url).toBe(`${mock.url}/connect?pair=pair-ok`);
   });
 
   it("refuses a connect URL on another origin (it would go into the QR code)", async () => {
     mock.pairing.connectBase = "https://evil.example";
-    await expect(new VeridexApi(mock.url).startPairing()).rejects.toMatchObject({ code: "BAD_PAIRING" });
+    await expect(new UnfretApi(mock.url).startPairing()).rejects.toMatchObject({ code: "BAD_PAIRING" });
   });
 
   it("waits while pending, then signs in exactly once", async () => {
-    const api = new VeridexApi(mock.url);
+    const api = new UnfretApi(mock.url);
     const outcome = await waitForPairing(api, "pair-ok", { expiresAt: FAR, sleep: noSleep });
 
     expect(outcome).toEqual({
@@ -46,7 +46,7 @@ describe("phone pairing", () => {
   });
 
   it("reports expiry from the server (410)", async () => {
-    const outcome = await waitForPairing(new VeridexApi(mock.url), "pair-expired", {
+    const outcome = await waitForPairing(new UnfretApi(mock.url), "pair-expired", {
       expiresAt: FAR,
       sleep: noSleep,
     });
@@ -56,7 +56,7 @@ describe("phone pairing", () => {
   it("stops at the pairing's own expiry while still pending", async () => {
     mock.pairing.pendingPolls = 1_000;
     let now = Date.parse("2099-01-01T00:00:00Z");
-    const outcome = await waitForPairing(new VeridexApi(mock.url), "pair-ok", {
+    const outcome = await waitForPairing(new UnfretApi(mock.url), "pair-ok", {
       expiresAt: "2099-01-01T00:00:03Z",
       now: () => now,
       sleep: () => {
@@ -68,7 +68,7 @@ describe("phone pairing", () => {
   });
 
   it("fails clearly on an unknown pairing (404)", async () => {
-    const outcome = await waitForPairing(new VeridexApi(mock.url), "pair-gone", {
+    const outcome = await waitForPairing(new UnfretApi(mock.url), "pair-gone", {
       expiresAt: FAR,
       sleep: noSleep,
     });
@@ -76,7 +76,7 @@ describe("phone pairing", () => {
   });
 
   it("retries through server hiccups (5xx)", async () => {
-    const outcome = await waitForPairing(new VeridexApi(mock.url), "pair-flaky", {
+    const outcome = await waitForPairing(new UnfretApi(mock.url), "pair-flaky", {
       expiresAt: FAR,
       sleep: noSleep,
     });
@@ -85,7 +85,7 @@ describe("phone pairing", () => {
 
   it("retries through network errors until the pairing expires", async () => {
     let calls = 0;
-    const offline = new VeridexApi("http://127.0.0.1:9", undefined, () => {
+    const offline = new UnfretApi("http://127.0.0.1:9", undefined, () => {
       calls += 1;
       return Promise.reject(new TypeError("fetch failed"));
     });
@@ -105,7 +105,7 @@ describe("phone pairing", () => {
   it("can be cancelled", async () => {
     mock.pairing.pendingPolls = 1_000;
     const abort = new AbortController();
-    const outcome = await waitForPairing(new VeridexApi(mock.url), "pair-ok", {
+    const outcome = await waitForPairing(new UnfretApi(mock.url), "pair-ok", {
       expiresAt: FAR,
       signal: abort.signal,
       sleep: () => {
@@ -117,7 +117,7 @@ describe("phone pairing", () => {
   });
 
   it("rejects a malformed session from the server", async () => {
-    const api = new VeridexApi(mock.url, undefined, () =>
+    const api = new UnfretApi(mock.url, undefined, () =>
       Promise.resolve(
         new Response(JSON.stringify({ token: "x", address: "nope", expires_at: FAR }), { status: 200 }),
       ),
@@ -127,7 +127,7 @@ describe("phone pairing", () => {
   });
 
   it("surfaces start errors as ApiError", async () => {
-    const api = new VeridexApi(mock.url, undefined, () =>
+    const api = new UnfretApi(mock.url, undefined, () =>
       Promise.resolve(
         new Response(JSON.stringify({ detail: "Too many.", error_code: "TOO_MANY_REQUESTS" }), {
           status: 429,

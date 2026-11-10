@@ -1,6 +1,6 @@
 /** The popup: account and credits, the "Analyse this page" button, live progress and the result. */
 
-import { ApiError, type Pairing, type ReportReason, VeridexApi } from "../api/client.js";
+import { ApiError, type Pairing, type ReportReason, UnfretApi } from "../api/client.js";
 import {
   ANALYSIS_PORT,
   type BackgroundUpdate,
@@ -89,7 +89,7 @@ async function sessionRejected(): Promise<void> {
 async function refreshCredits(): Promise<void> {
   if (!session) return;
   try {
-    const credits = await new VeridexApi(apiBase, session.token).credits();
+    const credits = await new UnfretApi(apiBase, session.token).credits();
     checks = credits.checks_remaining;
     inviteEligible = credits.invite_eligible;
     renderAccount();
@@ -100,7 +100,7 @@ async function refreshCredits(): Promise<void> {
 
 async function refreshPricing(): Promise<void> {
   try {
-    purchasesOn = (await new VeridexApi(apiBase).pricing()).hot_wallet !== null;
+    purchasesOn = (await new UnfretApi(apiBase).pricing()).hot_wallet !== null;
   } catch {
     purchasesOn = false;
   }
@@ -150,7 +150,7 @@ async function showPairing(pairing: Pairing): Promise<void> {
   phoneStatus("Waiting for your phone…");
   const abort = new AbortController();
   pairingAbort = abort;
-  const outcome = await waitForPairing(new VeridexApi(apiBase), pairing.pair_id, {
+  const outcome = await waitForPairing(new UnfretApi(apiBase), pairing.pair_id, {
     expiresAt: pairing.expires_at,
     signal: abort.signal,
   });
@@ -180,7 +180,7 @@ async function startPhoneSignIn(): Promise<void> {
   el("phone-code").textContent = "";
   phoneStatus("Preparing…");
   try {
-    const pairing = await new VeridexApi(apiBase).startPairing();
+    const pairing = await new UnfretApi(apiBase).startPairing();
     try {
       await chrome.storage.session.set({ [PAIRING_KEY]: pairing });
     } catch {

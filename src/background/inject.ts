@@ -9,7 +9,7 @@ export async function extractFromTab(tabId: number): Promise<Extraction> {
   await chrome.scripting.executeScript({ target: { tabId }, files: ["extract.js"] });
   const [injection] = await chrome.scripting.executeScript({
     target: { tabId },
-    func: () => window.__veridexExtract?.(),
+    func: () => window.__unfretExtract?.(),
   });
   const result: Extraction | undefined = injection?.result;
   if (!result) throw new Error("Couldn't read this page.");

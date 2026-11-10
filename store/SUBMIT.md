@@ -14,14 +14,17 @@ Everything Claude could prepare is in this folder. These are the steps only you 
 - [x] **Approve the icon and images** (approved 2026-11-09): `icons/icon-128.png`, `store/assets/promo-small-440x280.png`,
       `store/assets/promo-marquee-1400x560.png`, `store/screenshots/*.png`. Re-render with `make icons` and
       `make screenshots` after changing `brand/*.svg` or the popup.
-- [ ] **Build the package**: `make release` writes `dist/release/unfret-chrome-<version>.zip` (the store zip: no
-      `key`, no `update_url`; the store gives the extension its own ID, different from the self-hosted one).
+- [ ] **Build the package**: Actions → **Release to Chrome Web Store** → Run workflow (input `main`) checks the
+      commit, builds and checks the store zip and attaches `unfret-chrome-<version>.zip` to the Forgejo release
+      `v<version>` (locally, `make store-package` writes the same file to `dist/store/`). The store zip has no `key`
+      and no `update_url`: the store gives the extension its own ID, different from the self-hosted one. The upload
+      stays manual: the Chrome Web Store API would need Google OAuth credentials this repository doesn't have.
 
 ## In the developer dashboard (https://chrome.google.com/webstore/devconsole)
 
 1. **Account**: complete the trader declaration (DSA): you sell checks, so you're a trader. It shows your business
    name, address (use the KvK business address), e-mail and phone publicly in the EU.
-2. **New item** → upload `dist/release/unfret-chrome-<version>.zip`.
+2. **New item** (later releases: the item's **Package** tab) → upload `unfret-chrome-<version>.zip` from the release.
 3. **Store listing**: copy from `store/listing.en.md` (name, summary, description, category Shopping, language
    English; the extension is English-only, so there is no localized listing). Upload the icon,
    screenshots and promo images listed at the end of `listing.en.md`. Homepage and support URLs are there too.

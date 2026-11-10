@@ -1,5 +1,5 @@
 /**
- * Walmart.com product pages: a port of the backend's `veridex/facts/walmart.py`.
+ * Walmart.com product pages: a port of the backend's `facts/walmart.py`.
  *
  * Walmart renders with Next.js and ships the whole product in the `__NEXT_DATA__` script: price and "was" price,
  * the seller (Walmart itself or a marketplace seller), the rating histogram and a page of reviews. Its Product

@@ -1,6 +1,6 @@
 /**
  * Locale-tolerant parsing of the numbers, prices and dates found on shop pages (en, de, fr, nl, es, it).
- * A line-for-line port of the backend's `veridex/facts/_parse.py`; parity tests keep the two in step.
+ * A line-for-line port of the backend's `facts/_parse.py`; parity tests keep the two in step.
  */
 
 const MONTHS = new Map<string, number>();

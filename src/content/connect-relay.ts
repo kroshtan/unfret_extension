@@ -4,7 +4,7 @@
  */
 
 import { loadSettings, type Session } from "../shared/settings.js";
-import { acceptSessionMessage, SESSION_MESSAGE } from "./relay.js";
+import { acceptSessionMessage, SESSION_MESSAGE, SESSION_RECEIVED_MESSAGE } from "./relay.js";
 
 window.addEventListener("message", (event: MessageEvent) => {
   void (async () => {
@@ -19,11 +19,11 @@ window.addEventListener("message", (event: MessageEvent) => {
       session,
     });
     if (reply?.ok) {
-      // Answer in the page's own naming: the old site waits for "veridex-session-received", the renamed one for
+      // Answer in the page's own naming: the old site waits for SESSION_RECEIVED_MESSAGE, the renamed one for
       // "unfret-session-received".
       const renamed = (event.data as { type?: unknown }).type === "unfret-session";
       window.postMessage(
-        { type: renamed ? "unfret-session-received" : "veridex-session-received" },
+        { type: renamed ? "unfret-session-received" : SESSION_RECEIVED_MESSAGE },
         location.origin,
       );
     }

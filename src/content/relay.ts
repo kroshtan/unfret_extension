@@ -7,8 +7,11 @@
 
 import { normaliseApiBase, parseSession, type Session } from "../shared/settings.js";
 
+// Wire names of API contract v1, shared with the backend's connect.js and every released extension (≤ 0.8.3), so
+// they keep their pre-rename spelling; renaming them takes a coordinated two-step release.
 export const SESSION_MESSAGE = "veridex-session";
 const SESSION_MESSAGES: readonly unknown[] = [SESSION_MESSAGE, "unfret-session"];
+export const SESSION_RECEIVED_MESSAGE = "veridex-session-received";
 
 export interface MessageLike {
   origin: string;

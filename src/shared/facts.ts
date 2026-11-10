@@ -1,6 +1,6 @@
 /**
  * `PageFacts`: the structured facts about a product page, mirroring the backend's pydantic model
- * (`veridex.facts.schema.PageFacts`, JSON schema in `pagefacts.schema.json`). Absent facts are `null` or empty,
+ * (`facts.schema.PageFacts`, JSON schema in `pagefacts.schema.json`). Absent facts are `null` or empty,
  * never guessed. Dates are ISO `YYYY-MM-DD` strings; histogram keys are star counts as strings ("1"–"5").
  */
 

@@ -28,3 +28,112 @@ jobs:
         run: npm run build
       - name: Lint the Firefox build (AMO rules)
         run: npx web-ext lint --source-dir dist/firefox
+      - name: Check the store package
+        run: node scripts/store-package.mjs
+
+  # Unfret Dev, on every push to main (and manual runs on main): build it as version <package.json>.<run number>,
+  # sign it with the dev key, and propose it to the backend, which serves it at
+  # https://dev.unfret.kroshtan.com/extension/updates-dev.xml. That backend pull request merges itself once the
+  # backend's CI passes, and the backend's own pipeline then deploys it to dev; installed copies update within
+  # hours. Production is never published from here: see release-store.yaml (manual, Chrome Web Store).
+  #
+  # The deploy runner, because this job holds secrets; it uses neither docker nor /creds, only node and npm.
+  # Repo secrets (Settings → Actions → Secrets): DEV_CRX_KEY, the PEM of Unfret Dev's signing key (ID
+  # phokojgbhkfcejnnocokabdjoljdfgpl), and BACKEND_TOKEN, a token of an account that may push branches to and
+  # open pull requests on the backend repository (scope write:repository).
+  publish-dev:
+    needs: check
+    if: forgejo.event_name != 'pull_request' && forgejo.ref == 'refs/heads/main'
+    runs-on: kroshtan-deploy
+    container:
+      image: node:22-bookworm
+    concurrency:
+      group: publish-unfret-dev
+      cancel-in-progress: false
+    env:
+      UNFRET_DEV_BUILD: ${{ forgejo.run_number }}
+      BACKEND_REPO: kroshtan/unfret_backend
+      BACKEND_BRANCH: extension-dev
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install dependencies
+        run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Sign Unfret Dev
+        env:
+          DEV_CRX_KEY: ${{ secrets.DEV_CRX_KEY }}
+        run: |
+          set -euo pipefail
+          [[ -n "$DEV_CRX_KEY" ]] || { echo "::error::repo secret DEV_CRX_KEY is not set"; exit 1; }
+          key="$(mktemp)"
+          trap 'rm -f "$key"' EXIT
+          chmod 600 "$key"
+          printf '%s\n' "$DEV_CRX_KEY" > "$key"
+          # release.mjs refuses a key whose ID isn't release/dev-extension-id.txt's.
+          UNFRET_DEV_CRX_KEY="$key" node scripts/release.mjs --dev
+          node scripts/verify-release.mjs --dev dist/release/unfret-dev-*.crx
+      - name: Propose it to the backend
+        env:
+          BACKEND_TOKEN: ${{ secrets.BACKEND_TOKEN }}
+          SERVER: ${{ forgejo.server_url }}
+          SHA: ${{ forgejo.sha }}
+          REPO: ${{ forgejo.repository }}
+        run: |
+          set -euo pipefail
+          [[ -n "$BACKEND_TOKEN" ]] || { echo "::error::repo secret BACKEND_TOKEN is not set"; exit 1; }
+          api="$SERVER/api/v1/repos/$BACKEND_REPO"
+          auth="Authorization: token $BACKEND_TOKEN"
+          basic="$(printf 'ci:%s' "$BACKEND_TOKEN" | base64 -w0)"
+          echo "::add-mask::$basic"
+          git_auth=(-c http.extraHeader="Authorization: Basic $basic")
+          version="$(node -p 'require("./dist/chrome-dev/manifest.json").version')"
+          git "${git_auth[@]}" clone -q --depth 1 --branch main "$SERVER/$BACKEND_REPO.git" backend
+          node scripts/publish-dev.mjs backend
+          git -C backend add -A src
+          if git -C backend diff --cached --quiet; then
+            echo "the backend already serves Unfret Dev $version"
+            exit 0
+          fi
+          git -C backend -c user.name="Unfret extension CI" -c user.email="noreply@git.kroshtan.com" commit -q \
+            -m "Unfret Dev $version" -m "Built and signed by $REPO's CI (run $UNFRET_DEV_BUILD) from $REPO@$SHA."
+          # One branch for every dev publish: a newer build replaces a pending one instead of conflicting with it.
+          git -C backend "${git_auth[@]}" push -q -f origin "HEAD:refs/heads/$BACKEND_BRANCH"
+          head="$(git -C backend rev-parse HEAD)"
+
+          number="$(curl -fsS -H "$auth" "$api/pulls?state=open&limit=50" | node -e '
+            const pulls = JSON.parse(require("fs").readFileSync(0, "utf8"));
+            const pull = pulls.find((p) => p.head.ref === process.env.BACKEND_BRANCH && p.base.ref === "main");
+            console.log(pull ? pull.number : "");')"
+          if [[ -z "$number" ]]; then
+            body="$(VERSION="$version" node -p 'JSON.stringify({
+              head: process.env.BACKEND_BRANCH,
+              base: "main",
+              title: `Unfret Dev ${process.env.VERSION}`,
+              body: `Unfret Dev ${process.env.VERSION} from ${process.env.REPO}@${process.env.SHA}, built and signed ` +
+                `by its CI (run ${process.env.UNFRET_DEV_BUILD}). Only the dev channel changes: unfret-dev-*.crx, ` +
+                "updates-dev.xml and their SHA256SUMS lines. It merges itself when CI passes.",
+            })')"
+            number="$(curl -fsS -X POST -H "$auth" -H "Content-Type: application/json" -d "$body" "$api/pulls" \
+              | node -p 'JSON.parse(require("fs").readFileSync(0, "utf8")).number')"
+          fi
+          echo "backend pull request: $SERVER/$BACKEND_REPO/pulls/$number"
+
+          # Schedule the merge only once the backend's CI has reported on this commit: with no status at all,
+          # "merge when checks succeed" could merge at once.
+          count=0
+          for _ in $(seq 60); do
+            count="$(curl -fsS -H "$auth" "$api/commits/$head/status" \
+              | node -p '(JSON.parse(require("fs").readFileSync(0, "utf8")).statuses ?? []).length')"
+            ((count > 0)) && break
+            sleep 5
+          done
+          ((count > 0)) || { echo "::warning::no CI status on $head after 5 minutes: merge #$number by hand"; exit 0; }
+          code="$(curl -sS -o merge.out -w '%{http_code}' -X POST -H "$auth" -H "Content-Type: application/json" \
+            -d '{"Do": "merge", "merge_when_checks_succeed": true, "delete_branch_after_merge": true}' \
+            "$api/pulls/$number/merge")"
+          case "$code" in
+            200 | 201 | 204) echo "#$number merges when the backend's CI passes" ;;
+            409) echo "#$number: merge already scheduled ($(cat merge.out))" ;;
+            *) echo "::warning::could not schedule the merge of #$number (HTTP $code: $(cat merge.out)): merge it by hand" ;;
+          esac

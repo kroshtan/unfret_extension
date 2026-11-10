@@ -11,7 +11,7 @@ export const GREEN = "#1e7d32";
 export const AMBER = "#b26a00";
 export const RED = "#c62828";
 export const GREY = "#5f6368";
-/** The neutral accent of the marketplace icon hint: "Veridex can check this", not a warning. */
+/** The neutral accent of the marketplace icon hint: "Unfret can check this", not a warning. */
 export const ACCENT = "#3b5bdb";
 
 /** The traffic light for a result: the verdict band when the server sent one, else the same score thresholds. */

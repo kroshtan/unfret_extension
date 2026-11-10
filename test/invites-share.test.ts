@@ -3,7 +3,7 @@
 
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { type AnalysisResult, ApiError, VeridexApi } from "../src/api/client.js";
+import { type AnalysisResult, ApiError, UnfretApi } from "../src/api/client.js";
 import { INVITE_RE, normaliseInvite, redeemInvite } from "../src/shared/invites.js";
 import { createShare, previewShare, shareError, shareRequest } from "../src/shared/share.js";
 import {
@@ -115,7 +115,7 @@ describe("sharing a result", () => {
     const request = shareRequest(BODY, RESULT);
     if (!request) throw new Error("not shareable");
     // Even a client made with a session token sends none for a share.
-    const client = new VeridexApi(api.url, KEY);
+    const client = new UnfretApi(api.url, KEY);
     const preview = await previewShare(client, request);
     expect(preview).toEqual({ status: "preview", preview: SHARE_PREVIEW });
     expect(api.requests.at(-1)).toMatchObject({ path: "/v1/shares/preview", auth: "", body: request });
@@ -132,7 +132,7 @@ describe("sharing a result", () => {
   });
 
   it("explains refusals in plain words; a failed share keeps the preview to try again", async () => {
-    const client = new VeridexApi(api.url);
+    const client = new UnfretApi(api.url);
     const request = shareRequest(BODY, RESULT);
     if (!request) throw new Error("not shareable");
     expect(await previewShare(client, { ...request, share_token: "expired.mac" })).toEqual({
@@ -161,8 +161,8 @@ describe("sharing a result", () => {
   });
 
   it("refuses a shared link that isn't a page on the API's own site", async () => {
-    const fake = (link: string): VeridexApi =>
-      new VeridexApi("https://unfret.kroshtan.com", undefined, () =>
+    const fake = (link: string): UnfretApi =>
+      new UnfretApi("https://unfret.kroshtan.com", undefined, () =>
         Promise.resolve(
           new Response(
             JSON.stringify({ id: "x", link, delete_code: "c", expires_at: "2027-01-01T00:00:00Z" }),
