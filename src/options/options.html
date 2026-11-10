@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
-    <title data-i18n="opt_title">Unfret settings</title>
+    <title>Unfret settings</title>
     <link rel="stylesheet" href="../shared/ui.css" />
     <style>
       main {
@@ -17,7 +17,8 @@
         margin-bottom: 4px;
       }
       #api-base,
-      #api-key {
+      #api-key,
+      #invite-input {
         width: 100%;
         margin-bottom: 8px;
       }
@@ -25,47 +26,65 @@
   </head>
   <body>
     <main>
-      <h1 style="margin: 8px 12px" data-i18n="opt_title">Unfret settings</h1>
+      <h1 style="margin: 8px 12px">Unfret settings</h1>
 
       <section class="card" aria-labelledby="account-heading">
-        <h2 id="account-heading" data-i18n="opt_account">Account</h2>
+        <h2 id="account-heading">Account</h2>
         <p id="account-status"></p>
-        <button id="sign-out" type="button" hidden data-i18n="sign_out">Sign out</button>
+        <button id="sign-out" type="button" hidden>Sign out</button>
+        <div id="invite" hidden>
+          <h3>Have an invite?</h3>
+          <p class="muted small">
+            An invite adds 3 checks to a new wallet or a new API key, one that never had checks.
+          </p>
+          <label for="invite-input">Invite code</label>
+          <input id="invite-input" type="text" spellcheck="false" autocomplete="off" placeholder="ufi_…" />
+          <div class="row">
+            <button id="invite-use" type="button">Use invite</button>
+          </div>
+          <p id="invite-status" class="muted small" role="status"></p>
+        </div>
       </section>
 
       <section class="card" aria-labelledby="key-heading">
-        <h2 id="key-heading" data-i18n="opt_key_heading">Use an API key instead</h2>
-        <p class="muted small" data-i18n="opt_key_help"></p>
-        <label for="api-key" data-i18n="opt_key_label">API key</label>
+        <h2 id="key-heading">Use an API key instead</h2>
+        <p class="muted small">
+          An API key is an alternative to a wallet: buy checks for it with a card, SOL or USDC on the checkout
+          page and paste it here. It is kept only in this browser.
+        </p>
+        <label for="api-key">API key</label>
         <input id="api-key" type="password" spellcheck="false" autocomplete="off" placeholder="ufk_…" />
         <div class="row">
-          <button id="key-use" type="button" data-i18n="opt_key_use">Use this key</button>
-          <a id="key-get" class="link" target="_blank" rel="noopener" data-i18n="opt_key_get"
-            >Get or top up a key</a
-          >
+          <button id="key-use" type="button">Use this key</button>
+          <a id="key-get" class="link" target="_blank" rel="noopener">Get or top up a key</a>
         </div>
         <p id="key-status" class="muted small" role="status"></p>
       </section>
 
       <section class="card" aria-labelledby="server-heading">
-        <h2 id="server-heading" data-i18n="opt_server">Server</h2>
-        <label for="api-base" data-i18n="opt_api_base">API base URL</label>
+        <h2 id="server-heading">Server</h2>
+        <label for="api-base">API base URL</label>
         <input id="api-base" type="url" spellcheck="false" autocomplete="off" />
         <div class="row">
-          <button id="save" type="button" data-i18n="opt_save">Save</button>
-          <button id="reset" type="button" data-i18n="opt_reset">Use the default</button>
+          <button id="save" type="button">Save</button>
+          <button id="reset" type="button">Use the default</button>
         </div>
         <p id="server-status" class="muted small" role="status"></p>
         <p id="server-help" class="muted small"></p>
       </section>
 
       <section class="card" aria-labelledby="privacy-heading">
-        <h2 id="privacy-heading" data-i18n="opt_privacy">Privacy</h2>
-        <p data-i18n="opt_privacy_body"></p>
+        <h2 id="privacy-heading">Privacy</h2>
         <p>
-          <a id="privacy-link" class="link" target="_blank" rel="noopener" data-i18n="consent_privacy"
-            >Read the privacy statement</a
-          >
+          Unfret reads a page only when you click "Check this page". It then sends the product facts and the
+          page's visible product text (without account menus, addresses or forms) to the Unfret server. It
+          stores only your sign-in session or API key, your consent and these settings in your browser, and no
+          analysis history. A page is shared for review only when you report a result as wrong and agree. A
+          result becomes a public link only when you share it and confirm what the preview shows; that link
+          names no account.
+        </p>
+        <p>
+          <a id="privacy-link" class="link" target="_blank" rel="noopener">Read the privacy statement</a>
         </p>
       </section>
     </main>

@@ -7,7 +7,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { LOCAL_PERMISSIONS, manifest } from "../scripts/manifest.mjs";
 import { shopifyCompareAt } from "../src/extract/generic.js";
 import { TIMER_WAIT_MS } from "../src/extract/index.js";
-import { t } from "../src/shared/i18n.js";
 import {
   CONSENT_VERSION,
   consentGiven,
@@ -65,23 +64,18 @@ describe("consent", () => {
     expect(await consentGiven()).toBe(false);
   });
 
-  it.each(["en", "nl"] as const)(
-    "%s: the three panels say what is sent, to whom and for how long",
-    (lang) => {
-      const sent = t("consent_sent_body", [], lang);
-      expect(sent).toContain("unfret.kroshtan.com");
-      expect(sent).toContain("90");
-      for (const key of [
-        "consent_what_body",
-        "consent_pay_body",
-        "consent_agree",
-        "consent_privacy",
-      ] as const) {
-        expect(t(key, [], lang)).not.toBe(key);
-      }
-      expect(PRIVACY_URL).toBe("https://unfret.kroshtan.com/privacy");
-    },
-  );
+  it("the three panels say what is sent, to whom and for how long", () => {
+    const popup = new DOMParser().parseFromString(readFileSync("src/popup/popup.html", "utf8"), "text/html");
+    const panels = [...popup.querySelectorAll<HTMLElement>("#consent p.small")].map((p) =>
+      p.textContent.trim(),
+    );
+    expect(panels[0]).toMatch(/^Unfret checks product pages/u);
+    expect(panels[1]).toContain("unfret.kroshtan.com");
+    expect(panels[1]).toContain("90");
+    expect(panels[2]).toMatch(/prepaid checks/u);
+    expect(popup.querySelector("#consent-agree")?.textContent).toBe("I agree");
+    expect(PRIVACY_URL).toBe("https://unfret.kroshtan.com/privacy");
+  });
 
   it("the popup keeps Analyse disabled until consent", () => {
     const popup = readFileSync("src/popup/popup.ts", "utf8");

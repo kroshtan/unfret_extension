@@ -23,7 +23,7 @@ Everything Claude could prepare is in this folder. These are the steps only you 
    name, address (use the KvK business address), e-mail and phone publicly in the EU.
 2. **New item** → upload `dist/release/unfret-chrome-<version>.zip`.
 3. **Store listing**: copy from `store/listing.en.md` (name, summary, description, category Shopping, language
-   English). Add the Dutch translation from `store/listing.nl.md` under "Localized listings". Upload the icon,
+   English; the extension is English-only, so there is no localized listing). Upload the icon,
    screenshots and promo images listed at the end of `listing.en.md`. Homepage and support URLs are there too.
 4. **Privacy practices**: copy from `store/privacy-practices.md` (single purpose, one justification per permission,
    remote code "No", the data usage ticks and certifications, privacy policy URL).

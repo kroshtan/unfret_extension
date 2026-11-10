@@ -11,135 +11,172 @@
     <header class="bar">
       <h1 class="brand"><img src="../icons/icon-32.png" width="20" height="20" alt="" />Unfret</h1>
       <nav class="row">
-        <a id="about" href="#" class="link" data-i18n="about">About &amp; privacy</a>
-        <a id="options" href="#" class="link" data-i18n="settings">Settings</a>
+        <a id="about" href="#" class="link">About &amp; privacy</a>
+        <a id="options" href="#" class="link">Settings</a>
       </nav>
     </header>
 
     <section id="consent" class="card" aria-labelledby="consent-heading" hidden>
-      <h2 id="consent-heading" data-i18n="consent_heading">Before your first check</h2>
-      <h3 data-i18n="consent_what_title">What Unfret does</h3>
-      <p class="small" data-i18n="consent_what_body"></p>
-      <h3 data-i18n="consent_sent_title">What is sent, and when</h3>
-      <p class="small" data-i18n="consent_sent_body"></p>
-      <h3 data-i18n="consent_pay_title">Paying for checks</h3>
-      <p class="small" data-i18n="consent_pay_body"></p>
+      <h2 id="consent-heading">Before your first check</h2>
+      <h3>What Unfret does</h3>
       <p class="small">
-        <a id="privacy" href="#" class="link" data-i18n="consent_privacy">Read the privacy statement</a>
+        Unfret checks product pages for scam shops, generic factory goods sold as a brand, fake discounts and
+        pushy tricks such as fake countdowns, and explains what it found in plain words.
       </p>
-      <p id="consent-agreed" class="muted small" hidden data-i18n="consent_agreed"></p>
+      <h3>What is sent, and when</h3>
+      <p class="small">
+        Only when you click “Check this page”: the product facts and the cleaned visible text of that page go
+        to unfret.kroshtan.com. Never your account details or anything you typed. Page addresses aren't
+        stored, nothing is sold and there are no affiliate links. Product prices are kept anonymously for 90
+        days to spot fake discounts.
+      </p>
+      <h3>Paying for checks</h3>
+      <p class="small">Sign in with a Solana wallet, or use an API key, and use prepaid checks.</p>
+      <p class="small">
+        <a id="privacy" href="#" class="link">Read the privacy statement</a>
+      </p>
+      <p id="consent-agreed" class="muted small" hidden>You agreed to this.</p>
       <div class="row">
-        <button id="consent-agree" type="button" class="primary" data-i18n="consent_agree">I agree</button>
-        <button id="consent-close" type="button" class="secondary" hidden data-i18n="consent_close">
-          Close
-        </button>
+        <button id="consent-agree" type="button" class="primary">I agree</button>
+        <button id="consent-close" type="button" class="secondary" hidden>Close</button>
       </div>
     </section>
 
-    <section id="account" class="card" data-i18n-label="account_label" aria-label="Account">
+    <section id="account" class="card" aria-label="Account">
       <p id="account-status">Not signed in.</p>
       <p id="account-until" class="muted small" hidden></p>
       <p id="credits" class="muted" hidden></p>
       <div class="row">
-        <button id="sign-in" type="button" class="secondary" data-i18n="sign_in_wallet">
-          Sign in with a Solana wallet
-        </button>
-        <button id="sign-in-phone" type="button" class="secondary" data-i18n="sign_in_phone">
-          Sign in with phone
-        </button>
-        <button id="sign-in-key" type="button" class="secondary" data-i18n="sign_in_key">API key</button>
-        <button id="buy" type="button" class="secondary" hidden data-i18n="buy_checks">Buy checks</button>
-        <button id="sign-out" type="button" class="secondary" hidden data-i18n="sign_out">Sign out</button>
+        <button id="sign-in" type="button" class="secondary">Wallet in this browser</button>
+        <button id="sign-in-phone" type="button" class="secondary">Wallet on your phone</button>
+        <button id="sign-in-key" type="button" class="secondary">API key</button>
+        <button id="buy" type="button" class="secondary" hidden>Buy checks</button>
+        <button id="sign-out" type="button" class="secondary" hidden>Sign out</button>
       </div>
+      <details id="invite" class="invite small" hidden>
+        <summary>Have an invite?</summary>
+        <p class="muted">
+          An invite adds 3 checks to a new wallet or a new API key, one that never had checks.
+        </p>
+        <label for="invite-input">Invite code</label>
+        <input id="invite-input" type="text" spellcheck="false" autocomplete="off" placeholder="ufi_…" />
+        <div class="row">
+          <button id="invite-use" type="button" class="secondary">Use invite</button>
+        </div>
+        <p id="invite-status" class="muted small" role="status" aria-live="polite"></p>
+      </details>
     </section>
 
     <section id="key" class="card" aria-labelledby="key-heading" hidden>
-      <h2 id="key-heading" data-i18n="key_heading">Sign in with an API key</h2>
-      <label for="key-input" class="small" data-i18n="opt_key_label">API key</label>
+      <h2 id="key-heading">Sign in with an API key</h2>
+      <label for="key-input" class="small">API key</label>
       <input id="key-input" type="password" spellcheck="false" autocomplete="off" placeholder="ufk_…" />
       <p id="key-status" class="muted small" role="status" aria-live="polite"></p>
       <div class="row">
-        <button id="key-use" type="button" class="primary" data-i18n="opt_key_use">Use this key</button>
-        <button id="key-cancel" type="button" class="secondary" data-i18n="cancel">Cancel</button>
+        <button id="key-use" type="button" class="primary">Use this key</button>
+        <button id="key-cancel" type="button" class="secondary">Cancel</button>
       </div>
-      <p class="small"><a id="key-get" class="link" href="#" data-i18n="key_get">Get a key</a></p>
+      <p class="small"><a id="key-get" class="link" href="#">No key yet? Get one on the checkout page</a></p>
+      <p class="muted small">
+        Have an invite? Sign in with a new key (or a new wallet), then enter it under “Have an invite?”.
+      </p>
     </section>
 
     <section id="phone" class="card" aria-labelledby="phone-heading" hidden>
-      <h2 id="phone-heading" data-i18n="phone_heading">Sign in with your phone</h2>
-      <p class="small" data-i18n="phone_help"></p>
+      <h2 id="phone-heading">Wallet on your phone</h2>
+      <p class="small">
+        Scan this with your phone and open the page in your wallet app (Phantom, Solflare…). If your camera
+        opens a browser instead, the page offers to open itself in your wallet.
+      </p>
       <div id="phone-qr" class="qr"></div>
-      <p class="small" data-i18n="phone_same_code">Check that your phone shows the same code:</p>
+      <p class="small">Check that your phone shows the same code:</p>
       <p id="phone-code" class="code" aria-live="polite"></p>
       <p id="phone-status" class="muted small" role="status" aria-live="polite"></p>
       <div class="row">
-        <button id="phone-retry" type="button" class="secondary" hidden data-i18n="try_again">
-          Try again
-        </button>
-        <button id="phone-cancel" type="button" class="secondary" data-i18n="cancel">Cancel</button>
+        <button id="phone-retry" type="button" class="secondary" hidden>Try again</button>
+        <button id="phone-cancel" type="button" class="secondary">Cancel</button>
       </div>
     </section>
 
-    <section class="card" data-i18n-label="page_label" aria-label="This page">
-      <button id="analyse" type="button" class="primary" disabled data-i18n="analyse">Check this page</button>
+    <section class="card" aria-label="This page">
+      <button id="analyse" type="button" class="primary" disabled>Check this page</button>
       <p id="hint" class="muted"></p>
     </section>
 
-    <section id="progress" class="card" data-i18n-label="progress_label" aria-label="Progress" hidden>
+    <section id="progress" class="card" aria-label="Progress" hidden>
       <p id="progress-status" role="status" aria-live="polite"></p>
       <ul id="steps" class="checklist"></ul>
     </section>
 
-    <section
-      id="result"
-      class="card"
-      data-i18n-label="result_label"
-      aria-label="Result"
-      aria-live="polite"
-      hidden
-    >
+    <section id="result" class="card" aria-label="Result" aria-live="polite" hidden>
       <div id="result-body"></div>
       <p id="report-open-row" class="small" hidden>
-        <a id="report-open" href="#" class="link" data-i18n="report_open">This is wrong</a>
+        <a id="report-open" href="#" class="link">This is wrong</a>
       </p>
       <form id="report" hidden>
         <fieldset>
-          <legend data-i18n="report_heading">What is this page really?</legend>
-          <label
-            ><input type="radio" name="reason" value="real_brand" />
-            <span data-i18n="report_real_brand"></span
-          ></label>
-          <label
-            ><input type="radio" name="reason" value="scam" /> <span data-i18n="report_scam"></span
-          ></label>
-          <label
-            ><input type="radio" name="reason" value="junk" /> <span data-i18n="report_junk"></span
-          ></label>
-          <label
-            ><input type="radio" name="reason" value="other" /> <span data-i18n="report_other"></span
-          ></label>
+          <legend>What is this page really?</legend>
+          <label><input type="radio" name="reason" value="real_brand" /> A real brand or shop</label>
+          <label><input type="radio" name="reason" value="scam" /> A scam</label>
+          <label><input type="radio" name="reason" value="junk" /> Junk or dropshipping</label>
+          <label><input type="radio" name="reason" value="other" /> Something else</label>
         </fieldset>
-        <p class="muted small" data-i18n="report_consent"></p>
+        <p class="muted small">
+          Sending this shares this one check's product facts, page text and result with Unfret for review.
+          Personal details are removed first; once reviewed, it is kept without any link to you. If the score
+          was far off, you get 3 free checks.
+        </p>
         <div class="row">
-          <button id="report-send" type="submit" class="secondary" disabled data-i18n="report_send">
-            Send report
-          </button>
-          <button id="report-cancel" type="button" class="secondary" data-i18n="cancel">Cancel</button>
+          <button id="report-send" type="submit" class="secondary" disabled>Send report</button>
+          <button id="report-cancel" type="button" class="secondary">Cancel</button>
         </div>
       </form>
       <p id="report-status" class="muted small" role="status" aria-live="polite" hidden></p>
+
+      <div id="share-area" aria-label="Share this result" hidden>
+        <p id="share-open-row">
+          <button id="share-open" type="button" class="secondary">Share this result</button>
+        </p>
+        <div id="share-preview" class="share-preview" hidden>
+          <h2>This is what will be public</h2>
+          <div id="share-preview-body"></div>
+          <p id="share-notice" class="small"></p>
+          <p class="muted small">
+            No score and no quotes from the page. It stays up for 90 days, and you can delete it sooner with a
+            code you get next.
+          </p>
+          <div class="row">
+            <button id="share-confirm" type="button" class="secondary">Share</button>
+            <button id="share-cancel" type="button" class="secondary">Cancel</button>
+          </div>
+        </div>
+        <div id="share-done" hidden>
+          <p class="small">
+            Shared: <a id="share-link" class="link share-link" target="_blank" rel="noopener"></a>
+          </p>
+          <div class="row">
+            <button id="share-copy" type="button" class="secondary">Copy link</button>
+          </div>
+          <p class="small">Delete code: <code id="share-code" class="share-code"></code></p>
+          <p class="muted small">
+            Save it now: Unfret keeps only a fingerprint of it, so once this tab moves on it can't be shown
+            again. You need it to delete the shared page before its 90 days are up, under “Shared this? Delete
+            it” on the page itself.
+          </p>
+          <div class="row">
+            <button id="share-code-copy" type="button" class="secondary">Copy delete code</button>
+          </div>
+        </div>
+        <p id="share-status" class="muted small" role="status" aria-live="polite" hidden></p>
+      </div>
     </section>
 
     <section id="error" class="card error" role="alert" hidden>
       <p id="error-message"></p>
-      <p id="error-refunded" class="muted small" hidden data-i18n="no_check_used"></p>
+      <p id="error-refunded" class="muted small" hidden>No check was used.</p>
       <div class="row">
-        <button id="error-sign-in" type="button" class="secondary" hidden data-i18n="sign_in_again">
-          Sign in again
-        </button>
-        <button id="error-buy" type="button" class="secondary" hidden data-i18n="buy_checks">
-          Buy checks
-        </button>
+        <button id="error-sign-in" type="button" class="secondary" hidden>Sign in again</button>
+        <button id="error-buy" type="button" class="secondary" hidden>Buy checks</button>
       </div>
     </section>
 

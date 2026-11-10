@@ -77,10 +77,10 @@ describe("VeridexApi against a mock server", () => {
     expect((refused as ApiError).code).toBe("REPORT_LIMIT");
   });
 
-  it("asks for the verdict in the user's language", async () => {
-    await new VeridexApi(api.url, "good", undefined, "nl").credits();
-    expect(api.requests.at(-1)?.language).toBe("nl");
-    await collect(new VeridexApi(api.url, "good", undefined, "en"));
+  it("asks for English, whatever the browser's language (the extension is in English)", async () => {
+    await new VeridexApi(api.url, "good").credits();
+    expect(api.requests.at(-1)?.language).toBe("en");
+    await collect(new VeridexApi(api.url, "good"));
     expect(api.requests.at(-1)?.language).toBe("en");
   });
 

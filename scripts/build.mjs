@@ -58,7 +58,6 @@ async function buildFor(browser) {
     logLevel: "warning",
   });
   for (const file of statics) cpSync(join(root, "src", file), join(out, file));
-  cpSync(join(root, "src", "_locales"), join(out, "_locales"), { recursive: true });
   cpSync(join(root, browser === "chrome-dev" ? "icons-dev" : "icons"), join(out, "icons"), {
     recursive: true,
   });

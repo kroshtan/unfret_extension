@@ -1,7 +1,6 @@
 /** The popup: account and credits, the "Analyse this page" button, live progress and the result. */
 
 import { ApiError, type Pairing, type ReportReason, VeridexApi } from "../api/client.js";
-import { localise, t, uiLanguage } from "../shared/i18n.js";
 import {
   ANALYSIS_PORT,
   type BackgroundUpdate,
@@ -10,6 +9,7 @@ import {
 } from "../shared/messages.js";
 import { waitForPairing } from "../shared/pairing.js";
 import { encodeQr, qrSvg } from "../shared/qr.js";
+import { shareRequest } from "../shared/share.js";
 import {
   accountLabel,
   clearSession,
@@ -22,9 +22,18 @@ import {
   saveSession,
   type Session,
 } from "../shared/settings.js";
+import { inviteAdded, redeemInvite } from "../shared/invites.js";
 import { KEY_FAILURE, signInWithKey } from "../shared/key-sign-in.js";
 import { isAnalysable } from "../shared/sites.js";
-import { buildChecklist, checklistDone, checksText, renderResult, updateChecklist } from "./view.js";
+import { CONSENT_HINT, OFFLINE, SESSION_EXPIRED } from "../shared/text.js";
+import {
+  buildChecklist,
+  checklistDone,
+  checksText,
+  renderResult,
+  renderSharePreview,
+  updateChecklist,
+} from "./view.js";
 
 function el(id: string): HTMLElement {
   const found = document.getElementById(id);
@@ -132,9 +141,9 @@ function stopPairing(): void {
 async function showPairing(pairing: Pairing): Promise<void> {
   stopPairing();
   show("phone", true);
-  el("phone-qr").replaceChildren(qrSvg(encodeQr(pairing.connect_url), t("phone_qr_label")));
+  el("phone-qr").replaceChildren(qrSvg(encodeQr(pairing.connect_url), "QR code to sign in on your phone"));
   el("phone-code").textContent = pairing.confirm_code;
-  phoneStatus(t("phone_waiting"));
+  phoneStatus("Waiting for your phone…");
   const abort = new AbortController();
   pairingAbort = abort;
   const outcome = await waitForPairing(new VeridexApi(apiBase), pairing.pair_id, {
@@ -153,7 +162,7 @@ async function showPairing(pairing: Pairing): Promise<void> {
     void refreshCredits();
   } else if (outcome.kind === "expired") {
     el("phone-qr").replaceChildren();
-    phoneStatus(t("phone_expired"), true);
+    phoneStatus("This sign-in request expired.", true);
   } else if (outcome.kind === "failed") {
     el("phone-qr").replaceChildren();
     phoneStatus(outcome.message, true);
@@ -165,7 +174,7 @@ async function startPhoneSignIn(): Promise<void> {
   show("phone", true);
   el("phone-qr").replaceChildren();
   el("phone-code").textContent = "";
-  phoneStatus(t("phone_preparing"));
+  phoneStatus("Preparing…");
   try {
     const pairing = await new VeridexApi(apiBase).startPairing();
     try {
@@ -177,12 +186,12 @@ async function startPhoneSignIn(): Promise<void> {
   } catch (error) {
     const message =
       error instanceof ApiError && error.serviceOff
-        ? t("phone_unavailable")
+        ? "Sign-in isn't available yet."
         : error instanceof ApiError && error.status === 429
-          ? t("phone_too_many")
+          ? "Too many attempts; wait a few minutes."
           : error instanceof ApiError
             ? error.message
-            : t("offline");
+            : OFFLINE;
     phoneStatus(message, true);
   }
 }
@@ -191,16 +200,16 @@ async function startPhoneSignIn(): Promise<void> {
 
 function untilText(expiresAt: string): string {
   const date = new Date(expiresAt);
-  return t("signed_in_until", [date.toLocaleDateString(uiLanguage(), { day: "numeric", month: "long" })]);
+  return `Signed in until ${date.toLocaleDateString("en", { day: "numeric", month: "long" })}`;
 }
 
 function renderAccount(): void {
   const usingKey = isKeySession(session);
   el("account-status").textContent = session
-    ? t(usingKey ? "signed_in_key" : "signed_in_as", [accountLabel(session)])
+    ? `${usingKey ? "Using API key" : "Signed in as"} ${accountLabel(session)}`
     : expired
-      ? t("session_expired")
-      : t("not_signed_in");
+      ? SESSION_EXPIRED
+      : "Not signed in. Sign in with your Solana wallet to use your checks.";
   el("account-until").textContent = session && !usingKey ? untilText(session.expiresAt) : "";
   show("account-until", Boolean(session) && !usingKey);
   show("sign-in", !session);
@@ -208,23 +217,24 @@ function renderAccount(): void {
   show("sign-in-key", !session);
   if (session) show("key", false);
   show("sign-out", Boolean(session));
+  show("invite", Boolean(session));
   show("buy", Boolean(session) && purchasesOn);
   el("credits").textContent = checks === undefined ? "" : checksText(checks);
   show("credits", Boolean(session) && checks !== undefined);
 
   const noChecks = Boolean(session) && checks === 0;
   const analyse = button("analyse");
-  analyse.textContent = busy ? t("analysing") : noChecks ? t("buy_to_analyse") : t("analyse");
+  analyse.textContent = busy ? "Checking…" : noChecks ? "Buy checks to start" : "Check this page";
   analyse.disabled = busy || !consented || !session || !analysable || (noChecks && !purchasesOn);
   el("hint").textContent = !consented
-    ? t("hint_consent")
+    ? CONSENT_HINT
     : !analysable
-      ? t("hint_not_analysable")
+      ? "This page can't be checked."
       : !session
-        ? t("hint_sign_in")
+        ? "Sign in to check this page."
         : noChecks
-          ? t("hint_no_checks")
-          : t("hint_ready");
+          ? "You have no checks left."
+          : "One check per page. Nothing is sent until you click.";
 }
 
 /** The origin of the API in use (thumbnails are only loaded from there). */
@@ -243,16 +253,16 @@ function render(state: TabState): void {
   show("error", state.status === "error");
   renderAccount();
   if (busy) {
-    el("progress-status").textContent = t(
-      state.status === "extracting" ? "progress_reading" : "progress_checking",
-    );
+    el("progress-status").textContent =
+      state.status === "extracting" ? "Reading the page…" : "Checking… this usually takes 10–30 seconds.";
     const steps = el("steps");
     buildChecklist(steps);
     updateChecklist(steps, checklistDone(state.status === "analysing" ? (state.steps ?? []) : [], false));
   }
   if (state.status === "done") {
-    renderResult(el("result-body"), state.result, undefined, apiOrigin());
+    renderResult(el("result-body"), state.result, apiOrigin());
     renderReport(state);
+    renderShare(state);
     if (state.result.balance_lamports !== undefined) void refreshCredits();
   } else if (state.status === "error") {
     el("error-message").textContent = state.message;
@@ -266,9 +276,9 @@ function render(state: TabState): void {
 // ── "This is wrong" ──────────────────────────────────────────────────────────
 
 const REPORT_OUTCOME = {
-  queued: "report_queued",
-  already_reported: "report_already_reported",
-  already_known: "report_already_known",
+  queued: "Thanks! We'll review this page. If we got it badly wrong, you get free checks.",
+  already_reported: "Thanks! Someone reported this page first; your report counts as confirmation.",
+  already_known: "Thanks! We reviewed this page recently.",
 } as const;
 
 function renderReport(state: Extract<TabState, { status: "done" }>): void {
@@ -278,8 +288,8 @@ function renderReport(state: Extract<TabState, { status: "done" }>): void {
   if (report !== undefined) show("report", false);
   const status = el("report-status");
   status.hidden = report === undefined;
-  if (report?.status === "sending") status.textContent = t("report_sending");
-  else if (report?.status === "sent") status.textContent = t(REPORT_OUTCOME[report.outcome]);
+  if (report?.status === "sending") status.textContent = "Sending…";
+  else if (report?.status === "sent") status.textContent = REPORT_OUTCOME[report.outcome];
   else if (report?.status === "error") status.textContent = report.message;
 }
 
@@ -288,9 +298,94 @@ function reportReason(): ReportReason | undefined {
   return (picked?.value as ReportReason | undefined) ?? undefined;
 }
 
+// ── "Share this result" ─────────────────────────────────────────────────────
+// The background asks for the preview and makes the share (without the sign-in); the popup shows each step. The link
+// and the delete code stay with the tab's result until the tab moves on, so closing the popup doesn't lose them.
+
+/** The preview on screen, so a state update that doesn't change it doesn't rebuild it (an open "Show details"). */
+let shownPreview = "";
+
+function shareStatus(text: string): void {
+  el("share-status").textContent = text;
+  show("share-status", text !== "");
+}
+
+function renderShare(state: Extract<TabState, { status: "done" }>): void {
+  const share = state.share;
+  show("share-area", shareRequest(state.body, state.result) !== null);
+  const preview =
+    share?.status === "preview" || share?.status === "sharing" || share?.status === "error"
+      ? share.preview
+      : undefined;
+  show(
+    "share-open-row",
+    share === undefined || (share.status === "error" && !share.preview) || share.status === "loading",
+  );
+  button("share-open").disabled = share?.status === "loading";
+  show("share-preview", preview !== undefined);
+  const previewKey = preview ? JSON.stringify(preview) : "";
+  if (preview && previewKey !== shownPreview) {
+    renderSharePreview(el("share-preview-body"), preview, apiOrigin());
+    const notice = document.createElement("strong");
+    notice.textContent = preview.notice;
+    el("share-notice").replaceChildren(notice);
+  }
+  shownPreview = previewKey;
+  button("share-confirm").disabled = share?.status === "sharing";
+  show("share-done", share?.status === "shared");
+  if (share?.status === "shared") {
+    const link = el("share-link") as HTMLAnchorElement;
+    link.href = share.link;
+    link.textContent = share.link;
+    el("share-code").textContent = share.deleteCode;
+  } else {
+    el("share-code").textContent = "";
+  }
+  shareStatus(
+    share?.status === "loading"
+      ? "Preparing the preview…"
+      : share?.status === "sharing"
+        ? "Sharing…"
+        : share?.status === "error"
+          ? share.message
+          : "",
+  );
+}
+
+/** Copy `text`, saying so on `target` (or how to copy it by hand). */
+async function copy(text: string, target: HTMLButtonElement, done: string): Promise<void> {
+  try {
+    await navigator.clipboard.writeText(text);
+    target.textContent = done;
+  } catch {
+    target.textContent = "Select it and copy it";
+  }
+}
+
+// ── "Have an invite?" ─────────────────────────────────────────────────────
+
+async function useInvite(): Promise<void> {
+  if (!session) return;
+  const field = el("invite-input") as HTMLInputElement;
+  const status = el("invite-status");
+  button("invite-use").disabled = true;
+  try {
+    const outcome = await redeemInvite(apiBase, session.token, field.value);
+    if (outcome.ok) {
+      field.value = "";
+      status.textContent = inviteAdded(outcome.checksAdded);
+      checks = outcome.checks;
+      renderAccount();
+    } else {
+      status.textContent = outcome.message;
+      if (outcome.signedOut) await sessionRejected();
+    }
+  } finally {
+    button("invite-use").disabled = false;
+  }
+}
+
 async function init(): Promise<void> {
-  document.documentElement.lang = uiLanguage();
-  localise(document);
   ({ apiBase, session, expired } = await loadSettings());
   consented = await consentGiven();
   showConsent(!consented);
@@ -365,7 +460,7 @@ async function init(): Promise<void> {
     const field = el("key-input") as HTMLInputElement;
     const result = await signInWithKey(apiBase, field.value);
     if (!result.ok) {
-      el("key-status").textContent = t(KEY_FAILURE[result.reason]);
+      el("key-status").textContent = KEY_FAILURE[result.reason];
       return;
     }
     field.value = "";
@@ -375,6 +470,10 @@ async function init(): Promise<void> {
     renderAccount();
   };
   el("key-use").addEventListener("click", () => void useKey());
+  el("invite-use").addEventListener("click", () => void useInvite());
+  el("invite-input").addEventListener("keydown", (event) => {
+    if (event.key === "Enter") void useInvite();
+  });
   el("key-input").addEventListener("keydown", (event) => {
     if (event.key === "Enter") void useKey();
   });
@@ -408,6 +507,23 @@ async function init(): Promise<void> {
   });
   el("report").addEventListener("change", () => {
     button("report-send").disabled = reportReason() === undefined;
+  });
+  el("share-open").addEventListener("click", () => {
+    if (tabId !== undefined) port?.postMessage({ type: "share-preview", tabId } satisfies PopupRequest);
+  });
+  el("share-cancel").addEventListener("click", () => {
+    if (tabId !== undefined) port?.postMessage({ type: "share-cancel", tabId } satisfies PopupRequest);
+  });
+  el("share-confirm").addEventListener("click", () => {
+    if (tabId === undefined) return;
+    button("share-confirm").disabled = true; // until the background's state arrives: one share per click
+    port?.postMessage({ type: "share", tabId } satisfies PopupRequest);
+  });
+  el("share-copy").addEventListener("click", () => {
+    void copy((el("share-link") as HTMLAnchorElement).href, button("share-copy"), "Link copied");
+  });
+  el("share-code-copy").addEventListener("click", () => {
+    void copy(el("share-code").textContent, button("share-code-copy"), "Delete code copied");
   });
   el("report").addEventListener("submit", (event) => {
     event.preventDefault();
