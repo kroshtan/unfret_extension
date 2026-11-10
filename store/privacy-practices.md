@@ -1,6 +1,6 @@
 # Chrome Web Store: privacy practices tab
 
-Copy these into the developer dashboard (Privacy practices). They match https://unfret.kroshtan.com/privacy and the
+Copy these into the developer dashboard (Privacy practices). They match https://unfret.net/privacy and the
 manifest built by `scripts/manifest.mjs` (Chrome store build: `dist/chrome`).
 
 ## Single purpose
@@ -26,11 +26,11 @@ user shared it. No browsing history is stored.
 product pages (Amazon, bol.com), so the user knows a check is possible there. The extension never sees those pages:
 the browser applies the rule, and no page access is granted.
 
-**Host permission (content script on https://unfret.kroshtan.com/connect\*)**: Unfret's own sign-in page. After the
+**Host permission (content script on https://unfret.net/connect\*)**: Unfret's own sign-in page. After the
 user signs in with their wallet there, the page hands the session to the extension through this content script. It
 runs on no other site.
 
-**Optional host permissions (https://dev.unfret.kroshtan.com/\_, http://localhost/\_, http://127.0.0.1/\*)**:
+**Optional host permissions (https://dev.unfret.net/\_, http://localhost/\_, http://127.0.0.1/\*)**:
 Requested only if a developer chooses the test server or a local server in the extension's settings. Never requested
 for normal use.
 
@@ -59,4 +59,4 @@ Certifications (all true):
 - I do not use or transfer user data for purposes that are unrelated to my item's single purpose.
 - I do not use or transfer user data to determine creditworthiness or for lending purposes.
 
-Privacy policy URL: https://unfret.kroshtan.com/privacy
+Privacy policy URL: https://unfret.net/privacy

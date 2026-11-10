@@ -29,7 +29,7 @@ function decode(text: string): string | undefined {
 describe("QR encoder", () => {
   it.each([
     "a",
-    "https://unfret.kroshtan.com/connect?pair=Xg4k2_PqR9vT-LmN0aBcDw",
+    "https://unfret.net/connect?pair=Xg4k2_PqR9vT-LmN0aBcDw",
     "http://localhost:8080/connect?pair=AAAAAAAAAAAAAAAAAAAAAA",
     "Unfret — ünïcödé ✓",
     "x".repeat(150),
@@ -40,8 +40,9 @@ describe("QR encoder", () => {
 
   it("picks the smallest version that fits", () => {
     expect(encodeQr("a")).toHaveLength(21); // version 1
-    // 63 bytes: more than version 4-M holds (62), so version 5 (37×37).
-    expect(encodeQr("https://unfret.kroshtan.com/connect?pair=Xg4k2_PqR9vT-LmN0aBcDw")).toHaveLength(37);
+    // Version 4-M holds 62 bytes (33×33); one more needs version 5 (37×37).
+    expect(encodeQr("b".repeat(62))).toHaveLength(33);
+    expect(encodeQr("b".repeat(63))).toHaveLength(37);
   });
 
   it("refuses text beyond version 10", () => {

@@ -81,7 +81,7 @@ describe("session relay origin check", () => {
     address: "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin",
     expires_at: "2999-01-01T00:00:00Z",
   };
-  const origin = "https://unfret.kroshtan.com";
+  const origin = "https://unfret.net";
 
   it("accepts the page's own message on the configured origin", () => {
     expect(
@@ -154,9 +154,9 @@ describe("session relay origin check", () => {
 
 describe("settings", () => {
   it("only allows this build's API or a local dev origin", () => {
-    expect(normaliseApiBase("https://unfret.kroshtan.com/v1/")).toBe(DEFAULT_API_BASE);
+    expect(normaliseApiBase("https://unfret.net/v1/")).toBe(DEFAULT_API_BASE);
     // Stored by 0.5–0.7's "Use the dev server": that is Unfret Dev's job now, so production falls back.
-    expect(normaliseApiBase("https://dev.unfret.kroshtan.com")).toBe(DEFAULT_API_BASE);
+    expect(normaliseApiBase("https://dev.unfret.net")).toBe(DEFAULT_API_BASE);
     expect(normaliseApiBase("https://other.example")).toBe(DEFAULT_API_BASE);
     expect(normaliseApiBase("http://localhost:8080/")).toBe("http://localhost:8080");
     expect(normaliseApiBase("http://evil.example")).toBe(DEFAULT_API_BASE);
@@ -255,7 +255,7 @@ describe("sites", () => {
     expect(isAnalysable("https://shop.example/p/1", DEFAULT_API_BASE)).toBe(true);
     expect(isAnalysable("chrome://extensions", DEFAULT_API_BASE)).toBe(false);
     expect(isAnalysable("https://chromewebstore.google.com/detail/x", DEFAULT_API_BASE)).toBe(false);
-    expect(isAnalysable("https://unfret.kroshtan.com/checkout", DEFAULT_API_BASE)).toBe(false);
+    expect(isAnalysable("https://unfret.net/checkout", DEFAULT_API_BASE)).toBe(false);
     expect(isAnalysable(undefined, DEFAULT_API_BASE)).toBe(false);
   });
 });
@@ -293,7 +293,7 @@ describe("presentation", () => {
 describe("signing in with an API key", () => {
   it("refuses something that isn't a key without asking the server", async () => {
     const { signInWithKey } = await import("../src/shared/key-sign-in.js");
-    expect(await signInWithKey("https://unfret.kroshtan.com", "not-a-key")).toEqual({
+    expect(await signInWithKey("https://unfret.net", "not-a-key")).toEqual({
       ok: false,
       reason: "invalid",
     });

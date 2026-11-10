@@ -70,11 +70,11 @@ describe("consent", () => {
       p.textContent.trim(),
     );
     expect(panels[0]).toMatch(/^Unfret checks product pages/u);
-    expect(panels[1]).toContain("unfret.kroshtan.com");
+    expect(panels[1]).toContain("unfret.net");
     expect(panels[1]).toContain("90");
     expect(panels[2]).toMatch(/prepaid checks/u);
     expect(popup.querySelector("#consent-agree")?.textContent).toBe("I agree");
-    expect(PRIVACY_URL).toBe("https://unfret.kroshtan.com/privacy");
+    expect(PRIVACY_URL).toBe("https://unfret.net/privacy");
   });
 
   it("the popup keeps Analyse disabled until consent", () => {
@@ -97,7 +97,7 @@ describe("timers and hosts", () => {
     };
     expect(m.optional_host_permissions).toEqual(LOCAL_PERMISSIONS);
     expect(m.content_security_policy.extension_pages).not.toContain("dev.unfret");
-    expect(DEFAULT_API_BASE).toBe("https://unfret.kroshtan.com");
+    expect(DEFAULT_API_BASE).toBe("https://unfret.net");
     expect(isDevBase("http://localhost:8080")).toBe(true);
     expect(isDevBase(DEFAULT_API_BASE)).toBe(false);
   });

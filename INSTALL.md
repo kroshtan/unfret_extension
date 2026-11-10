@@ -2,18 +2,18 @@
 
 Unfret is distributed **from its own server** (and, once listed, the Chrome Web Store):
 
-- Signed package: `https://unfret.kroshtan.com/extension/unfret-<version>.crx`
-- Update manifest: `https://unfret.kroshtan.com/extension/updates.xml`
+- Signed package: `https://unfret.net/extension/unfret-<version>.crx`
+- Update manifest: `https://unfret.net/extension/updates.xml`
 - Extension ID: `kpllgmbgfmnlpnmkibmhflkafhilckfe` (fixed by the signing key)
 
-The install page, <https://unfret.kroshtan.com/extension>, has the same instructions, filled in for the current release.
+The install page, <https://unfret.net/extension>, has the same instructions, filled in for the current release.
 
 Chromium browsers only install extensions from outside the Chrome Web Store through a **browser policy** or **developer
 mode**. What that means per platform:
 
 | Browser and OS                                             | How                              | Automatic updates                |
 | ---------------------------------------------------------- | -------------------------------- | -------------------------------- |
-| Brave, Chromium, Chrome on **Linux**                       | Policy (one command, below)      | Yes, from unfret.kroshtan.com    |
+| Brave, Chromium, Chrome on **Linux**                       | Policy (one command, below)      | Yes, from unfret.net             |
 | **ungoogled-chromium** (any OS)                            | A flag, then open the `.crx`     | Yes, via the update manifest     |
 | Windows, macOS, **managed** device (Active Directory, MDM) | Policy, set by the administrator | Yes                              |
 | Windows, macOS, personal device                            | Developer mode ("Load unpacked") | No; install new versions by hand |
@@ -21,11 +21,11 @@ mode**. What that means per platform:
 ## Linux: Brave, Chromium, Chrome
 
 Chromium-based browsers read policies from JSON files in a `managed` directory. This installs Unfret and keeps it
-updated from unfret.kroshtan.com:
+updated from unfret.net:
 
 ```bash
 # Brave
-sudo mkdir -p /etc/brave/policies/managed && echo '{"ExtensionInstallForcelist":["kpllgmbgfmnlpnmkibmhflkafhilckfe;https://unfret.kroshtan.com/extension/updates.xml"]}' | sudo tee /etc/brave/policies/managed/unfret.json > /dev/null
+sudo mkdir -p /etc/brave/policies/managed && echo '{"ExtensionInstallForcelist":["kpllgmbgfmnlpnmkibmhflkafhilckfe;https://unfret.net/extension/updates.xml"]}' | sudo tee /etc/brave/policies/managed/unfret.json > /dev/null
 
 # Chromium: same JSON in /etc/chromium/policies/managed/unfret.json
 # Google Chrome: same JSON in /etc/opt/chrome/policies/managed/unfret.json
@@ -75,7 +75,7 @@ file.
 (e.g. `0.8.3.42`), signs it with the dev key (repo secret `DEV_CRX_KEY`) and opens a pull request on the backend
 (kroshtan/unfret_backend, branch `extension-dev`) that replaces `unfret-dev-*.crx`, `updates-dev.xml` and their
 `SHA256SUMS` lines. It merges itself when the backend's CI passes, and the backend's pipeline deploys it to
-dev.unfret.kroshtan.com; installed copies update within a few hours. To check a published Unfret Dev package, rebuild
+dev.unfret.net; installed copies update within a few hours. To check a published Unfret Dev package, rebuild
 it with the same run number: `UNFRET_DEV_BUILD=42 make verify-release DEV=1 CRX=unfret-dev-0.8.3.42.crx`.
 
 **Production goes to the Chrome Web Store, by hand.**

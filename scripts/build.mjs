@@ -1,6 +1,6 @@
 // Build the extension from one source tree:
 //   dist/chrome             Chromium, store variant (no update_url; Chrome Web Store if ever listed) + its zip
-//   dist/chrome-selfhosted  Chromium, self-hosted variant: update_url on unfret.kroshtan.com and the public `key`,
+//   dist/chrome-selfhosted  Chromium, self-hosted variant: update_url on unfret.net and the public `key`,
 //                           so the ID is the one the signed CRX has (needs release/public-key.b64, see crx-key.mjs)
 //   dist/chrome-dev         "Unfret Dev": its own key and ID, grey DEV icon, update_url and API on the dev deployment
 //                           (needs release/dev-public-key.b64, `node scripts/crx-key.mjs --dev`); its version is

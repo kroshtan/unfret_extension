@@ -4,12 +4,12 @@ Everything Claude could prepare is in this folder. These are the steps only you 
 
 ## Before you upload
 
-- [ ] **Production on the current backend, on mainnet.** The store build talks to https://unfret.kroshtan.com, so
+- [ ] **Production on the current backend, on mainnet.** The store build talks to https://unfret.net, so
       production must run the release with no trial, the pack prices, card payments and the admin grant endpoint,
       started by you with the Deploy production workflow.
 - [ ] **Card payments live on production** (Polar ID check done, production token and webhook set). Until then,
       take "which you can also top up by card" and "a little more by card" out of both listing texts.
-- [ ] **Review the privacy statement** at https://unfret.kroshtan.com/privacy (the store links to it, and its wording on
+- [ ] **Review the privacy statement** at https://unfret.net/privacy (the store links to it, and its wording on
       Scaleway still needs your check).
 - [x] **Approve the icon and images** (approved 2026-11-09): `icons/icon-128.png`, `store/assets/promo-small-440x280.png`,
       `store/assets/promo-marquee-1400x560.png`, `store/screenshots/*.png`. Re-render with `make icons` and
@@ -38,6 +38,6 @@ Everything Claude could prepare is in this folder. These are the steps only you 
 
 ## After approval
 
-- The store version gets its own extension ID. The self-hosted channel (https://unfret.kroshtan.com/extension) keeps
+- The store version gets its own extension ID. The self-hosted channel (https://unfret.net/extension) keeps
   ID `kpllgmbgfmnlpnmkibmhflkafhilckfe`; both talk to the same API, and accounts work in both.
 - When the store version is live, retire the self-hosted production channel (the dev channel stays, by policy).

@@ -4,15 +4,15 @@ Paste the block below into the dashboard's "Test instructions" field, with a rea
 
 ## Creating the reviewer's test key (operator, once per review)
 
-Production (https://unfret.kroshtan.com) must run the current backend release (the admin grant endpoint and the
+Production (https://unfret.net) must run the current backend release (the admin grant endpoint and the
 pack prices) before this works.
 
-1. Open https://unfret.kroshtan.com/checkout?for=key, choose **Create a key**, and save the key (`ufk_…`) and its
+1. Open https://unfret.net/checkout?for=key, choose **Create a key**, and save the key (`ufk_…`) and its
    recovery code. Don't pay.
 2. Give it about 20 checks of credit (at most $10 per call):
 
    ```sh
-   curl -fsS -X POST https://unfret.kroshtan.com/v1/admin/keys/<key id>/grant \
+   curl -fsS -X POST https://unfret.net/v1/admin/keys/<key id>/grant \
      -H "Authorization: Bearer $(cat ~/kroshtan_secrets/unfret-prod-admin-token)" \
      -H "Content-Type: application/json" -d '{"usd_micros": 4000000}'
    ```
@@ -37,5 +37,5 @@ use the test API key below.
    icon, then "Check this page". The result appears in 10–30 seconds: a verdict in plain words with its reasons.
 5. Optional: under a result, "This is wrong" lets you report a wrong result (it asks for consent first).
 
-Nothing is read or sent until "Check this page" is clicked. Privacy statement: https://unfret.kroshtan.com/privacy
+Nothing is read or sent until "Check this page" is clicked. Privacy statement: https://unfret.net/privacy
 ```

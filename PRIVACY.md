@@ -20,7 +20,7 @@ see the page or its address.
 
 ## What is sent, and to whom
 
-Only to the Unfret API (`unfret.kroshtan.com`, hosted in the EU), when you click "Check this page":
+Only to the Unfret API (`unfret.net`, hosted in the EU), when you click "Check this page":
 
 - the page address and the product facts and text described above;
 - your session token, which identifies the Solana wallet you signed in with.
@@ -30,7 +30,7 @@ Two more requests go to the same API, and only when you ask for them:
 - **Share this result**: the page address and that check's result, sent **without** your session token or API key,
   so the shared result is not tied to your account. Unfret first shows you exactly what the public page will contain
   (the product's title and link, the shop, the day of the check and the verdict; no score and no quotes from the page);
-  nothing is stored until you click **Share**. The page is then public at `unfret.kroshtan.com/r/…` for anyone with
+  nothing is stored until you click **Share**. The page is then public at `unfret.net/r/…` for anyone with
   the link, for 90 days, and never says who checked. You get a delete code, shown once, to remove it sooner.
 - **Have an invite?**: the invite code you enter, with your sign-in, to add its checks to your account. Invite codes
   are not linked to whoever bought the pack they came with.
@@ -56,7 +56,7 @@ share is kept for 90 days (or until you delete it) as the preview showed it, wit
 the server keeps only a fingerprint of its delete code. An invite is kept only as a fingerprint with the day it was
 issued and the day it was used, with no buyer and no redeemer. The product
 photo itself (the image only, fetched by the server) is looked up with Google Cloud Vision to find copies on
-wholesale sites. The full server-side statement: <https://unfret.kroshtan.com/privacy>.
+wholesale sites. The full server-side statement: <https://unfret.net/privacy>.
 
 ## Your consent
 

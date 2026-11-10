@@ -1,5 +1,5 @@
 // Put a signed Unfret Dev release (dist/release from `node scripts/release.mjs --dev`) into a checkout of the
-// backend, which serves it at https://dev.unfret.kroshtan.com/extension/updates-dev.xml:
+// backend, which serves it at https://dev.unfret.net/extension/updates-dev.xml:
 //   node scripts/publish-dev.mjs <backend checkout>
 // It replaces the previous unfret-dev-*.crx and updates-dev.xml in the backend's static/extension directory and
 // updates their lines in its SHA256SUMS; the production files there are left alone. CI runs this on every merge to

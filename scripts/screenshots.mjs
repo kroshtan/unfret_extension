@@ -11,7 +11,7 @@ import { chromium } from "playwright";
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const extension = join(root, "dist", "chrome");
 const out = join(root, "store", "screenshots");
-const API = "https://unfret.kroshtan.com";
+const API = "https://unfret.net";
 const SHOP = "https://shop.example/products/smart-watch";
 const ADDRESS = "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin";
 const MARK = `data:image/svg+xml;base64,${readFileSync(join(root, "brand", "unfret.svg")).toString("base64")}`;

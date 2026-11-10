@@ -15,7 +15,7 @@ export const CHANNELS = {
     idFile: join(root, "release", "extension-id.txt"),
     crxPrefix: "unfret",
     updates: "updates.xml",
-    baseUrl: "https://unfret.kroshtan.com/extension",
+    baseUrl: "https://unfret.net/extension",
   },
   dev: {
     build: "chrome-dev",
@@ -24,7 +24,7 @@ export const CHANNELS = {
     idFile: join(root, "release", "dev-extension-id.txt"),
     crxPrefix: "unfret-dev",
     updates: "updates-dev.xml",
-    baseUrl: "https://dev.unfret.kroshtan.com/extension",
+    baseUrl: "https://dev.unfret.net/extension",
   },
 };
 

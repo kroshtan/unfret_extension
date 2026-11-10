@@ -9,7 +9,7 @@ third-party requests: the extension talks to the Unfret API and nothing else.
 
 **Install:** Unfret is distributed from its own server as a signed, reproducible CRX with automatic updates, and is
 being submitted to the Chrome Web Store (the listing and its assets are in [store/](store/SUBMIT.md)). See [INSTALL.md](INSTALL.md) (Brave, Chromium and Chrome on Linux;
-ungoogled-chromium; Windows and macOS) or <https://unfret.kroshtan.com/extension>.
+ungoogled-chromium; Windows and macOS) or <https://unfret.net/extension>.
 
 ## How it works
 
@@ -28,7 +28,7 @@ toolbar click ─► popup ─► background ─► inject extract.js into the t
   the current state of checkboxes, and countdowns read twice a few seconds apart.
 - **Only facts and cleaned product text are sent**, never the raw page: account menus, delivery addresses,
   greetings, forms and inputs are stripped from a copy of the page first.
-- **Sign-in is Sign-In With Solana.** "Sign in" opens `https://unfret.kroshtan.com/connect`; after you sign a
+- **Sign-in is Sign-In With Solana.** "Sign in" opens `https://unfret.net/connect`; after you sign a
   message in your wallet, that page posts the session to itself and the extension's content script (injected only
   there) relays it. The relay accepts it only from that window on the configured Unfret origin, and the
   background checks the sender again. Signing grants no spending rights. "Buy checks" opens `/checkout`, which also
@@ -65,7 +65,7 @@ test/           unit, parity (jsdom vs the Python extractors), mock API; smoke/ 
 | `scripting`                                         | Inject the extractor into that tab; register the relay for a dev API origin |
 | `storage`                                           | Your session (token, wallet address, expiry) and settings; nothing else     |
 | `declarativeContent` (Chromium)                     | The browser marks the icon on marketplace product pages; no page access     |
-| `https://unfret.kroshtan.com/connect*`              | The sign-in relay on the Unfret sign-in page (the API itself is CORS)       |
+| `https://unfret.net/connect*`                       | The sign-in relay on the Unfret sign-in page (the API itself is CORS)       |
 | optional `http://localhost/*`, `http://127.0.0.1/*` | Only if you point the extension at a local dev server                       |
 
 ## Development
@@ -93,7 +93,7 @@ To use a local backend, open the extension's settings and set the API base to e.
 and `dist/firefox` (built, not published).
 
 `dist/chrome-dev` is **Unfret Dev**: a separate extension (ID `phokojgbhkfcejnnocokabdjoljdfgpl`, grey icon with a
-DEV label) that talks only to the dev deployment (dev.unfret.kroshtan.com, devnet) and updates from there. Install it
+DEV label) that talks only to the dev deployment (dev.unfret.net, devnet) and updates from there. Install it
 next to Unfret to test; the production extension never talks to dev. The version comes from `package.json`. `make release` produces the signed
 self-hosted release in `dist/release/` (see [INSTALL.md](INSTALL.md#for-maintainers-making-a-release)).
 
@@ -101,7 +101,7 @@ self-hosted release in `dist/release/` (see [INSTALL.md](INSTALL.md#for-maintain
 
 - **Merge to `main` ⇒ Unfret Dev.** CI (`.forgejo/workflows/ci.yaml`, job `publish-dev`) builds Unfret Dev as
   `<version>.<run number>`, signs it and opens a self-merging pull request on the backend, whose pipeline deploys it to
-  dev.unfret.kroshtan.com.
+  dev.unfret.net.
 - **Production ⇒ by hand only.** Actions → "Release to Chrome Web Store" (`release-store.yaml`) builds and checks the
   store package and attaches it to the release `v<version>`; the upload to the store is manual
   ([store/SUBMIT.md](store/SUBMIT.md)).

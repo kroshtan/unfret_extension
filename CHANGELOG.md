@@ -3,6 +3,13 @@
 Releases of the Unfret browser extension. (Earlier releases are described in their commit messages and in the
 backend's changelog, which lists each one published at `/extension`.)
 
+## 0.9.1 (2026-11-10)
+
+- **Unfret moves to unfret.net.** The extension talks to https://unfret.net (Unfret Dev to https://dev.unfret.net),
+  its host permission and the sign-in page's content script follow, the self-hosted channel updates from
+  `unfret.net/extension`, and the store texts, privacy statement and first-run notice name the new host. The old
+  names redirect to the new ones, so 0.9.0 keeps working until it updates.
+
 ## 0.9.0 (2026-11-10)
 
 - **Share this result.** Under a finished check, "Share this result" shows exactly what the public page will contain

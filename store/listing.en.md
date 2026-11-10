@@ -45,14 +45,14 @@ Checks are prepaid, in packs of 25, 50 or 100 (20 cents a check with USDC or SOL
 
 Works on Amazon, bol.com and most web shops. The code is open source (MIT).
 
-Privacy statement: https://unfret.kroshtan.com/privacy
-Website: https://unfret.kroshtan.com
+Privacy statement: https://unfret.net/privacy
+Website: https://unfret.net
 
 ## URLs
 
-- Homepage: https://unfret.kroshtan.com
+- Homepage: https://unfret.net
 - Support: https://kroshtan.com (contact details)
-- Privacy policy: https://unfret.kroshtan.com/privacy
+- Privacy policy: https://unfret.net/privacy
 
 ## Images
 
