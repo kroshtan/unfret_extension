@@ -162,7 +162,7 @@ describe("sharing a result", () => {
 
   it("refuses a shared link that isn't a page on the API's own site", async () => {
     const fake = (link: string): UnfretApi =>
-      new UnfretApi("https://unfret.kroshtan.com", undefined, () =>
+      new UnfretApi("https://unfret.net", undefined, () =>
         Promise.resolve(
           new Response(
             JSON.stringify({ id: "x", link, delete_code: "c", expires_at: "2027-01-01T00:00:00Z" }),

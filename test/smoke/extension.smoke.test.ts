@@ -55,7 +55,7 @@ async function launch(
   await context.route("https://www.amazon.com/**", (route) =>
     route.fulfill({ contentType: "text/html", body: fixture("amazon-com.html") }),
   );
-  await context.route("https://unfret.kroshtan.com/connect**", (route) =>
+  await context.route("https://unfret.net/connect**", (route) =>
     route.fulfill({ contentType: "text/html", body: CONNECT_PAGE }),
   );
   const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent("serviceworker"));
@@ -115,7 +115,7 @@ describe("the shipped extension (no host permissions)", () => {
 
   it("stores the session the connect page relays", async () => {
     const page = await plain.context.newPage();
-    await page.goto("https://unfret.kroshtan.com/connect");
+    await page.goto("https://unfret.net/connect");
     await page.waitForFunction(() => document.title === "received", undefined, { timeout: 10_000 });
     const stored = await plain.worker.evaluate(() => chrome.storage.local.get("session"));
     expect(stored.session).toMatchObject({ address: ADDRESS });
@@ -195,7 +195,7 @@ describe("with the access a click grants (activeTab)", () => {
       text: document.querySelector("#consent")?.textContent ?? "",
     }));
     expect(before.disabled).toBe(true);
-    expect(before.text).toContain("unfret.kroshtan.com");
+    expect(before.text).toContain("unfret.net");
     await popup.click("#consent-agree");
     await popup.waitForSelector("#consent", { state: "hidden" });
     const stored = await granted.worker.evaluate(() => chrome.storage.local.get("consent"));

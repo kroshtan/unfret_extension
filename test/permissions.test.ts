@@ -24,7 +24,7 @@ describe("manifest permissions", () => {
     expect(m.optional_host_permissions).toEqual(["http://localhost/*", "http://127.0.0.1/*"]);
     expect(m.content_scripts).toEqual([
       {
-        matches: ["https://unfret.kroshtan.com/connect*"],
+        matches: ["https://unfret.net/connect*"],
         js: ["connect-relay.js"],
         run_at: "document_start",
       },
@@ -48,7 +48,7 @@ describe("manifest permissions", () => {
 
   it("the self-hosted build carries the update URL and key", () => {
     const m = manifest("chrome-selfhosted", options);
-    expect(m.update_url).toBe("https://unfret.kroshtan.com/extension/updates.xml");
+    expect(m.update_url).toBe("https://unfret.net/extension/updates.xml");
     expect(m.key).toBe("PUBLICKEY");
   });
 
@@ -62,12 +62,10 @@ describe("manifest permissions", () => {
     expect(m.name).toBe("Unfret Dev");
     expect(m.action.default_title).toBe("Unfret Dev");
     expect(m.key).toBe("DEVKEY");
-    expect(m.update_url).toBe("https://dev.unfret.kroshtan.com/extension/updates-dev.xml");
-    expect(m.content_scripts[0]?.matches).toEqual(["https://dev.unfret.kroshtan.com/connect*"]);
-    expect(m.content_security_policy.extension_pages).toContain(
-      "connect-src https://dev.unfret.kroshtan.com ",
-    );
-    expect(m.content_security_policy.extension_pages).not.toContain("https://unfret.kroshtan.com");
+    expect(m.update_url).toBe("https://dev.unfret.net/extension/updates-dev.xml");
+    expect(m.content_scripts[0]?.matches).toEqual(["https://dev.unfret.net/connect*"]);
+    expect(m.content_security_policy.extension_pages).toContain("connect-src https://dev.unfret.net ");
+    expect(m.content_security_policy.extension_pages).not.toContain("https://unfret.net");
     expect(m.permissions).toEqual(manifest("chrome-selfhosted", options).permissions);
   });
 });

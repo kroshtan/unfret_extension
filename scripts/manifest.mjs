@@ -4,11 +4,11 @@
 // granted by the user's click on the toolbar button; the marketplace icon hint is set by the browser itself through
 // declarativeContent (Chromium only), which needs no host access and shows no install warning.
 
-export const API_ORIGIN = "https://unfret.kroshtan.com";
+export const API_ORIGIN = "https://unfret.net";
 export const UPDATE_URL = `${API_ORIGIN}/extension/updates.xml`;
 // "Unfret Dev" is a separate extension (its own key, ID, icon and update channel) that only talks to the dev
 // deployment, so testing never touches the production install.
-export const DEV_API_ORIGIN = "https://dev.unfret.kroshtan.com";
+export const DEV_API_ORIGIN = "https://dev.unfret.net";
 export const DEV_UPDATE_URL = `${DEV_API_ORIGIN}/extension/updates-dev.xml`;
 // A local server: optional, asked for only when chosen in the options (no install warning).
 export const LOCAL_PERMISSIONS = ["http://localhost/*", "http://127.0.0.1/*"];

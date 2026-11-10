@@ -6,8 +6,7 @@
 
 // Set by the build: the dev deployment for "Unfret Dev", production for everything else (and in tests).
 declare const __UNFRET_API__: string | undefined;
-export const DEFAULT_API_BASE =
-  typeof __UNFRET_API__ === "string" ? __UNFRET_API__ : "https://unfret.kroshtan.com";
+export const DEFAULT_API_BASE = typeof __UNFRET_API__ === "string" ? __UNFRET_API__ : "https://unfret.net";
 /** Origins allowed as a development override (they need an optional host permission). */
 export const DEV_ORIGINS = ["http://localhost", "http://127.0.0.1"];
 

@@ -150,7 +150,7 @@ describe("result view", () => {
 });
 
 describe("photo thumbnails", () => {
-  const API = "https://unfret.kroshtan.com";
+  const API = "https://unfret.net";
   const PHOTO: AnalysisResult = {
     score: 20,
     explanation: "",
@@ -233,7 +233,7 @@ describe("progress checklist", () => {
 });
 
 describe("share preview", () => {
-  const API = "https://unfret.kroshtan.com";
+  const API = "https://unfret.net";
 
   it("shows exactly what becomes public: product, shop, day and the verdict, without a score", () => {
     const root = document.createElement("div");
