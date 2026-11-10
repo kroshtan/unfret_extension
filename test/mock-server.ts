@@ -4,7 +4,8 @@
  * "off" → 503, "midway" → stream error event, anything else → a normal result.
  *
  * Invites (`POST /v1/invites/redeem`): INVITE_OK adds 3 checks; INVITE_USED_CODE, INVITE_UNKNOWN_CODE and
- * INVITE_NOT_NEW_CODE are refused with the server's codes and words. Shares (`/v1/shares/preview`, `/v1/shares`) refuse
+ * INVITE_NOT_NEW_CODE are refused with the server's codes and words; once INVITE_OK is redeemed by a token,
+ * `/v1/credits` reports `invite_eligible: false` for it (before that the field is absent, like an older server). Shares (`/v1/shares/preview`, `/v1/shares`) refuse
  * a request with Authorization, like the server; share token "expired.mac" → 422, "busy.mac" → 429 on create.
  */
 
@@ -114,6 +115,7 @@ async function readBody(req: IncomingMessage): Promise<unknown> {
 export async function startMockApi(): Promise<MockApi> {
   const requests: MockApi["requests"] = [];
   const pairing: MockApi["pairing"] = { id: "pair-ok", pendingPolls: 2, delivered: false, flaked: false };
+  const invited = new Set<string>(); // tokens that redeemed an invite
   let base = "";
   const server: Server = createServer((req, res) => {
     void (async () => {
@@ -200,14 +202,15 @@ export async function startMockApi(): Promise<MockApi> {
         const code = (body as { code?: string } | null)?.code ?? "";
         const refusal = INVITE_REFUSALS[code];
         if (refusal) json(res, refusal.status, { detail: refusal.detail, error_code: refusal.error_code });
-        else if (code === INVITE_OK)
+        else if (code === INVITE_OK) {
+          invited.add(token);
           json(res, 200, {
             checks_added: 3,
             usd_micros_added: 600_000,
             balance_usd_micros: 600_000,
             checks_remaining: 3,
           });
-        else
+        } else
           json(res, 400, {
             detail: "That isn't an invite code (it starts with ufi_).",
             error_code: "INVALID_INVITE",
@@ -249,6 +252,7 @@ export async function startMockApi(): Promise<MockApi> {
           address: "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin",
           balance_lamports: 7_500_000,
           checks_remaining: 5,
+          ...(invited.has(token) ? { invite_eligible: false } : {}),
         });
         return;
       }

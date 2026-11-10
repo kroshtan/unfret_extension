@@ -399,6 +399,16 @@ describe("sharing a result and redeeming an invite, in the popup", () => {
     expect(JSON.stringify(stored)).not.toContain("ufi_");
     await page.close();
   });
+
+  it('hides "Have an invite?" once the server says the account can\'t redeem one', async () => {
+    const extensionId = new URL(granted.worker.url()).host;
+    const page = await granted.context.newPage();
+    await page.goto(`chrome-extension://${extensionId}/popup/popup.html?tab=${analysedTab}`);
+    // The previous test redeemed an invite with this key, so /v1/credits now answers invite_eligible: false.
+    await page.waitForFunction(() => document.querySelector("#credits")?.textContent !== "");
+    expect(await page.isVisible("#invite")).toBe(false);
+    await page.close();
+  });
 });
 
 describe("in a Dutch browser", () => {

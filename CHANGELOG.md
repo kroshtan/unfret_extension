@@ -25,5 +25,10 @@ backend's changelog, which lists each one published at `/extension`.)
   Outdoor LLC. All rights reserved."), as the backend's own extractor does, so the server can name a US shop's company
   when it's only in the footer. A copyright line never counts as an imprint. `make parity` runs the renamed backend
   again (`unfret.facts`).
+- "Have an invite?" is hidden for an account that has had checks, where no code would be accepted (the server's new
+  `invite_eligible` in `/v1/credits`; shown as before when a server doesn't send it).
+- The connect page's sign-in message is also accepted under its new name, `unfret-session` (answered with
+  `unfret-session-received`), so the site can switch to it once this version is in use; `veridex-session` keeps
+  working until then.
 - Privacy statement and store privacy practices: shared results (public, 90 days, no account attached, delete code)
   and invites (not linked to the buyer).
