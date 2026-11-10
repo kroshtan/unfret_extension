@@ -1,5 +1,5 @@
 /**
- * A small mock of the Veridex API (contract v1) for tests and the smoke run: pricing, credits, and a streamed
+ * A small mock of the Unfret API (contract v1) for tests and the smoke run: pricing, credits, and a streamed
  * analysis that records the request it got. Behaviour per bearer token: "expired" → 401, "broke" → 402,
  * "off" → 503, "midway" → stream error event, anything else → a normal result.
  */

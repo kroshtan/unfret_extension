@@ -29,9 +29,9 @@ function decode(text: string): string | undefined {
 describe("QR encoder", () => {
   it.each([
     "a",
-    "https://veridex.kroshtan.com/connect?pair=Xg4k2_PqR9vT-LmN0aBcDw",
+    "https://unfret.kroshtan.com/connect?pair=Xg4k2_PqR9vT-LmN0aBcDw",
     "http://localhost:8080/connect?pair=AAAAAAAAAAAAAAAAAAAAAA",
-    "Veridex — ünïcödé ✓",
+    "Unfret — ünïcödé ✓",
     "x".repeat(150),
     "y".repeat(213),
   ])("round-trips %#", (text) => {
@@ -40,8 +40,8 @@ describe("QR encoder", () => {
 
   it("picks the smallest version that fits", () => {
     expect(encodeQr("a")).toHaveLength(21); // version 1
-    // 64 bytes: more than version 4-M holds (62), so version 5 (37×37).
-    expect(encodeQr("https://veridex.kroshtan.com/connect?pair=Xg4k2_PqR9vT-LmN0aBcDw")).toHaveLength(37);
+    // 63 bytes: more than version 4-M holds (62), so version 5 (37×37).
+    expect(encodeQr("https://unfret.kroshtan.com/connect?pair=Xg4k2_PqR9vT-LmN0aBcDw")).toHaveLength(37);
   });
 
   it("refuses text beyond version 10", () => {

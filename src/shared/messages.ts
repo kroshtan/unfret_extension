@@ -2,7 +2,7 @@
 
 import type { AnalysisResult, AnalyzeBody, Finding, ReportReason } from "../api/client.js";
 
-export const ANALYSIS_PORT = "veridex-analysis";
+export const ANALYSIS_PORT = "unfret-analysis";
 
 /**
  * What the background knows about a tab's analysis. Kept in memory and mirrored to `chrome.storage.session` (memory

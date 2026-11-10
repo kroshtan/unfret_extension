@@ -15,7 +15,7 @@ const BUNDLED: Record<Language, Messages> = { en, nl };
 export type Language = "en" | "nl";
 export type MessageKey = keyof typeof en;
 
-/** The browser's UI language, narrowed to one Veridex supports (English otherwise). */
+/** The browser's UI language, narrowed to one Unfret supports (English otherwise). */
 export function uiLanguage(): Language {
   let tag: string;
   try {

@@ -1,5 +1,5 @@
 /**
- * Amazon product detail pages on any Amazon TLD: a port of the backend's `veridex/facts/amazon.py`.
+ * Amazon product detail pages on any Amazon TLD: a port of the backend's `facts/amazon.py`.
  *
  * Amazon's markup varies by locale and layout generation, so each fact tries the known variants in order and
  * leaves the fact empty when none match.

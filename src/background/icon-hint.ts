@@ -1,5 +1,5 @@
 /**
- * The marketplace hint: on supported marketplace product pages the toolbar icon gets a small neutral marker ("Veridex
+ * The marketplace hint: on supported marketplace product pages the toolbar icon gets a small neutral marker ("Unfret
  * can check this", not a warning), set by the browser through `declarativeContent` rules. The extension never sees those pages (no host permission); the browser
  * matches the URL and swaps the icon, and reverts it when the page no longer matches. Firefox has no
  * `declarativeContent`, so there the hint is simply absent.

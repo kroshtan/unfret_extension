@@ -10,7 +10,7 @@ const secrets = join(homedir(), "kroshtan_secrets");
 export const CHANNELS = {
   production: {
     build: "chrome-selfhosted",
-    keyPath: process.env.VERIDEX_CRX_KEY || join(secrets, "veridex-extension-crx.pem"),
+    keyPath: process.env.UNFRET_CRX_KEY || join(secrets, "unfret-extension-crx.pem"),
     publicKeyFile: join(root, "release", "public-key.b64"),
     idFile: join(root, "release", "extension-id.txt"),
     crxPrefix: "unfret",
@@ -31,4 +31,26 @@ export const CHANNELS = {
 /** The channel named by a `--dev` flag in argv (production otherwise). */
 export function channelFromArgs(argv = process.argv) {
   return argv.includes("--dev") ? CHANNELS.dev : CHANNELS.production;
+}
+
+/**
+ * Unfret Dev's version: package.json's, plus a fourth part from $UNFRET_DEV_BUILD when that is set. CI sets it to
+ * its run number, so every publish from main is a higher version, which Chromium then installs; the next version
+ * bump in package.json (0.8.4 > 0.8.3.N) still outranks them all.
+ *
+ * @param {string} version package.json's version (three parts)
+ * @param {string | undefined} build the build number, 0–65535
+ */
+export function devVersion(version, build = process.env.UNFRET_DEV_BUILD) {
+  if (!build) return version;
+  if (!/^\d{1,5}$/.test(build) || Number(build) > 65535) {
+    throw new Error(`UNFRET_DEV_BUILD must be a number from 0 to 65535, not ${JSON.stringify(build)}`);
+  }
+  if (!/^\d+\.\d+\.\d+$/.test(version)) throw new Error(`can't add a build number to version ${version}`);
+  return `${version}.${Number(build)}`;
+}
+
+/** The version a build target (`chrome`, `chrome-dev`, ...) carries. */
+export function versionFor(build, version) {
+  return build === CHANNELS.dev.build ? devVersion(version) : version;
 }

@@ -118,7 +118,7 @@ export function verifyCrx(crx) {
   for (const [number, bytes] of parseFields(header)) {
     if (number === 2) proofs.push(Object.fromEntries(parseFields(bytes)));
     else if (number === 10000) signedHeaderData = bytes;
-    else if (number === 3) throw new Error("ECDSA proofs are not used by Veridex builds");
+    else if (number === 3) throw new Error("ECDSA proofs are not used by Unfret builds");
   }
   if (!signedHeaderData) throw new Error("missing signed header data");
   const crxId = Object.fromEntries(parseFields(signedHeaderData))[1];

@@ -1,5 +1,5 @@
 /**
- * Extract `PageFacts` from a page's DOM: a port of the backend's `veridex/facts/extract.py`. Platform extractors
+ * Extract `PageFacts` from a page's DOM: a port of the backend's `facts/extract.py`. Platform extractors
  * (Amazon, bol.com, Walmart) fill in what generic markup (JSON-LD, microdata, Open Graph) doesn't carry.
  *
  * Works on any `Document`: the live page in the browser, or a parsed HTML string in tests (parity with Python).

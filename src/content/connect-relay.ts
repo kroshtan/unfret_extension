@@ -1,10 +1,10 @@
 /**
- * Content script on the Veridex connect page only (`<API base>/connect*`, or a local dev origin).
+ * Content script on the Unfret connect page only (`<API base>/connect*`, or a local dev origin).
  * Relays the session the page posts after sign-in to the extension; the background checks the sender again.
  */
 
 import { loadSettings, type Session } from "../shared/settings.js";
-import { acceptSessionMessage, SESSION_MESSAGE } from "./relay.js";
+import { acceptSessionMessage, SESSION_MESSAGE, SESSION_RECEIVED_MESSAGE } from "./relay.js";
 
 window.addEventListener("message", (event: MessageEvent) => {
   void (async () => {
@@ -19,7 +19,7 @@ window.addEventListener("message", (event: MessageEvent) => {
       session,
     });
     if (reply?.ok) {
-      window.postMessage({ type: "veridex-session-received" }, location.origin);
+      window.postMessage({ type: SESSION_RECEIVED_MESSAGE }, location.origin);
     }
   })();
 });

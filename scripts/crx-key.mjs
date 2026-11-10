@@ -2,7 +2,7 @@
 //   node scripts/crx-key.mjs [--dev]           create the key (refuses to overwrite an existing one)
 //   node scripts/crx-key.mjs [--dev] --public  re-derive the public key and ID files in release/ from the key
 //
-// Production's key lives at $VERIDEX_CRX_KEY (default ~/kroshtan_secrets/veridex-extension-crx.pem), Unfret Dev's at
+// Production's key lives at $UNFRET_CRX_KEY (default ~/kroshtan_secrets/unfret-extension-crx.pem), Unfret Dev's at
 // $UNFRET_DEV_CRX_KEY (default ~/kroshtan_secrets/unfret-dev-crx.pem); both outside the repo, mode 600, never
 // printed or committed. Losing one changes that extension's ID: existing installs would stop receiving updates.
 // Back them up.

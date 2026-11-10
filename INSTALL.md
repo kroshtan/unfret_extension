@@ -71,11 +71,25 @@ file.
 
 ## For maintainers: making a release
 
-1. Bump `version` in `package.json`.
-2. `make release`. It needs both signing keys: production's at `$VERIDEX_CRX_KEY` (default
-   `~/kroshtan_secrets/veridex-extension-crx.pem`) and Unfret Dev's at `$UNFRET_DEV_CRX_KEY` (default
-   `~/kroshtan_secrets/unfret-dev-crx.pem`). Each is created once with `make crx-key` (`DEV=1` for the dev one); back
-   them up: losing one changes that extension's ID, and existing installs stop receiving updates.
-3. Copy `dist/release/*` into the backend's `src/veridex/static/extension/` and ship it. Browsers pick the new version
-   up from `updates.xml` (Unfret Dev: `updates-dev.xml`) within a few hours. Check a published Unfret Dev package with
-   `make verify-release DEV=1 CRX=…`.
+**Unfret Dev is published by CI.** Every merge to `main` builds Unfret Dev as version `<package.json>.<run number>`
+(e.g. `0.8.3.42`), signs it with the dev key (repo secret `DEV_CRX_KEY`) and opens a pull request on the backend
+(kroshtan/unfret_backend, branch `extension-dev`) that replaces `unfret-dev-*.crx`, `updates-dev.xml` and their
+`SHA256SUMS` lines. It merges itself when the backend's CI passes, and the backend's pipeline deploys it to
+dev.unfret.kroshtan.com; installed copies update within a few hours. To check a published Unfret Dev package, rebuild
+it with the same run number: `UNFRET_DEV_BUILD=42 make verify-release DEV=1 CRX=unfret-dev-0.8.3.42.crx`.
+
+**Production goes to the Chrome Web Store, by hand.**
+
+1. Bump `version` in `package.json` and merge it; wait for CI (both `check` and `publish-dev`) to pass on `main`.
+2. Actions → **Release to Chrome Web Store** → Run workflow (input `main`). It checks the commit, builds and checks the
+   store package (`make store-package` does the same locally), tags `v<version>` and attaches
+   `unfret-chrome-<version>.zip` and `SHA256SUMS` to that Forgejo release.
+3. Upload that zip in the Chrome Web Store developer dashboard ([store/SUBMIT.md](store/SUBMIT.md)).
+
+**The self-hosted production channel** (until it is retired): `make release` signs both channels locally. It needs
+both signing keys: production's at `$UNFRET_CRX_KEY` (default `~/kroshtan_secrets/unfret-extension-crx.pem`) and
+Unfret Dev's at `$UNFRET_DEV_CRX_KEY` (default `~/kroshtan_secrets/unfret-dev-crx.pem`). Each is created once with
+`make crx-key` (`DEV=1` for the dev one); back them up: losing one changes that extension's ID, and existing installs
+stop receiving updates. Copy `unfret-<version>.crx`, `updates.xml`, the store zip and their `SHA256SUMS` lines from
+`dist/release/` into the backend's `src/<package>/static/extension/` and ship it; leave the dev files to CI (a local
+`updates-dev.xml` at `<version>` would sit below CI's `<version>.<run>` builds, so Unfret Dev would ignore it).

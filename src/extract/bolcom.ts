@@ -1,5 +1,5 @@
 /**
- * bol.com product pages (the Dutch/Belgian marketplace): a port of the backend's `veridex/facts/bolcom.py`.
+ * bol.com product pages (the Dutch/Belgian marketplace): a port of the backend's `facts/bolcom.py`.
  * JSON-LD is already read by the generic extractor; this adds the seller, its rating and the review summary.
  */
 

@@ -10,7 +10,7 @@
  * when the browser closes) so they survive the service worker sleeping. Nothing about pages is written to disk.
  */
 
-import { ApiError, type ReportReason, VeridexApi } from "../api/client.js";
+import { ApiError, type ReportReason, UnfretApi } from "../api/client.js";
 import { SESSION_MESSAGE } from "../content/relay.js";
 import {
   ANALYSIS_PORT,
@@ -25,7 +25,7 @@ import { badgeFor } from "./badge.js";
 import { registerMarketplaceHint } from "./icon-hint.js";
 import { extractFromTab } from "./inject.js";
 
-const DEV_RELAY_ID = "veridex-connect-dev";
+const DEV_RELAY_ID = "unfret-connect-dev";
 const states = new Map<number, TabState>();
 const watchers = new Map<number, Set<chrome.runtime.Port>>();
 
@@ -171,7 +171,7 @@ async function runAnalysis(tabId: number): Promise<void> {
   setState(tabId, { status: "extracting" });
   try {
     const { facts, text } = await extractFromTab(tabId);
-    const api = new VeridexApi(apiBase, session.token);
+    const api = new UnfretApi(apiBase, session.token);
     let state: Extract<TabState, { status: "analysing" }> = { status: "analysing", findings: [], steps: [] };
     setState(tabId, state);
     const upload = text.slice(0, MAX_UPLOAD_TEXT_CHARS);
@@ -229,7 +229,7 @@ async function report(tabId: number, reason: ReportReason): Promise<void> {
   if (!session) return;
   setState(tabId, { ...state, report: { status: "sending" } });
   try {
-    const sent = await new VeridexApi(apiBase, session.token).report(state.body, state.result, reason);
+    const sent = await new UnfretApi(apiBase, session.token).report(state.body, state.result, reason);
     setState(tabId, { ...state, report: { status: "sent", outcome: sent.status } });
   } catch (error) {
     setState(tabId, { ...state, report: { status: "error", message: reportError(error) } });
@@ -259,8 +259,11 @@ chrome.runtime.onConnect.addListener((port) => {
 
 async function syncDevRelay(): Promise<void> {
   const { apiBase } = await loadSettings();
-  const registered = await chrome.scripting.getRegisteredContentScripts({ ids: [DEV_RELAY_ID] });
-  if (registered.length > 0) await chrome.scripting.unregisterContentScripts({ ids: [DEV_RELAY_ID] });
+  // Registrations persist across updates, and releases before the rename used another ID: match the suffix.
+  const ids = (await chrome.scripting.getRegisteredContentScripts())
+    .map((script) => script.id)
+    .filter((id) => id.endsWith("-connect-dev"));
+  if (ids.length > 0) await chrome.scripting.unregisterContentScripts({ ids });
   if (!isDevBase(apiBase)) return;
   // Match patterns can't carry a port; the relay itself checks the exact origin.
   const { protocol, hostname } = new URL(apiBase);

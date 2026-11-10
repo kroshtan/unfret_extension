@@ -72,7 +72,7 @@ export function manifest(browser, { version, description, publicKey }) {
     background: { scripts: ["background.js"] },
     browser_specific_settings: {
       gecko: {
-        id: "veridex@kroshtan.com",
+        id: "unfret@kroshtan.com",
         strict_min_version: "140.0",
         data_collection_permissions: { required: ["websiteContent", "browsingActivity"] },
       },

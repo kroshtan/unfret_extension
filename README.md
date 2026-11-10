@@ -24,7 +24,7 @@ toolbar click ─► popup ─► background ─► inject extract.js into the t
   gets a small amber marker; in Chromium the browser sets it itself from the page address (`declarativeContent`),
   without the extension seeing the page.
 - **Extraction happens in the browser.** `src/extract/` is a TypeScript port of the backend's PageFacts
-  extractors (`veridex/facts/*.py`). It also adds what only the rendered page shows: text hidden by stylesheet CSS,
+  extractors (`facts/*.py`). It also adds what only the rendered page shows: text hidden by stylesheet CSS,
   the current state of checkboxes, and countdowns read twice a few seconds apart.
 - **Only facts and cleaned product text are sent**, never the raw page: account menus, delivery addresses,
   greetings, forms and inputs are stripped from a copy of the page first.
@@ -69,7 +69,7 @@ make test             # unit + parity tests
 make lint typecheck
 make build-dev        # dist/chrome, dist/firefox (unminified, source maps)
 make smoke            # build + headless Chromium run (first: npx playwright install chromium)
-make parity           # regenerate expectations from the backend's Python extractors (BACKEND=~/repos/veridex_backend)
+make parity           # regenerate expectations from the backend's Python extractors (BACKEND=~/repos/unfret_backend)
 ```
 
 Load unpacked:
@@ -89,6 +89,15 @@ and `dist/firefox` (built, not published).
 DEV label) that talks only to the dev deployment (dev.unfret.kroshtan.com, devnet) and updates from there. Install it
 next to Unfret to test; the production extension never talks to dev. The version comes from `package.json`. `make release` produces the signed
 self-hosted release in `dist/release/` (see [INSTALL.md](INSTALL.md#for-maintainers-making-a-release)).
+
+## Releases (CI/CD)
+
+- **Merge to `main` ⇒ Unfret Dev.** CI (`.forgejo/workflows/ci.yaml`, job `publish-dev`) builds Unfret Dev as
+  `<version>.<run number>`, signs it and opens a self-merging pull request on the backend, whose pipeline deploys it to
+  dev.unfret.kroshtan.com.
+- **Production ⇒ by hand only.** Actions → "Release to Chrome Web Store" (`release-store.yaml`) builds and checks the
+  store package and attaches it to the release `v<version>`; the upload to the store is manual
+  ([store/SUBMIT.md](store/SUBMIT.md)).
 
 ## Parity with the backend
 

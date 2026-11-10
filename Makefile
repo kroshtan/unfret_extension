@@ -1,7 +1,7 @@
-.PHONY: help install lint typecheck test smoke build build-dev parity icons screenshots crx-key release verify-release clean
+.PHONY: help install lint typecheck test smoke build build-dev parity icons screenshots crx-key release store-package publish-dev verify-release clean
 .DEFAULT_GOAL := help
 
-BACKEND ?= $(HOME)/repos/veridex_backend
+BACKEND ?= $(HOME)/repos/unfret_backend
 
 help:  ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-12s\033[0m %s\n", $$1, $$2}'
@@ -41,6 +41,12 @@ crx-key:  ## Create a CRX signing key once (production; DEV=1 for Unfret Dev). K
 
 release: build  ## Signed self-hosted release in dist/release: CRX, updates.xml, store zip, SHA256SUMS
 	node scripts/release.mjs
+
+store-package: build  ## Check the Chrome Web Store package and put it, with SHA256SUMS, in dist/store
+	node scripts/store-package.mjs
+
+publish-dev:  ## Put dist/release's Unfret Dev into the backend checkout (BACKEND=path); CI does this on main
+	node scripts/publish-dev.mjs $(BACKEND)
 
 verify-release: build  ## Check a published CRX against your own build: make verify-release CRX=file.crx [DEV=1]
 	node scripts/verify-release.mjs $(if $(DEV),--dev) $(CRX)
