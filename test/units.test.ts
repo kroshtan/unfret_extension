@@ -93,6 +93,17 @@ describe("session relay origin check", () => {
     });
   });
 
+  it("accepts the renamed message too (unfret-session), for when the site switches to it", () => {
+    const renamed = { ...session, type: "unfret-session" };
+    expect(
+      acceptSessionMessage({ origin, source: page, data: renamed }, page, origin, DEFAULT_API_BASE),
+    ).toEqual({
+      token: session.token,
+      address: session.address,
+      expiresAt: "2999-01-01T00:00:00.000Z",
+    });
+  });
+
   it.each([
     ["another window", { origin, source: {}, data: session }, origin, DEFAULT_API_BASE],
     [

@@ -43,6 +43,8 @@ export interface Credits {
   address: string;
   balance_lamports: number;
   checks_remaining: number;
+  /** Whether an invite can still be redeemed onto this account (it never had credit); absent on older servers. */
+  invite_eligible?: boolean;
 }
 
 /** A phone sign-in pairing (contract: "phone sign-in by pairing"). */

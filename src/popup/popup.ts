@@ -55,6 +55,8 @@ let apiBase = "";
 let session: Session | undefined;
 let expired = false;
 let checks: number | undefined;
+/** From the server: false once the account has had credit, when "Have an invite?" can no longer work. */
+let inviteEligible: boolean | undefined;
 let tabId: number | undefined;
 let analysable = false;
 let busy = false;
@@ -80,6 +82,7 @@ async function sessionRejected(): Promise<void> {
   session = undefined;
   expired = true;
   checks = undefined;
+  inviteEligible = undefined;
   renderAccount();
 }
 
@@ -88,6 +91,7 @@ async function refreshCredits(): Promise<void> {
   try {
     const credits = await new VeridexApi(apiBase, session.token).credits();
     checks = credits.checks_remaining;
+    inviteEligible = credits.invite_eligible;
     renderAccount();
   } catch (error) {
     if (error instanceof ApiError && error.needsSignIn) await sessionRejected();
@@ -217,7 +221,7 @@ function renderAccount(): void {
   show("sign-in-key", !session);
   if (session) show("key", false);
   show("sign-out", Boolean(session));
-  show("invite", Boolean(session));
+  show("invite", Boolean(session) && inviteEligible !== false);
   show("buy", Boolean(session) && purchasesOn);
   el("credits").textContent = checks === undefined ? "" : checksText(checks);
   show("credits", Boolean(session) && checks !== undefined);
@@ -438,6 +442,7 @@ async function init(): Promise<void> {
       session = undefined;
       expired = false;
       checks = undefined;
+      inviteEligible = undefined;
       renderAccount();
     });
   });
@@ -467,6 +472,7 @@ async function init(): Promise<void> {
     session = result.session;
     expired = false;
     checks = result.checks;
+    inviteEligible = result.inviteEligible;
     renderAccount();
   };
   el("key-use").addEventListener("click", () => void useKey());

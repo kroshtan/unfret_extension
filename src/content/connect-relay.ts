@@ -1,5 +1,5 @@
 /**
- * Content script on the Veridex connect page only (`<API base>/connect*`, or a local dev origin).
+ * Content script on the Unfret connect page only (`<API base>/connect*`, or a local dev origin).
  * Relays the session the page posts after sign-in to the extension; the background checks the sender again.
  */
 
@@ -19,7 +19,13 @@ window.addEventListener("message", (event: MessageEvent) => {
       session,
     });
     if (reply?.ok) {
-      window.postMessage({ type: "veridex-session-received" }, location.origin);
+      // Answer in the page's own naming: the old site waits for "veridex-session-received", the renamed one for
+      // "unfret-session-received".
+      const renamed = (event.data as { type?: unknown }).type === "unfret-session";
+      window.postMessage(
+        { type: renamed ? "unfret-session-received" : "veridex-session-received" },
+        location.origin,
+      );
     }
   })();
 });
