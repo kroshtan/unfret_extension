@@ -78,6 +78,7 @@
  "legal_mentions": [
   "Company number 12345678, registered in England"
  ],
+ "copyright_lines": [],
  "policy_links": {
   "refund": "https://www.zentrashop.example/pages/return-policy",
   "contact": "mailto:help@zentrashop.example",

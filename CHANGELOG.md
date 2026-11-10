@@ -21,5 +21,9 @@ backend's changelog, which lists each one published at `/extension`.)
   language switch): all text is in the code and pages, in English, and the extension always asks the API for English.
   What the server writes about a page is shown as it comes. The manifest's description is plain text, and the Dutch
   store listing is removed.
+- **Copyright lines.** Page facts carry the footer's copyright lines (`copyright_lines`, up to three: "© 2026 Acme
+  Outdoor LLC. All rights reserved."), as the backend's own extractor does, so the server can name a US shop's company
+  when it's only in the footer. A copyright line never counts as an imprint. `make parity` runs the renamed backend
+  again (`unfret.facts`).
 - Privacy statement and store privacy practices: shared results (public, 90 days, no account attached, delete code)
   and invites (not linked to the buyer).

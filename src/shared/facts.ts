@@ -46,6 +46,7 @@ export interface PageFacts {
   fee_mentions: string[];
   vat_ids: string[];
   legal_mentions: string[];
+  copyright_lines: string[];
   policy_links: Record<string, string>;
   image_urls: string[];
 }
@@ -77,6 +78,7 @@ export function emptyFacts(url = ""): PageFacts {
     fee_mentions: [],
     vat_ids: [],
     legal_mentions: [],
+    copyright_lines: [],
     policy_links: {},
     image_urls: [],
   };
