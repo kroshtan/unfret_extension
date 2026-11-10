@@ -39,7 +39,7 @@ Private by design
 • No tracking, no ads, no affiliate links, no browsing history.
 
 How you pay
-Checks are prepaid and cost cents each. Sign in with a Solana wallet, or use an API key, and buy checks with USDC or SOL (card payments are on the way). A wallet new to Unfret gets a few free checks to try it. Unfret never gets access to your funds: signing in is a free message, not a transaction.
+Checks are prepaid, in packs of 25, 50 or 100 (20 cents a check with USDC or SOL, a little more by card, plus VAT where it applies). Sign in with a Solana wallet, or use an API key, which you can also top up by card. Unfret never gets access to your funds: signing in is a free message, not a transaction.
 
 Works on Amazon, bol.com and most web shops. The code is open source (MIT).
 
