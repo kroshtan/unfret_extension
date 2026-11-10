@@ -25,7 +25,7 @@ updated from unfret.kroshtan.com:
 
 ```bash
 # Brave
-sudo mkdir -p /etc/brave/policies/managed && sudo rm -f /etc/brave/policies/managed/veridex.json && echo '{"ExtensionInstallForcelist":["kpllgmbgfmnlpnmkibmhflkafhilckfe;https://unfret.kroshtan.com/extension/updates.xml"]}' | sudo tee /etc/brave/policies/managed/unfret.json > /dev/null
+sudo mkdir -p /etc/brave/policies/managed && echo '{"ExtensionInstallForcelist":["kpllgmbgfmnlpnmkibmhflkafhilckfe;https://unfret.kroshtan.com/extension/updates.xml"]}' | sudo tee /etc/brave/policies/managed/unfret.json > /dev/null
 
 # Chromium: same JSON in /etc/chromium/policies/managed/unfret.json
 # Google Chrome: same JSON in /etc/opt/chrome/policies/managed/unfret.json
@@ -34,7 +34,7 @@ sudo mkdir -p /etc/brave/policies/managed && sudo rm -f /etc/brave/policies/mana
 Restart the browser, then check `brave://policy` (or `chrome://policy`) and `brave://extensions`.
 
 A force-installed extension can't be removed from the browser's extensions page. To uninstall, delete the policy file
-(`sudo rm /etc/brave/policies/managed/unfret.json`, or `veridex.json` for releases before 0.7.0) and restart the browser.
+(`sudo rm /etc/brave/policies/managed/unfret.json`) and restart the browser.
 
 ## ungoogled-chromium
 
