@@ -4,7 +4,7 @@
  * are shown as it words them. Shared by the popup and the options page. The code is sent once and never stored.
  */
 
-import { ApiError, VeridexApi } from "../api/client.js";
+import { ApiError, UnfretApi } from "../api/client.js";
 import { OFFLINE, SESSION_EXPIRED } from "./text.js";
 
 /** An invite code: `ufi_` and 32 lower-case base32 letters (the server ignores case and surrounding spaces). */
@@ -40,7 +40,7 @@ export async function redeemInvite(apiBase: string, token: string, value: string
   const code = normaliseInvite(value);
   if (!code) return { ok: false, message: NOT_AN_INVITE, signedOut: false };
   try {
-    const added = await new VeridexApi(apiBase, token).redeemInvite(code);
+    const added = await new UnfretApi(apiBase, token).redeemInvite(code);
     return { ok: true, checksAdded: added.checks_added, checks: added.checks_remaining };
   } catch (error) {
     if (!(error instanceof ApiError)) return { ok: false, message: OFFLINE, signedOut: false };

@@ -11,7 +11,7 @@ import {
   type AnalyzeBody,
   ApiError,
   type ShareRequest,
-  type VeridexApi,
+  type UnfretApi,
 } from "../api/client.js";
 import type { ShareState } from "./messages.js";
 import { OFFLINE } from "./text.js";
@@ -43,7 +43,7 @@ export function shareError(error: unknown): string {
 }
 
 /** Ask for the preview: what the public page would show. */
-export async function previewShare(api: VeridexApi, request: ShareRequest): Promise<ShareState> {
+export async function previewShare(api: UnfretApi, request: ShareRequest): Promise<ShareState> {
   try {
     return { status: "preview", preview: await api.sharePreview(request) };
   } catch (error) {
@@ -53,7 +53,7 @@ export async function previewShare(api: VeridexApi, request: ShareRequest): Prom
 
 /** Share it (after the user saw the preview): the public link on `apiBase`, and its delete code. */
 export async function createShare(
-  api: VeridexApi,
+  api: UnfretApi,
   apiBase: string,
   request: ShareRequest,
   preview: Extract<ShareState, { status: "preview" }>["preview"],

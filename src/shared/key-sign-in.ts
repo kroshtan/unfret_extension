@@ -1,6 +1,6 @@
 /** Signing in with an API key instead of a wallet: shared by the popup and the options page. */
 
-import { ApiError, VeridexApi } from "../api/client.js";
+import { ApiError, UnfretApi } from "../api/client.js";
 import { keySession, saveSession, type Session } from "./settings.js";
 import { OFFLINE } from "./text.js";
 
@@ -13,7 +13,7 @@ export async function signInWithKey(apiBase: string, value: string): Promise<Key
   const session = keySession(value);
   if (!session) return { ok: false, reason: "invalid" };
   try {
-    const credits = await new VeridexApi(apiBase, session.token).credits();
+    const credits = await new UnfretApi(apiBase, session.token).credits();
     await saveSession(session);
     return { ok: true, session, checks: credits.checks_remaining, inviteEligible: credits.invite_eligible };
   } catch (error) {

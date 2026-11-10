@@ -1,6 +1,6 @@
 /** Options: the API base URL (production by default, a local origin for development), an API key, signing out. */
 
-import { VeridexApi } from "../api/client.js";
+import { UnfretApi } from "../api/client.js";
 import { checksText } from "../popup/view.js";
 import { inviteAdded, redeemInvite } from "../shared/invites.js";
 import { KEY_FAILURE, signInWithKey } from "../shared/key-sign-in.js";
@@ -42,7 +42,7 @@ async function renderAccount(): Promise<void> {
   if (session) {
     try {
       // Hide "Have an invite?" for an account that has had credit, where no code would be accepted.
-      const credits = await new VeridexApi(apiBase, session.token).credits();
+      const credits = await new UnfretApi(apiBase, session.token).credits();
       if (credits.invite_eligible === false) el("invite").hidden = true;
     } catch {
       // Offline or an expired sign-in: keep the field; redeeming explains what's wrong.

@@ -1,5 +1,5 @@
 /**
- * The Veridex API, as the extension uses it (contract v1: SIWS sessions, credits in lamports, streamed analysis).
+ * The Unfret API, as the extension uses it (contract v1: SIWS sessions, credits in lamports, streamed analysis).
  * Errors carry the backend's `{detail, error_code, metadata}` shape.
  */
 
@@ -243,7 +243,7 @@ function asFindings(data: Record<string, unknown>): Finding[] {
   return [];
 }
 
-export class VeridexApi {
+export class UnfretApi {
   constructor(
     private readonly base: string,
     private readonly token?: string,

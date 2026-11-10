@@ -3,7 +3,8 @@
 //   dist/chrome-selfhosted  Chromium, self-hosted variant: update_url on unfret.kroshtan.com and the public `key`,
 //                           so the ID is the one the signed CRX has (needs release/public-key.b64, see crx-key.mjs)
 //   dist/chrome-dev         "Unfret Dev": its own key and ID, grey DEV icon, update_url and API on the dev deployment
-//                           (needs release/dev-public-key.b64, `node scripts/crx-key.mjs --dev`)
+//                           (needs release/dev-public-key.b64, `node scripts/crx-key.mjs --dev`); its version is
+//                           package.json's, or x.y.z.N with $UNFRET_DEV_BUILD=N (CI's run number, channels.mjs)
 //   dist/firefox            Firefox (built, not published) + its zip
 //   node scripts/build.mjs          production (minified)
 //   node scripts/build.mjs --dev    readable, with source maps
@@ -13,7 +14,7 @@ import { fileURLToPath } from "node:url";
 
 import { build } from "esbuild";
 
-import { CHANNELS } from "./channels.mjs";
+import { CHANNELS, versionFor } from "./channels.mjs";
 import { apiOrigin, manifest as manifestFor } from "./manifest.mjs";
 import { zipDirectory } from "./zip.mjs";
 
@@ -38,7 +39,11 @@ const statics = ["popup/popup.html", "popup/popup.css", "options/options.html", 
 function manifest(browser) {
   const keyFile = PUBLIC_KEY_FILE[browser];
   const publicKey = keyFile ? readFileSync(keyFile, "utf8").trim() : undefined;
-  return manifestFor(browser, { version: pkg.version, description: pkg.description, publicKey });
+  return manifestFor(browser, {
+    version: versionFor(browser, pkg.version),
+    description: pkg.description,
+    publicKey,
+  });
 }
 
 async function buildFor(browser) {

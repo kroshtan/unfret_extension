@@ -6,7 +6,7 @@
  * failures are retried until the pairing's expiry; anything the server refuses ends the wait.
  */
 
-import { ApiError, type PairedSession, type VeridexApi } from "../api/client.js";
+import { ApiError, type PairedSession, type UnfretApi } from "../api/client.js";
 import { parseSession, type Session } from "./settings.js";
 
 export const POLL_INTERVAL_MS = 1500;
@@ -52,7 +52,7 @@ function toSession(paired: PairedSession): Session | null {
  * @returns What happened.
  */
 export async function waitForPairing(
-  api: VeridexApi,
+  api: UnfretApi,
   pairId: string,
   options: WaitOptions,
 ): Promise<PairingOutcome> {

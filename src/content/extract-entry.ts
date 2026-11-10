@@ -8,8 +8,8 @@ import { extractPage } from "../extract/index.js";
 
 declare global {
   interface Window {
-    __veridexExtract?: () => ReturnType<typeof extractPage>;
+    __unfretExtract?: () => ReturnType<typeof extractPage>;
   }
 }
 
-window.__veridexExtract = () => extractPage(document, location.href, { live: true });
+window.__unfretExtract = () => extractPage(document, location.href, { live: true });

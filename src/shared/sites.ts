@@ -25,7 +25,7 @@ export function isMarketplaceProduct(url: string): boolean {
   return marketplaceUrlPatterns().some((pattern) => new RegExp(pattern, "u").test(url));
 }
 
-/** Pages a browser never lets extensions script (and the Veridex site itself). */
+/** Pages a browser never lets extensions script (and the Unfret site itself). */
 export function isAnalysable(url: string | undefined, apiBase: string): boolean {
   if (!url) return false;
   let parsed: URL;

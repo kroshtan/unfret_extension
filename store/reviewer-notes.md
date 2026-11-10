@@ -13,7 +13,7 @@ pack prices) before this works.
 
    ```sh
    curl -fsS -X POST https://unfret.kroshtan.com/v1/admin/keys/<key id>/grant \
-     -H "Authorization: Bearer $(cat ~/kroshtan_secrets/veridex-prod-admin-token)" \
+     -H "Authorization: Bearer $(cat ~/kroshtan_secrets/unfret-prod-admin-token)" \
      -H "Content-Type: application/json" -d '{"usd_micros": 4000000}'
    ```
 

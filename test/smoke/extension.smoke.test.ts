@@ -44,7 +44,7 @@ async function launch(
   extension: string,
   language = "en-US",
 ): Promise<{ context: BrowserContext; worker: Worker }> {
-  const userData = mkdtempSync(join(tmpdir(), "veridex-smoke-"));
+  const userData = mkdtempSync(join(tmpdir(), "unfret-smoke-"));
   temp.push(userData);
   const context = await chromium.launchPersistentContext(userData, {
     channel: "chromium",
@@ -64,7 +64,7 @@ async function launch(
 
 /** A copy of the build granted the Amazon site: the access a toolbar click (activeTab) gives for that tab. */
 function grantedCopy(): string {
-  const dir = mkdtempSync(join(tmpdir(), "veridex-granted-"));
+  const dir = mkdtempSync(join(tmpdir(), "unfret-granted-"));
   temp.push(dir);
   cpSync(shipped, dir, { recursive: true });
   const manifestPath = join(dir, "manifest.json");
@@ -174,7 +174,7 @@ describe("with the access a click grants (activeTab)", () => {
       await chrome.scripting.executeScript({ target: { tabId: id }, files: ["extract.js"] });
       const [result] = await chrome.scripting.executeScript({
         target: { tabId: id },
-        func: () => window.__veridexExtract?.(),
+        func: () => window.__unfretExtract?.(),
       });
       return result?.result;
     }, tabId);
@@ -222,7 +222,7 @@ describe("with the access a click grants (activeTab)", () => {
     const state = await popup.evaluate(
       (id) =>
         new Promise<TabState>((resolve) => {
-          const port = chrome.runtime.connect({ name: "veridex-analysis" });
+          const port = chrome.runtime.connect({ name: "unfret-analysis" });
           port.onMessage.addListener((update: { tabId: number; state: TabState }) => {
             if (update.tabId === id && ["done", "error"].includes(update.state.status)) resolve(update.state);
           });
@@ -441,7 +441,7 @@ describe("in a Dutch browser", () => {
     const state = await popup.evaluate(
       (id) =>
         new Promise<TabState>((resolve) => {
-          const port = chrome.runtime.connect({ name: "veridex-analysis" });
+          const port = chrome.runtime.connect({ name: "unfret-analysis" });
           port.onMessage.addListener((update: { tabId: number; state: TabState }) => {
             if (update.tabId === id && ["done", "error"].includes(update.state.status)) resolve(update.state);
           });
