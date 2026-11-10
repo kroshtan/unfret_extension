@@ -129,7 +129,10 @@ const context = await chromium.launchPersistentContext(userData, {
 });
 try {
   await context.route(`${API}/v1/credits`, (route) =>
-    route.fulfill({ json: { address: ADDRESS, balance_usd_micros: 4_600_000, checks_remaining: 23 } }),
+    // An account with checks: the server says no invite can be redeemed onto it, so the field is hidden.
+    route.fulfill({
+      json: { address: ADDRESS, balance_usd_micros: 4_600_000, checks_remaining: 23, invite_eligible: false },
+    }),
   );
   await context.route(`${API}/v1/pricing**`, (route) =>
     route.fulfill({
@@ -153,17 +156,26 @@ try {
       Math.max(...(await chrome.tabs.query({})).map((t) => t.id ?? -1)),
     );
     await worker.evaluate(
-      async ({ tabId, result, consent, address }) => {
+      async ({ tabId, result, consent, address, shop }) => {
         await chrome.storage.local.set({
           session: { token: `t-${"x".repeat(30)}`, address, expiresAt: "2999-01-01T00:00:00.000Z" },
         });
         if (consent) await chrome.storage.local.remove("consent");
         else await chrome.storage.local.set({ consent: { version: 1 } });
         await chrome.storage.session.set({
-          [`tab:${tabId}`]: result ? { status: "done", findings: [], steps: [], result } : { status: "idle" },
+          // With the page's address and a share token, as a real check has, so "Share this result" shows.
+          [`tab:${tabId}`]: result
+            ? {
+                status: "done",
+                findings: [],
+                steps: [],
+                body: { url: shop },
+                result: { share_token: "t.mac", ...result },
+              }
+            : { status: "idle" },
         });
       },
-      { tabId, result: shot.result ?? null, consent: shot.consent === true, address: ADDRESS },
+      { tabId, result: shot.result ?? null, consent: shot.consent === true, address: ADDRESS, shop: SHOP },
     );
     const popup = await context.newPage();
     await popup.setViewportSize({ width: 360, height: 600 });
