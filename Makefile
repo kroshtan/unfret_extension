@@ -42,7 +42,7 @@ crx-key:  ## Create a CRX signing key once (production; DEV=1 for Unfret Dev). K
 release: build  ## Signed self-hosted release in dist/release: CRX, updates.xml, store zip, SHA256SUMS
 	node scripts/release.mjs
 
-store-package: build  ## Check the Chrome Web Store package and put it, with SHA256SUMS, in dist/store
+store-package: build  ## Check the Chrome and Firefox store packages, add the source zip, put them with SHA256SUMS in dist/store
 	node scripts/store-package.mjs
 
 publish-dev:  ## Put dist/release's Unfret Dev into the backend checkout (BACKEND=path); CI does this on main
