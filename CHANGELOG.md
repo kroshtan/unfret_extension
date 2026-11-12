@@ -3,6 +3,14 @@
 Releases of the Unfret browser extension. (Earlier releases are described in their commit messages and in the
 backend's changelog, which lists each one published at `/extension`.)
 
+## Unreleased
+
+- **Firefox (addons.mozilla.org).** The store workflow, now "Release to the extension stores", also attaches the
+  Firefox zip and the source zip AMO asks for (`git archive` of the release commit; `npm ci && npm run build` rebuilds
+  the Firefox zip byte for byte), with one SHA256SUMS for all three, replaced when a package is added to an older
+  release. `store/AMO.md` has the submission steps, listing texts and reviewer notes. Node is pinned to 22 (`.nvmrc`,
+  `engines`). Version 0.9.1's Firefox and source zips were attached to its release by hand, built the same way.
+
 ## 0.9.1 (2026-11-10)
 
 - **Unfret moves to unfret.net.** The extension talks to https://unfret.net (Unfret Dev to https://dev.unfret.net),

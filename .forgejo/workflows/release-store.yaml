@@ -1,15 +1,15 @@
-name: Release to Chrome Web Store
+name: Release to the extension stores
 
-# Production Unfret is released only by hand: Actions → "Release to Chrome Web Store" → Run workflow. Nothing runs
+# Production Unfret is released only by hand: Actions → "Release to the extension stores" → Run workflow. Nothing runs
 # here automatically. Leave the input at `main` to release main's newest commit as v<version in package.json>
 # (refused if that tag already names another commit, so bump the version first). Or give an existing release tag,
 # e.g. v0.8.4, to package that release again. Either way the commit must be on main, with CI passed and the same
 # commit published as Unfret Dev.
 #
-# It builds the store package, checks it (scripts/store-package.mjs: package.json's version, production API, no
-# `key` or `update_url`) and attaches it with its checksum to the Forgejo release v<version>. Uploading it to the
-# Chrome Web Store is the one step left by hand (store/SUBMIT.md): the store's API needs Google credentials this
-# repository doesn't have.
+# It builds the store packages, checks them (scripts/store-package.mjs: package.json's version, production API, no
+# `key` or `update_url`) and attaches them with their checksums to the Forgejo release v<version>: the Chrome zip,
+# the Firefox zip and the source zip addons.mozilla.org asks for. Uploading them is left by hand (store/SUBMIT.md,
+# store/AMO.md): the stores' APIs need credentials this repository doesn't have.
 on:
   workflow_dispatch:
     inputs:
@@ -79,7 +79,7 @@ jobs:
             echo "tag=$tag"
             echo "version=$version"
           } >> "$FORGEJO_OUTPUT"
-          echo "Packaging $tag ($sha) for the Chrome Web Store"
+          echo "Packaging $tag ($sha) for the extension stores"
       - name: Install dependencies
         run: npm ci
       - name: Test
@@ -114,9 +114,10 @@ jobs:
               tag_name: process.env.TAG,
               target_commitish: process.env.SHA,
               name: `Unfret ${process.env.VERSION}`,
-              body: `The Chrome Web Store package of Unfret ${process.env.VERSION}: upload ` +
-                `unfret-chrome-${process.env.VERSION}.zip in the developer dashboard (store/SUBMIT.md). ` +
-                "SHA256SUMS lists its checksum; `make build` rebuilds it byte for byte from this tag.",
+              body: `The store packages of Unfret ${process.env.VERSION}: unfret-chrome-${process.env.VERSION}.zip ` +
+                `for the Chrome Web Store (store/SUBMIT.md), unfret-firefox-${process.env.VERSION}.zip and ` +
+                `unfret-source-${process.env.VERSION}.zip for addons.mozilla.org (store/AMO.md). SHA256SUMS ` +
+                "lists their checksums; `npm ci && npm run build` rebuilds them byte for byte from this tag.",
             })')"
             id="$(curl -fsS -X POST -H "$auth" -H "Content-Type: application/json" -d "$body" "$API/releases" \
               | node -p 'JSON.parse(require("fs").readFileSync(0, "utf8")).id')"
@@ -127,13 +128,19 @@ jobs:
           for file in dist/store/*; do
             name="$(basename "$file")"
             if grep -qxF "$name" <<< "$existing"; then
-              echo "$name is already attached"
-              continue
+              if [[ "$name" != SHA256SUMS ]]; then
+                echo "$name is already attached"
+                continue
+              fi
+              # The checksums grow when a package is added to an older release: replace them.
+              asset="$(curl -fsS -H "$auth" "$API/releases/$id/assets" \
+                | node -p 'JSON.parse(require("fs").readFileSync(0, "utf8")).find((a) => a.name === "SHA256SUMS").id')"
+              curl -fsS -o /dev/null -X DELETE -H "$auth" "$API/releases/$id/assets/$asset"
             fi
             curl -fsS -o /dev/null -X POST -H "$auth" -F "attachment=@$file" \
               "$API/releases/$id/assets?name=$name"
             echo "attached $name"
           done
-          echo "::notice::Unfret $VERSION is ready: download unfret-chrome-$VERSION.zip from" \
-            "$SERVER/$REPO/releases/tag/$TAG and upload it in the Chrome Web Store developer dashboard" \
-            "(store/SUBMIT.md)."
+          echo "::notice::Unfret $VERSION is ready at $SERVER/$REPO/releases/tag/$TAG: upload" \
+            "unfret-chrome-$VERSION.zip to the Chrome Web Store (store/SUBMIT.md) and unfret-firefox-$VERSION.zip" \
+            "with unfret-source-$VERSION.zip to addons.mozilla.org (store/AMO.md)."

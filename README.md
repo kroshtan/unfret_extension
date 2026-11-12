@@ -7,9 +7,10 @@ Unfret reports evidence and a plain-words verdict; it never calls a shop a scam.
 Chrome (Manifest V3) and Firefox, from one source. Vanilla TypeScript, no UI framework, no remote code, no
 third-party requests: the extension talks to the Unfret API and nothing else.
 
-**Install:** Unfret is distributed from its own server as a signed, reproducible CRX with automatic updates, and is
-being submitted to the Chrome Web Store (the listing and its assets are in [store/](store/SUBMIT.md)). See [INSTALL.md](INSTALL.md) (Brave, Chromium and Chrome on Linux;
-ungoogled-chromium; Windows and macOS) or <https://unfret.net/extension>.
+**Install:** from the [Chrome Web Store](https://chromewebstore.google.com/detail/unfret/giiengbpechhnphignbicmlcbklmcpjo)
+(Chrome, Brave, Edge and other Chromium browsers); Firefox is being submitted to addons.mozilla.org
+([store/AMO.md](store/AMO.md)). Both are built byte for byte from this repository. The older self-hosted install is
+described in [INSTALL.md](INSTALL.md), but no longer offered.
 
 ## How it works
 
@@ -102,9 +103,9 @@ self-hosted release in `dist/release/` (see [INSTALL.md](INSTALL.md#for-maintain
 - **Merge to `main` ⇒ Unfret Dev.** CI (`.forgejo/workflows/ci.yaml`, job `publish-dev`) builds Unfret Dev as
   `<version>.<run number>`, signs it and opens a self-merging pull request on the backend, whose pipeline deploys it to
   dev.unfret.net.
-- **Production ⇒ by hand only.** Actions → "Release to Chrome Web Store" (`release-store.yaml`) builds and checks the
-  store package and attaches it to the release `v<version>`; the upload to the store is manual
-  ([store/SUBMIT.md](store/SUBMIT.md)).
+- **Production ⇒ by hand only.** Actions → "Release to the extension stores" (`release-store.yaml`) builds and checks the
+  store packages (Chrome, Firefox and the source zip addons.mozilla.org asks for) and attaches them to the release
+  `v<version>`; the uploads are manual ([store/SUBMIT.md](store/SUBMIT.md), [store/AMO.md](store/AMO.md)).
 
 ## Parity with the backend
 

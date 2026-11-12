@@ -14,7 +14,7 @@ Everything Claude could prepare is in this folder. These are the steps only you 
 - [x] **Approve the icon and images** (approved 2026-11-09): `icons/icon-128.png`, `store/assets/promo-small-440x280.png`,
       `store/assets/promo-marquee-1400x560.png`, `store/screenshots/*.png`. Re-render with `make icons` and
       `make screenshots` after changing `brand/*.svg` or the popup.
-- [ ] **Build the package**: Actions → **Release to Chrome Web Store** → Run workflow (input `main`) checks the
+- [ ] **Build the package**: Actions → **Release to the extension stores** → Run workflow (input `main`) checks the
       commit, builds and checks the store zip and attaches `unfret-chrome-<version>.zip` to the Forgejo release
       `v<version>` (locally, `make store-package` writes the same file to `dist/store/`). The store zip has no `key`
       and no `update_url`: the store gives the extension its own ID, different from the self-hosted one. The upload
