@@ -7,3 +7,9 @@ coverage/
 # Signing keys never belong in the repo (the CRX key lives in ~/kroshtan_secrets)
 *.pem
 *.key
+
+# Python (the parity script runs the backend's extractors) and other generated folders
+__pycache__/
+.venv/
+venv/
+build/

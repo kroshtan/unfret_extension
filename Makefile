@@ -1,7 +1,8 @@
 .PHONY: help install lint typecheck test smoke build build-dev parity icons screenshots crx-key release store-package publish-dev verify-release clean
 .DEFAULT_GOAL := help
 
-BACKEND ?= $(HOME)/repos/unfret_backend
+# The backend checkout, next to this one unless set (make parity BACKEND=…)
+BACKEND ?= $(abspath $(CURDIR)/../unfret_backend)
 
 help:  ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-12s\033[0m %s\n", $$1, $$2}'
