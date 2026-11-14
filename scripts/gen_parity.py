@@ -3,7 +3,7 @@ Generate the parity expectations: run the backend's Python extractors over test/
 
 Run with the backend's virtualenv (read-only use of the backend repo):
 
-    make parity BACKEND=~/repos/unfret_backend
+    make parity BACKEND=../unfret_backend
 
 Writes test/fixtures/<name>.expected.json (PageFacts as JSON) for every entry in test/fixtures/index.json.
 """

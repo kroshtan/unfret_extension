@@ -77,7 +77,7 @@ make test             # unit + parity tests
 make lint typecheck
 make build-dev        # dist/chrome, dist/firefox (unminified, source maps)
 make smoke            # build + headless Chromium run (first: npx playwright install chromium)
-make parity           # regenerate expectations from the backend's Python extractors (BACKEND=~/repos/unfret_backend)
+make parity           # regenerate expectations from the backend's Python extractors (BACKEND=../unfret_backend)
 ```
 
 Load unpacked:
