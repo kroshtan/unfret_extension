@@ -64,7 +64,12 @@ const INVITE_REFUSALS: Record<string, { status: number; error_code: string; deta
   [INVITE_NOT_NEW_CODE]: {
     status: 403,
     error_code: "INVITE_NOT_FOR_THIS_ACCOUNT",
-    detail: "Invites are for new accounts: this one has had checks before, or used an invite.",
+    detail: "Invites and intro codes are for new accounts: this one has had checks before, or used one.",
+  },
+  CAPPED: {
+    status: 429,
+    error_code: "INTRO_DAILY_CAP",
+    detail: "Today's free checks from codes are gone: they're back tomorrow (UTC).",
   },
 };
 
@@ -202,6 +207,13 @@ export async function startMockApi(): Promise<MockApi> {
         const code = (body as { code?: string } | null)?.code ?? "";
         const refusal = INVITE_REFUSALS[code];
         if (refusal) json(res, refusal.status, { detail: refusal.detail, error_code: refusal.error_code });
+        else if (code === "FRIENDS")
+          json(res, 200, {
+            checks_added: 5,
+            usd_micros_added: 1_000_000,
+            balance_usd_micros: 1_000_000,
+            checks_remaining: 5,
+          });
         else if (code === INVITE_OK) {
           invited.add(token);
           json(res, 200, {
@@ -212,7 +224,7 @@ export async function startMockApi(): Promise<MockApi> {
           });
         } else
           json(res, 400, {
-            detail: "That isn't an invite code (it starts with ufi_).",
+            detail: "That isn't an invite or intro code.",
             error_code: "INVALID_INVITE",
           });
         return;

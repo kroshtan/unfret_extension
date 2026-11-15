@@ -1,5 +1,6 @@
 /**
- * "Have an invite?": a code someone got with a pack of checks, redeemed onto the signed-in account (the wallet's
+ * "Have an invite or intro code?": a code someone got with a pack of checks, or an intro code someone shared (FRIENDS),
+ * redeemed onto the signed-in account (the wallet's
  * session or the API key). The server adds the checks only for a new account, one that never had any; its refusals
  * are shown as it words them. Shared by the popup and the options page. The code is sent once and never stored.
  */
@@ -9,8 +10,10 @@ import { OFFLINE, SESSION_EXPIRED } from "./text.js";
 
 /** An invite code: `ufi_` and 32 lower-case base32 letters (the server ignores case and surrounding spaces). */
 export const INVITE_RE = /^ufi_[a-z2-7]{32}$/u;
+/** An intro code someone shared, such as FRIENDS: 3 to 24 letters or digits, upper case. */
+export const INTRO_RE = /^[A-Z0-9]{3,24}$/u;
 
-export const NOT_AN_INVITE = "That isn't an invite code (it starts with ufi_).";
+export const NOT_AN_INVITE = "That isn't an invite (ufi_…) or an intro code.";
 
 /** The refusals the server explains itself (its `detail` is shown); the wording here is the fallback. */
 const REFUSED: Record<string, string> = {
@@ -18,16 +21,19 @@ const REFUSED: Record<string, string> = {
   UNKNOWN_INVITE: "Unknown invite code.",
   INVITE_USED: "This invite has already been used.",
   INVITE_NOT_FOR_THIS_ACCOUNT:
-    "Invites are for new accounts: this one has had checks before, or used an invite.",
+    "Invites and intro codes are for new accounts: this one has had checks before, or used one.",
+  INVITE_ENDED: "This code has ended.",
+  INTRO_DAILY_CAP: "Today's free checks from codes are gone: they're back tomorrow.",
 };
 
 export type InviteRedemption =
   { ok: true; checksAdded: number; checks: number } | { ok: false; message: string; signedOut: boolean };
 
-/** The code as typed, or null when it isn't one (checked before anything is sent). */
+/** The code as typed (an invite, or an intro code such as FRIENDS), or null when it isn't one. */
 export function normaliseInvite(value: string): string | null {
-  const code = value.trim().toLowerCase();
-  return INVITE_RE.test(code) ? code : null;
+  const typed = value.trim();
+  if (INVITE_RE.test(typed.toLowerCase())) return typed.toLowerCase();
+  return INTRO_RE.test(typed.toUpperCase()) ? typed.toUpperCase() : null;
 }
 
 /** "3 checks added." */

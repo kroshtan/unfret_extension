@@ -5,6 +5,15 @@ backend's changelog, which lists each one published at `/extension`.)
 
 ## Unreleased
 
+## 0.10.0 (2026-11-15)
+
+- **Intro codes.** "Have an invite or intro code?" also takes the named codes Unfret hands out (FRIENDS, DEV, …):
+  3 to 24 letters or digits, in any case, sent upper case. They work like invites (new accounts only, one per
+  account) and add their own number of checks; the server's new refusals ("This code has ended", today's free
+  checks are gone) are shown in its own words.
+- **API key first.** The popup's sign-in buttons start with "API key", then the wallets, matching the website
+  (card payments go to an API key).
+
 - **Firefox (addons.mozilla.org).** The store workflow, now "Release to the extension stores", also attaches the
   Firefox zip and the source zip AMO asks for (`git archive` of the release commit; `npm ci && npm run build` rebuilds
   the Firefox zip byte for byte), with one SHA256SUMS for all three, replaced when a package is added to an older

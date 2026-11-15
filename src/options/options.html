@@ -33,14 +33,21 @@
         <p id="account-status"></p>
         <button id="sign-out" type="button" hidden>Sign out</button>
         <div id="invite" hidden>
-          <h3>Have an invite?</h3>
+          <h3>Have an invite or intro code?</h3>
           <p class="muted small">
-            An invite adds 3 checks to a new wallet or a new API key, one that never had checks.
+            An invite adds 3 checks, an intro code a few, to a new wallet or a new API key, one that never had
+            checks.
           </p>
-          <label for="invite-input">Invite code</label>
-          <input id="invite-input" type="text" spellcheck="false" autocomplete="off" placeholder="ufi_…" />
+          <label for="invite-input">Invite or intro code</label>
+          <input
+            id="invite-input"
+            type="text"
+            spellcheck="false"
+            autocomplete="off"
+            placeholder="ufi_… or a code like FRIENDS"
+          />
           <div class="row">
-            <button id="invite-use" type="button">Use invite</button>
+            <button id="invite-use" type="button">Use code</button>
           </div>
           <p id="invite-status" class="muted small" role="status"></p>
         </div>
