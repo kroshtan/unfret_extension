@@ -91,7 +91,10 @@ describe("invites", () => {
   it.each([
     [INVITE_USED_CODE, "This invite has already been used."],
     [INVITE_UNKNOWN_CODE, "Unknown invite code."],
-    [INVITE_NOT_NEW_CODE, "Invites and intro codes are for new accounts: this one has had checks before, or used one."],
+    [
+      INVITE_NOT_NEW_CODE,
+      "Invites and intro codes are for new accounts: this one has had checks before, or used one.",
+    ],
   ])("shows the server's reason for a refused code (%s)", async (code, message) => {
     expect(await redeemInvite(api.url, KEY, code)).toEqual({ ok: false, message, signedOut: false });
   });
