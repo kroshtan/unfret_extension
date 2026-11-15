@@ -27,8 +27,13 @@ toolbar click ─► popup ─► background ─► inject extract.js into the t
 - **Extraction happens in the browser.** `src/extract/` is a TypeScript port of the backend's PageFacts
   extractors (`facts/*.py`). It also adds what only the rendered page shows: text hidden by stylesheet CSS,
   the current state of checkboxes, and countdowns read twice a few seconds apart.
-- **Only facts and cleaned product text are sent**, never the raw page: account menus, delivery addresses,
-  greetings, forms and inputs are stripped from a copy of the page first.
+- **Only facts and cleaned product text are sent**, never the raw page: account menus, greetings, forms and inputs,
+  checkout, billing and delivery areas are stripped from a copy of the page first. Addresses are kept only where the
+  business publishes its own (a contact, legal or imprint section, the footer, Organization or address structured
+  data); an address anywhere else could be yours and is stripped. The same rules decide which phone numbers, e-mail
+  addresses and addresses go into the facts (`src/extract/business.ts`, a port of the backend's `facts/business.py`).
+  On classifieds platforms (Marktplaats, 2dehands, Vinted, Craigslist, Facebook Marketplace) the seller's name is
+  never read, and only product IDs and payment methods are read as business facts there (also on eBay).
 - **Sign-in is Sign-In With Solana.** "Sign in" opens `https://unfret.net/connect`; after you sign a
   message in your wallet, that page posts the session to itself and the extension's content script (injected only
   there) relays it. The relay accepts it only from that window on the configured Unfret origin, and the
@@ -49,7 +54,7 @@ The API contract is in the backend repository (credits door, contract v1).
 src/
   background/   service worker / event page: session relay, icon hint, badge, analysis runner
   content/      extract-entry.ts (injected on demand), connect-relay.ts (connect page only), relay.ts (checks)
-  extract/      PageFacts extraction: parse, dom, generic, amazon, bolcom (ports); live, clean (browser-only)
+  extract/      PageFacts extraction: parse, dom, generic, business, amazon, bolcom, walmart (ports); live, clean (browser-only)
   api/          API client and SSE parser
   popup/        popup UI
   options/      options page (API base URL, sign out)

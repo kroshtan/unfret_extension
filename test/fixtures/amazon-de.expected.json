@@ -45,5 +45,26 @@
  "policy_links": {},
  "image_urls": [
   "https://m.media-amazon.com/images/I/big.jpg"
- ]
+ ],
+ "product_ids": {
+  "asin": "B0TEST1234"
+ },
+ "payment_methods": [],
+ "phones": [],
+ "emails": [],
+ "addresses": [],
+ "founded_claims": [],
+ "business_name": "",
+ "legal_form": "",
+ "kvk_numbers": [],
+ "licences": [],
+ "certifications": [],
+ "cities_served": [],
+ "internal_links": [],
+ "pricing_terms": [],
+ "promises": [],
+ "testimonials": [],
+ "organization_ld": [],
+ "seller_profile": null,
+ "listing": null
 }

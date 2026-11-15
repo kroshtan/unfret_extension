@@ -5,10 +5,18 @@
  * Works on any `Document`: the live page in the browser, or a parsed HTML string in tests (parity with Python).
  */
 
-import { type Checkbox, emptyFacts, emptyReview, type PageFacts, type Platform } from "../shared/facts.js";
+import {
+  type Checkbox,
+  emptyFacts,
+  emptyReview,
+  P2P_PLATFORMS,
+  type PageFacts,
+  type Platform,
+} from "../shared/facts.js";
 import * as amazon from "./amazon.js";
 import * as bolcom from "./bolcom.js";
 import * as walmart from "./walmart.js";
+import { extractBusiness } from "./business.js";
 import { attr, cut, dedupe, hostname, squash, tagName, text, urljoin } from "./dom.js";
 import { parseDate, parseNumber, parseRating } from "./parse.js";
 import { pyJsonLength } from "./pyjson.js";
@@ -44,6 +52,32 @@ const WOO_RE = /woocommerce|wp-content\/plugins\/woocommerce/iu;
 const AMAZON_HOST_RE = /(?:^|[\s.])amazon\.[a-z.]+/u;
 const BOL_HOST_RE = /(?:^|[\s.])bol\.com/u;
 const WALMART_HOST_RE = /(?:^|[\s.])walmart\.com\b/u;
+// Peer-to-peer marketplaces and service platforms, by host (the backend's classifier decides the page type).
+const HOST_PATTERNS: [Platform, string][] = [
+  ["ebay", String.raw`ebay\.[a-z.]+`],
+  ["marktplaats", String.raw`marktplaats\.nl`],
+  ["2dehands", String.raw`2dehands\.be|2ememain\.be`],
+  ["vinted", String.raw`vinted\.[a-z.]+`],
+  ["craigslist", String.raw`craigslist\.[a-z.]+`],
+  ["facebook", String.raw`facebook\.com`],
+  ["werkspot", String.raw`werkspot\.nl`],
+  ["thumbtack", String.raw`thumbtack\.com`],
+  ["angi", String.raw`angi\.com|angieslist\.com`],
+  ["homeadvisor", String.raw`homeadvisor\.com`],
+  ["checkatrade", String.raw`checkatrade\.com`],
+  ["taskrabbit", String.raw`taskrabbit\.[a-z.]+`],
+  ["bark", String.raw`bark\.com`],
+  ["houzz", String.raw`houzz\.[a-z.]+`],
+  ["myhammer", String.raw`my-hammer\.de|myhammer\.de`],
+];
+const PLATFORM_HOSTS: [Platform, RegExp][] = [
+  ["bol.com", BOL_HOST_RE],
+  ["walmart", WALMART_HOST_RE],
+  ...HOST_PATTERNS.map(([name, hosts]): [Platform, RegExp] => [
+    name,
+    new RegExp(String.raw`(?:^|[\s.])(?:${hosts})(?![a-z0-9-])`, "u"),
+  ]),
+];
 const COMPARE_AT_RE = /"compare_at_price"\s*:\s*("?)(\d+(?:\.\d+)?)\1/gu;
 const VARIANT_PRICE_RE = /"price"\s*:\s*("?)(\d+(?:\.\d+)?)\1/gu;
 const VARIANT_ID_RE = /"id"\s*:\s*"?(\d{6,})/gu;
@@ -122,7 +156,28 @@ export function extractFacts(doc: Document, html: string, url = ""): PageFacts {
   if (!facts.title) facts.title = text(doc.querySelector("h1")) || meta(doc, "og:title");
   const ogImage = meta(doc, "og:image");
   if (facts.image_urls.length === 0 && ogImage) facts.image_urls = [urljoin(url, ogImage)];
+  if (P2P_PLATFORMS.has(facts.platform)) {
+    // A private seller's name is never kept.
+    facts.seller = "";
+    facts.json_ld = withoutSeller(facts.json_ld);
+  }
+  extractBusiness(doc, url, facts);
   return facts;
+}
+
+/** Product JSON-LD without the offers' seller (on a peer-to-peer ad, a private person's name). */
+export function withoutSeller(jsonLd: Json[]): Json[] {
+  const offer = (value: unknown): unknown => {
+    if (!isObject(value)) return value;
+    const copy: Json = {};
+    for (const [k, v] of Object.entries(value)) if (k !== "seller") copy[k] = v;
+    return copy;
+  };
+  return jsonLd.map((node) => {
+    const offers = node.offers;
+    if (offers === undefined) return node;
+    return { ...node, offers: Array.isArray(offers) ? offers.map(offer) : offer(offers) };
+  });
 }
 
 export function platform(doc: Document, html: string, url: string): Platform {
@@ -133,8 +188,7 @@ export function platform(doc: Document, html: string, url: string): Platform {
   if (AMAZON_HOST_RE.test(hosts) || (doc.getElementById("productTitle") && doc.getElementById("dp"))) {
     return "amazon";
   }
-  if (BOL_HOST_RE.test(hosts)) return "bol.com";
-  if (WALMART_HOST_RE.test(hosts)) return "walmart";
+  for (const [name, pattern] of PLATFORM_HOSTS) if (pattern.test(hosts)) return name;
   if (SHOPIFY_RE.test(html)) return "shopify";
   if (WOO_RE.test(html)) return "woocommerce";
   return "generic";

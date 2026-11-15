@@ -9,5 +9,9 @@
   "amazon-com-buybox": "https://www.amazon.com/dp/B0TESTUS01",
   "walmart": "https://www.walmart.com/ip/Apple-AirPods-4/11381374703",
   "walmart-marketplace": "https://www.walmart.com/ip/-/11826501717",
-  "footer-copyright": "https://blueridge.example/products/trail-tent-2p"
+  "footer-copyright": "https://blueridge.example/products/trail-tent-2p",
+  "service-site-nl": "https://www.loodgietersnel.nl/",
+  "service-site-us": "https://acmeplumbing.example/",
+  "marktplaats-ad": "https://www.marktplaats.nl/v/fietsen-en-brommers/fietsen-dames-damesfietsen/m2187654321-gazelle-damesfiets",
+  "logged-in-shop": "https://lumen.example/products/glow-lamp"
 }

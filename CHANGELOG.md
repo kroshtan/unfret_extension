@@ -5,6 +5,22 @@ backend's changelog, which lists each one published at `/extension`.)
 
 ## Unreleased
 
+- **Page facts for more kinds of pages** (kept in parity with the backend's extractors, `make parity`): public product
+  IDs (GTIN/EAN, MPN, ASIN), payment methods mentioned, the phone numbers (typed: mobile, local, national, toll-free,
+  premium), e-mail addresses (own domain or webmail) and addresses a business publishes, "since 1998" claims, business
+  name and legal form, KvK and US licence numbers, certification, pricing and response-time snippets, cities served,
+  same-site links and Organization/LocalBusiness data; plus empty `seller_profile` and `listing` for the platform
+  readers to come. The platform is recognised on eBay, Marktplaats, 2dehands, Vinted, Craigslist, Facebook, Werkspot,
+  Thumbtack, Angi, HomeAdvisor, Checkatrade, TaskRabbit, Bark, Houzz and MyHammer. On the classifieds platforms the
+  seller's name is dropped (also from the offer's structured data). Needs a backend that knows the new platform values
+  (an older one refuses them): release only after the backend.
+- **Addresses: keep the business's, strip the visitor's.** The page text used to lose every element marked as an
+  address. Now an address is kept where the business publishes its own (a contact, legal or imprint section,
+  Organization or address microdata) and stripped everywhere else, including a plain `<address>` outside such a
+  section; checkout, billing, delivery-address, login and user-menu areas are stripped too, and an account or checkout
+  page sends no text at all. The business facts follow the same rules. Tests cover a logged-in shop page, service
+  company pages and a classifieds ad (`test/privacy.test.ts`).
+
 ## 0.10.0 (2026-11-15)
 
 - **Intro codes.** "Have an invite or intro code?" also takes the named codes Unfret hands out (FRIENDS, DEV, …):

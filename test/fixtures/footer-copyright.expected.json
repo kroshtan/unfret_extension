@@ -30,5 +30,29 @@
   "(c) 2026 ACME OUTDOOR L.L.C. Powered by Shopify"
  ],
  "policy_links": {},
- "image_urls": []
+ "image_urls": [],
+ "product_ids": {},
+ "payment_methods": [],
+ "phones": [],
+ "emails": [],
+ "addresses": [],
+ "founded_claims": [],
+ "business_name": "",
+ "legal_form": "LLC",
+ "kvk_numbers": [],
+ "licences": [],
+ "certifications": [],
+ "cities_served": [],
+ "internal_links": [
+  {
+   "text": "Blue Ridge Supply Co.",
+   "url": "https://blueridge.example/"
+  }
+ ],
+ "pricing_terms": [],
+ "promises": [],
+ "testimonials": [],
+ "organization_ld": [],
+ "seller_profile": null,
+ "listing": null
 }

@@ -34,5 +34,26 @@
  "legal_mentions": [],
  "copyright_lines": [],
  "policy_links": {},
- "image_urls": []
+ "image_urls": [],
+ "product_ids": {
+  "asin": "B0TESTUS01"
+ },
+ "payment_methods": [],
+ "phones": [],
+ "emails": [],
+ "addresses": [],
+ "founded_claims": [],
+ "business_name": "",
+ "legal_form": "",
+ "kvk_numbers": [],
+ "licences": [],
+ "certifications": [],
+ "cities_served": [],
+ "internal_links": [],
+ "pricing_terms": [],
+ "promises": [],
+ "testimonials": [],
+ "organization_ld": [],
+ "seller_profile": null,
+ "listing": null
 }

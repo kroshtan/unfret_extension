@@ -1,0 +1,104 @@
+{
+ "platform": "generic",
+ "url": "https://acmeplumbing.example/",
+ "title": "Emergency plumber in San Francisco: same-day service",
+ "brand": "",
+ "seller": "",
+ "seller_rating": null,
+ "ships_from": "",
+ "price": null,
+ "list_price": null,
+ "currency": "",
+ "date_first_available": null,
+ "rating": null,
+ "rating_count": null,
+ "rating_histogram": {},
+ "reviews": [],
+ "variations": [],
+ "json_ld": [],
+ "script_srcs": [],
+ "meta": {},
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [],
+ "fee_mentions": [],
+ "vat_ids": [],
+ "legal_mentions": [],
+ "copyright_lines": [
+  "Copyright 2026 Acme Plumbing & Rooter LLC. ROC 123456 (AZ). Yelp"
+ ],
+ "policy_links": {},
+ "image_urls": [],
+ "product_ids": {},
+ "payment_methods": [
+  "visa",
+  "mastercard",
+  "apple_pay",
+  "cash"
+ ],
+ "phones": [
+  {
+   "number": "+14155550123",
+   "kind": "local",
+   "country": "US"
+  }
+ ],
+ "emails": [
+  {
+   "address": "service@acmeplumbing.example",
+   "kind": "own_domain"
+  }
+ ],
+ "addresses": [
+  "1 Market St, San Francisco, CA 94105"
+ ],
+ "founded_claims": [
+  "Established in 2009"
+ ],
+ "business_name": "",
+ "legal_form": "LLC",
+ "kvk_numbers": [],
+ "licences": [
+  {
+   "number": "987654",
+   "state": "CA"
+  },
+  {
+   "number": "123456",
+   "state": ""
+  }
+ ],
+ "certifications": [
+  "akland Emergency plumber in San Francisco: same-day service Licensed, bonded and insured",
+  "rgency plumber in San Francisco: same-day service Licensed, bonded and insured",
+  "ber in San Francisco: same-day service Licensed, bonded and insured"
+ ],
+ "cities_served": [],
+ "internal_links": [
+  {
+   "text": "About us",
+   "url": "https://acmeplumbing.example/about-us"
+  },
+  {
+   "text": "Drain cleaning",
+   "url": "https://acmeplumbing.example/services/drain-cleaning"
+  },
+  {
+   "text": "Oakland",
+   "url": "https://acmeplumbing.example/locations/oakland"
+  }
+ ],
+ "pricing_terms": [
+  "Free estimates, no call-out fee"
+ ],
+ "promises": [
+  "ng & Rooter | San Francisco About us Drain cleaning Oakland Emergency plumber in San Francisco: same-day service Licensed, bonded and insured",
+  "Drain cleaning Oakland Emergency plumber in San Francisco: same-day service Licensed, bonded and insured",
+  "Call (415) 555-0123 or toll-free (800) 555-0199, open 24/7",
+  "\"Fixed our leak within 45 minutes"
+ ],
+ "testimonials": [],
+ "organization_ld": [],
+ "seller_profile": null,
+ "listing": null
+}

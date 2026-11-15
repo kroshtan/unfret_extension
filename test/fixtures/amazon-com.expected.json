@@ -62,5 +62,39 @@
  },
  "image_urls": [
   "https://m.media-amazon.com/images/I/watch.jpg"
- ]
+ ],
+ "product_ids": {
+  "asin": "B0WATCH123"
+ },
+ "payment_methods": [],
+ "phones": [],
+ "emails": [],
+ "addresses": [],
+ "founded_claims": [],
+ "business_name": "",
+ "legal_form": "",
+ "kvk_numbers": [],
+ "licences": [],
+ "certifications": [],
+ "cities_served": [],
+ "internal_links": [
+  {
+   "text": "Visit the NOVAXEL Store",
+   "url": "https://www.amazon.com/stores/NOVAXEL"
+  },
+  {
+   "text": "Returns & Refunds",
+   "url": "https://www.amazon.com/gp/help/customer/display.html?nodeId=returns"
+  },
+  {
+   "text": "Privacy Notice",
+   "url": "https://www.amazon.com/privacy"
+  }
+ ],
+ "pricing_terms": [],
+ "promises": [],
+ "testimonials": [],
+ "organization_ld": [],
+ "seller_profile": null,
+ "listing": null
 }
