@@ -111,7 +111,7 @@ self-hosted release in `dist/release/` (see [INSTALL.md](INSTALL.md#for-maintain
 - **Production ⇒ by hand only.** Actions → "Release to the extension stores" (`release-store.yaml`, manual) builds and
   checks the store packages (Chrome, Firefox and the source zip addons.mozilla.org asks for), attaches them to the
   release `v<version>` and submits them (`scripts/store-publish.mjs`): the Chrome zip to the Chrome Web Store for
-  review (API v2, a service account), the Firefox zip with its source as a new listed version on addons.mozilla.org
+  review (API v2, OAuth refresh token or a service account), the Firefox zip with its source as a new listed version on addons.mozilla.org
   (API v5). Inputs pick the stores (both, chrome, firefox, none) and a dry run (the default) that only shows the
   requests. A store without its secrets is skipped. See [store/SUBMIT.md](store/SUBMIT.md) and
   [store/AMO.md](store/AMO.md).

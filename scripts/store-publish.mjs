@@ -8,9 +8,9 @@
 // and platform values with 422). Then, per store, independently:
 //   Chrome Web Store (API v2): get an access token, skip if this version is already submitted or published, upload
 //     unfret-chrome-<version>.zip to item CWS_ITEM_ID and submit it for review (published when approved). Needs
-//     CWS_PUBLISHER_ID and a service account linked to the publisher, CWS_SERVICE_ACCOUNT_KEY (its JSON key; the
-//     token comes from a signed JWT, RFC 7523), or else the fallback: an OAuth client's CWS_CLIENT_ID,
-//     CWS_CLIENT_SECRET and CWS_REFRESH_TOKEN (scripts/cws-refresh-token.mjs).
+//     CWS_PUBLISHER_ID and the owner's OAuth client with its refresh token, CWS_CLIENT_ID, CWS_CLIENT_SECRET and
+//     CWS_REFRESH_TOKEN (scripts/cws-refresh-token.mjs gets the token), or instead of those three a service account
+//     linked to the publisher, CWS_SERVICE_ACCOUNT_KEY (its JSON key; the token comes from a signed JWT, RFC 7523).
 //   addons.mozilla.org (API v5, JWT auth): skip if this version exists, upload unfret-firefox-<version>.zip as a
 //     listed upload, wait for validation, create the version with unfret-source-<version>.zip as its source, then
 //     set its compatibility to Firefox desktop only (AMO_ANDROID=1 keeps the manifest's Android too). Needs
@@ -116,7 +116,10 @@ function describeBody(body) {
 export function httpClient({ fetch: fetchFn = fetch, dryRun = false, log = console.log } = {}) {
   const sent = [];
   async function send({ method = "GET", url, headers = {}, body, shown, dry = {}, accept = [], file }) {
-    const line = `${method} ${url}${shown ?? describeBody(body)}${file ? ` (${file})` : ""}`;
+    const scheme = headers.Authorization?.split(" ")[0];
+    const line =
+      `${method} ${url}${scheme ? ` [Authorization: ${scheme} …]` : ""}` +
+      `${shown ?? describeBody(body)}${file ? ` (${file})` : ""}`;
     sent.push(line);
     if (dryRun) {
       log(`[dry run] ${line}`);
@@ -204,7 +207,7 @@ export function cwsServiceAccountTokenRequest(assertion) {
   };
 }
 
-/** The refresh-token exchange (RFC 6749 §6) Google's OAuth server expects: the fallback to a service account. */
+/** The refresh-token exchange (RFC 6749 §6) Google's OAuth server expects. */
 export function cwsTokenRequest({ clientId, clientSecret, refreshToken }) {
   return {
     method: "POST",
@@ -501,9 +504,9 @@ export async function main(argv = process.argv.slice(2), env = process.env, fetc
     }
   }
 
-  // Chrome: a service account (CWS_SERVICE_ACCOUNT_KEY) first; the OAuth refresh token when only that is set.
+  // Chrome: the OAuth refresh token; a service account (CWS_SERVICE_ACCOUNT_KEY) when only that is set.
   const oauth = ["CWS_CLIENT_ID", "CWS_CLIENT_SECRET", "CWS_REFRESH_TOKEN"];
-  const chromeOauth = !env.CWS_SERVICE_ACCOUNT_KEY && oauth.some((name) => env[name]);
+  const chromeOauth = !env.CWS_SERVICE_ACCOUNT_KEY || oauth.some((name) => env[name]);
   const secrets = {
     chrome: [...(chromeOauth ? oauth : ["CWS_SERVICE_ACCOUNT_KEY"]), "CWS_PUBLISHER_ID"],
     firefox: ["AMO_JWT_ISSUER", "AMO_JWT_SECRET"],

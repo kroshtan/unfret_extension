@@ -7,14 +7,15 @@ backend's changelog, which lists each one published at `/extension`.)
 
 - **Automated store submission.** "Release to the extension stores" now also submits the packages it builds
   (`scripts/store-publish.mjs`, plain HTTPS, no new dependencies): the Chrome zip to the Chrome Web Store item for
-  review through the API v2, authenticated as a service account linked to the publisher (`CWS_SERVICE_ACCOUNT_KEY`,
-  `CWS_PUBLISHER_ID`; an OAuth refresh token is the fallback, with `scripts/cws-refresh-token.mjs` to get one), and
+  review through the API v2, authenticated with the owner's OAuth client and refresh token (`CWS_CLIENT_ID`,
+  `CWS_CLIENT_SECRET`, `CWS_REFRESH_TOKEN`, `CWS_PUBLISHER_ID`; `scripts/cws-refresh-token.mjs` gets the token once
+  into `~/kroshtan_secrets`) or a service account linked to the publisher (`CWS_SERVICE_ACCOUNT_KEY`), and
   the Firefox zip as a new listed version on addons.mozilla.org through the API v5 (JWT from `AMO_JWT_ISSUER`,
   `AMO_JWT_SECRET`) with the source zip, Firefox desktop only. New inputs: `stores` (both, chrome, firefox, none) and
   `dry_run` (default on: build, check and print every store request without secrets; nothing is attached, tagged or
   uploaded). Each store is its own step, skipped with a notice without its secrets, and a version a store already has
-  is left alone. **Order guard:** `minBackendVersion` in `package.json` (0.10.6, the first backend release with the
-  foundation for p2p and service pages) must be at most the `version` https://unfret.net/v1/health reports, or
+  is left alone. **Order guard:** `minBackendVersion` in `package.json` (0.10.6, the first backend release after 0.10.5, with the
+  foundation for p2p and service pages and the service providers' facts) must be at most the `version` https://unfret.net/v1/health reports, or
   nothing is submitted. `store/SUBMIT.md` and `store/AMO.md` describe the one-time credentials and the new release
   steps.
 - **Testimonials and service platform profiles** (in parity with the backend, `make parity`): `testimonials` is now

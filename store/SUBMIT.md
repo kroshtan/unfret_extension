@@ -33,8 +33,8 @@ is one workflow run:
    `firefox`), **Dry run** ticked. Read the log: the order guard's result and every request a real run would send
    (secrets shown as `<NAME>`). Nothing is attached, tagged or uploaded.
 4. Run it again with **Dry run** unticked. It attaches the packages to the release `v<version>`, then:
-   - **Chrome Web Store** (API v2): gets an access token for the service account (or, as a fallback, from an OAuth
-     refresh token), uploads
+   - **Chrome Web Store** (API v2): gets an access token from the OAuth refresh token (or for a service account),
+     uploads
      `unfret-chrome-<version>.zip` to item `giiengbpechhnphignbicmlcbklmcpjo` and submits it for review; it is
      published when approved, with the item's current visibility. A version the store already has (pending review
      or published) is skipped, so a run can be repeated. To hold a version back after approval, use the dashboard.
@@ -49,62 +49,57 @@ Listing texts, images and privacy answers are not sent by the workflow: change t
 You do this; Claude can't. Everything stays in `~/kroshtan_secrets` and in the repository's Forgejo secrets
 (git.kroshtan.com → kroshtan/unfret_extension → Settings → Actions → Secrets), never in the repository.
 
-### Chrome Web Store: a service account (preferred)
+### Chrome Web Store: the OAuth client and its refresh token
 
-The Chrome Web Store API v2 accepts a Google Cloud service account linked to the publisher
-(https://developer.chrome.com/docs/webstore/service-accounts): no refresh token to expire or renew. Do this as the
-Google account that owns the item, with 2-step verification on.
+The account is the Google account that owns the item, with 2-step verification on.
+
+**The OAuth client** (done: it is in `~/kroshtan_secrets/google-webstore-oauth`, mode 600, line 1 the client ID
+`….apps.googleusercontent.com`, line 2 the client secret). To make one again:
 
 1. https://console.cloud.google.com → project picker → **New project** (e.g. "unfret-cws"), and select it.
 2. **APIs & Services → Library**: search "Chrome Web Store API" → **Enable**.
-3. **IAM & Admin → Service accounts → Create service account**: name "unfret-release". Grant it no roles (none are
-   needed) → **Done**. Copy its e-mail (`unfret-release@unfret-cws.iam.gserviceaccount.com`).
-4. On the service account: **Keys → Add key → Create new key → JSON**. Save the download as
-   `~/kroshtan_secrets/cws-service-account.json` (`chmod 600`). If the organisation policy
-   `iam.disableServiceAccountKeyCreation` blocks this, use the OAuth fallback below.
-5. https://chrome.google.com/webstore/devconsole → **Account**: add the service account's e-mail as the publisher's
-   service account (one per publisher) and save.
-6. **Publisher → Settings**: copy the **publisher ID**. Put it in `~/kroshtan_secrets/cws-oauth.json`
-   (`{ "publisher_id": "…" }`, the same file the fallback uses).
-7. Forgejo secrets: `CWS_SERVICE_ACCOUNT_KEY` = the whole content of `cws-service-account.json`,
-   `CWS_PUBLISHER_ID` = the publisher ID.
-
-The key works until you delete it (IAM → the service account → Keys). If it leaks, delete it there and make a new one.
-
-### Chrome Web Store fallback: an OAuth client and its refresh token
-
-Only when a service account isn't possible. The workflow uses this when `CWS_SERVICE_ACCOUNT_KEY` is not set and
-`CWS_CLIENT_ID`, `CWS_CLIENT_SECRET` and `CWS_REFRESH_TOKEN` are.
-
-1. Steps 1 and 2 above (project, API enabled).
-2. **APIs & Services → OAuth consent screen** (Google Auth Platform): **Get started**; app name "Unfret release",
+3. **APIs & Services → OAuth consent screen** (Google Auth Platform): **Get started**; app name "Unfret release",
    your e-mail as support and developer contact; audience **External**. Leave the publishing status at **Testing**
    and, under **Audience → Test users**, add the owner account. No scopes need adding here.
-3. **APIs & Services → Credentials → Create credentials → OAuth client ID**: type **Desktop app**, name
-   "unfret-release" → **Create**, then **Download JSON**.
-4. Put the client in `~/kroshtan_secrets/cws-oauth.json` (`chmod 600`):
+4. **APIs & Services → Credentials → Create credentials → OAuth client ID**: type **Desktop app**, name
+   "unfret-release" → **Create**. Put the client ID and secret on lines 1 and 2 of
+   `~/kroshtan_secrets/google-webstore-oauth` (`chmod 600`).
 
-   ```json
-   {
-     "client_id": "1234-abc.apps.googleusercontent.com",
-     "client_secret": "GOCSPX-…",
-     "publisher_id": "the publisher ID (step 6 above)",
-     "refresh_token": "filled in by the next step"
-   }
-   ```
+**The refresh token**:
 
-5. Run `node scripts/cws-refresh-token.mjs --save` (or pass the downloaded JSON's path instead of using the default
-   file). Open the address it prints, sign in as the owner, continue past "Google hasn't verified this app" (it's
-   your own app) and allow "See, edit, update or publish your Chrome Web Store extensions". The browser comes back
-   to a one-off page on 127.0.0.1; the script prints the refresh token and, with `--save`, writes it into
-   `cws-oauth.json`. On a machine without a browser, open the address elsewhere and paste the address of the page
-   that fails to load into the script.
-6. Forgejo secrets: `CWS_CLIENT_ID` = `client_id`, `CWS_CLIENT_SECRET` = `client_secret`, `CWS_REFRESH_TOKEN` =
-   `refresh_token`, `CWS_PUBLISHER_ID` = `publisher_id`.
+5. Run `node scripts/cws-refresh-token.mjs`. It reads `~/kroshtan_secrets/google-webstore-oauth` (`--client <file>`
+   for another; a JSON file with `client_id` and `client_secret`, or Google's download, works too) and opens Google's
+   consent page in the browser (`--print-url` prints the address instead, e.g. without a desktop). Sign in as the
+   owner, continue past "Google hasn't verified this app" (it's your own app) and allow "See, edit, update or publish
+   your Chrome Web Store extensions". The browser comes back to a one-off page on 127.0.0.1 and the script writes the
+   refresh token to `~/kroshtan_secrets/google-webstore-refresh-token` (mode 600; `--out <file>` for another). It
+   prints neither the secret nor the token. If the client is a **Web application** rather than a Desktop app, add
+   `http://127.0.0.1:8765/` to its authorised redirect URIs and run the script with `--port 8765`. On a machine
+   without a browser, open the address elsewhere and paste the address of the page that fails to load into the
+   script.
+6. The **publisher ID**: https://chrome.google.com/webstore/devconsole → **Publisher → Settings** (API v2 needs it
+   in every request). It isn't secret; keep it with the others, e.g. in `~/kroshtan_secrets/google-webstore-publisher-id`.
+7. Forgejo secrets: `CWS_CLIENT_ID` = line 1 of `google-webstore-oauth`, `CWS_CLIENT_SECRET` = line 2,
+   `CWS_REFRESH_TOKEN` = the content of `google-webstore-refresh-token`, `CWS_PUBLISHER_ID` = the publisher ID.
 
-Refresh tokens of an app in **Testing** expire after 7 days: rerun step 5 and update `CWS_REFRESH_TOKEN` before each
-release, or set the consent screen to **In production** (a personal app with this one scope can be used unverified,
-behind the same warning screen) so the token lasts until revoked or unused for six months.
+Refresh tokens of an app whose consent screen is in **Testing** expire after 7 days: rerun step 5 and update
+`CWS_REFRESH_TOKEN` before each release, or set the consent screen to **In production** (a personal app with this
+one scope can be used unverified, behind the same warning screen) so the token lasts until it is revoked or unused
+for six months. A failed token exchange (`invalid_grant`) in the workflow means exactly this: rerun step 5.
+
+### Chrome Web Store alternative: a service account
+
+The API v2 also accepts a Google Cloud service account linked to the publisher
+(https://developer.chrome.com/docs/webstore/service-accounts): no refresh token to expire. The workflow uses it when
+`CWS_SERVICE_ACCOUNT_KEY` is set and the three OAuth secrets aren't.
+
+1. In the same project: **IAM & Admin → Service accounts → Create service account**, name "unfret-release", no
+   roles. On it: **Keys → Add key → Create new key → JSON**; save as `~/kroshtan_secrets/cws-service-account.json`
+   (`chmod 600`).
+2. Developer dashboard → **Account**: add the service account's e-mail as the publisher's service account (one per
+   publisher).
+3. Forgejo secrets: `CWS_SERVICE_ACCOUNT_KEY` = the whole JSON file, `CWS_PUBLISHER_ID` = the publisher ID; delete
+   `CWS_CLIENT_ID`, `CWS_CLIENT_SECRET` and `CWS_REFRESH_TOKEN`.
 
 ### addons.mozilla.org: an API key
 

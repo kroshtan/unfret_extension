@@ -20,9 +20,9 @@ name: Release to the extension stores
 # `dry_run` (on by default) builds and checks everything, runs the order guard (a failure is a warning) and prints
 # every store request a real run would send, without secrets; it attaches nothing and creates no tag or release.
 #
-# Repo secrets (Settings → Actions → Secrets; store/SUBMIT.md says how to get them): CWS_PUBLISHER_ID and
-# CWS_SERVICE_ACCOUNT_KEY (a service account's JSON key) for the Chrome Web Store, or instead of the key the OAuth
-# fallback CWS_CLIENT_ID, CWS_CLIENT_SECRET and CWS_REFRESH_TOKEN; AMO_JWT_ISSUER and
+# Repo secrets (Settings → Actions → Secrets; store/SUBMIT.md says how to get them): CWS_CLIENT_ID,
+# CWS_CLIENT_SECRET, CWS_REFRESH_TOKEN and CWS_PUBLISHER_ID for the Chrome Web Store (or, instead of the first three,
+# CWS_SERVICE_ACCOUNT_KEY, a service account's JSON key); AMO_JWT_ISSUER and
 # AMO_JWT_SECRET for addons.mozilla.org, and optionally AMO_APPROVAL_NOTES (the notes to the reviewer, with the test
 # key). They reach only the two submit steps, on the deploy runner.
 on:

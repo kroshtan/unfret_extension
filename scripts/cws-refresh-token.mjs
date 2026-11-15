@@ -1,14 +1,19 @@
-// One-time helper for the owner, only for the fallback to a service account: get the Chrome Web Store API refresh
-// token the release workflow can use instead (store/SUBMIT.md, "Chrome Web Store fallback"):
-//   node scripts/cws-refresh-token.mjs [client.json] [--save]
-// client.json is either ~/kroshtan_secrets/cws-oauth.json ({"client_id", "client_secret", ...}, the default) or the
-// JSON Google Cloud lets you download for a "Desktop app" OAuth client ({"installed": {...}}). The script prints a
-// consent URL; open it signed in as the Google account that owns the Chrome Web Store item and allow access. Google
-// then redirects to a one-off server on 127.0.0.1 here, the script exchanges the code (with PKCE) and prints the
-// refresh token. If the browser runs on another machine, the redirect page fails to load: copy its full address from
-// the address bar and paste it here instead. --save also writes the token into ~/kroshtan_secrets/cws-oauth.json.
+// One-time helper for the owner: get the Chrome Web Store API refresh token the release workflow uses
+// (store/SUBMIT.md, "The store credentials"):
+//   node scripts/cws-refresh-token.mjs [--client <file>] [--out <file>] [--port <n>] [--print-url]
+// --client is the OAuth client: by default ~/kroshtan_secrets/google-webstore-oauth (line 1 the client ID, line 2
+// the client secret); a JSON file with client_id and client_secret, or the JSON Google Cloud downloads for a client
+// ({"installed": {...}} or {"web": {...}}), works too. The script opens Google's consent page in the browser (and
+// prints its address only if it can't: the address holds the client ID, which isn't secret, never the secret); sign
+// in as the Google account that owns the Chrome Web Store item and allow access. Google redirects to a one-off server
+// on http://127.0.0.1:<port>/ here (a "Desktop app" client accepts any port; a "Web application" client needs that
+// exact address as an authorised redirect URI, so pass --port), the script exchanges the code (with PKCE) and writes
+// the refresh token to --out, by default ~/kroshtan_secrets/google-webstore-refresh-token (mode 600). It never prints
+// the secret or the token. If the browser runs on another machine, the redirect page fails to load: paste its full
+// address here instead.
+import { spawn } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -18,11 +23,29 @@ import { fileURLToPath } from "node:url";
 export const AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 export const TOKEN_URL = "https://oauth2.googleapis.com/token";
 export const SCOPE = "https://www.googleapis.com/auth/chromewebstore";
-export const SECRETS_FILE = join(homedir(), "kroshtan_secrets", "cws-oauth.json");
+export const CLIENT_FILE = join(homedir(), "kroshtan_secrets", "google-webstore-oauth");
+export const TOKEN_FILE = join(homedir(), "kroshtan_secrets", "google-webstore-refresh-token");
 
-/** `{ clientId, clientSecret }` from our own JSON or Google's downloaded client file. */
-export function readClient(json) {
-  const data = json.installed ?? json;
+/**
+ * `{ clientId, clientSecret }` from a client file's text: two lines (ID, secret), our JSON or Google's download.
+ * Errors never quote the text.
+ */
+export function readClient(text) {
+  const trimmed = text.trim();
+  if (!trimmed.startsWith("{")) {
+    const [clientId = "", clientSecret = ""] = trimmed.split(/\r?\n/u).map((line) => line.trim());
+    if (!clientId.endsWith(".apps.googleusercontent.com") || !clientSecret) {
+      throw new Error("the client file needs the client ID on line 1 and the client secret on line 2");
+    }
+    return { clientId, clientSecret };
+  }
+  let json;
+  try {
+    json = JSON.parse(trimmed);
+  } catch {
+    throw new Error("the client file is not valid JSON");
+  }
+  const data = json.installed ?? json.web ?? json;
   const clientId = data.client_id;
   const clientSecret = data.client_secret;
   if (!clientId || !clientSecret) throw new Error("the client file has no client_id and client_secret");
@@ -82,11 +105,42 @@ export function codeFrom(input, state) {
   return code;
 }
 
+/** The value after `--name` in `argv`, or `fallback`. */
+function option(argv, name, fallback) {
+  const index = argv.indexOf(`--${name}`);
+  if (index < 0) return fallback;
+  const value = argv[index + 1];
+  if (!value) throw new Error(`--${name} needs a value`);
+  return value;
+}
+
+/** Open `url` in the desktop's browser; false when there's no opener. */
+function openBrowser(url) {
+  const command =
+    process.platform === "darwin" ? "open" : process.platform === "win32" ? "explorer" : "xdg-open";
+  return new Promise((resolve) => {
+    try {
+      const child = spawn(command, [url], { stdio: "ignore", detached: true });
+      child.on("error", () => {
+        resolve(false);
+      });
+      child.on("spawn", () => {
+        child.unref();
+        resolve(true);
+      });
+    } catch {
+      resolve(false);
+    }
+  });
+}
+
 async function run(argv) {
-  const save = argv.includes("--save");
-  const file = argv.find((arg) => !arg.startsWith("--")) ?? SECRETS_FILE;
+  const file = option(argv, "client", CLIENT_FILE);
+  const out = option(argv, "out", TOKEN_FILE);
+  const port = Number(option(argv, "port", "0"));
+  if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Error("--port must be 0 to 65535");
   if (!existsSync(file)) throw new Error(`${file} not found (store/SUBMIT.md says what goes in it)`);
-  const { clientId, clientSecret } = readClient(JSON.parse(readFileSync(file, "utf8")));
+  const { clientId, clientSecret } = readClient(readFileSync(file, "utf8"));
   const state = randomBytes(16).toString("hex");
   const { verifier, challenge } = pkce();
 
@@ -109,15 +163,28 @@ async function run(argv) {
       finish.reject(error);
     }
   });
-  await new Promise((resolve) => server.listen(0, "127.0.0.1", () => resolve(undefined)));
+  await new Promise((resolve, reject) => {
+    server.once("error", (error) => {
+      reject(new Error(`can't listen on 127.0.0.1:${port}: ${error.message}`));
+    });
+    server.listen(port, "127.0.0.1", () => resolve(undefined));
+  });
   const address = server.address();
-  const port = typeof address === "object" && address ? address.port : 0;
-  const redirectUri = `http://127.0.0.1:${port}/`;
+  const bound = typeof address === "object" && address ? address.port : 0;
+  const redirectUri = `http://127.0.0.1:${bound}/`;
 
-  console.log(
-    "Open this address, signed in as the account that owns the Chrome Web Store item, and allow access:\n",
-  );
-  console.log(`  ${consentUrl({ clientId, redirectUri, state, challenge })}\n`);
+  const url = consentUrl({ clientId, redirectUri, state, challenge });
+  console.log(`Redirect address: ${redirectUri}`);
+  received.catch(() => undefined);
+  if (!argv.includes("--print-url") && (await openBrowser(url))) {
+    console.log(
+      "Opened Google's consent page in the browser: sign in as the account that owns the item and allow.",
+    );
+    console.log("(No browser? Stop and run again with --print-url.)");
+  } else {
+    console.log("Open this address, signed in as the account that owns the item, and allow access:\n");
+    console.log(`  ${url}\n`);
+  }
   console.log("Waiting for Google's redirect (or paste the redirect page's full address here):");
   const rl = createInterface({ input: process.stdin });
   rl.on("line", (line) => {
@@ -142,18 +209,11 @@ async function run(argv) {
   if (!response.ok) throw new Error(`token exchange: HTTP ${response.status}: ${JSON.stringify(data)}`);
   if (!data.refresh_token) throw new Error("Google returned no refresh token (was prompt=consent lost?)");
 
-  console.log(`\nRefresh token (the Forgejo secret CWS_REFRESH_TOKEN):\n\n  ${data.refresh_token}\n`);
-  if (save) {
-    const current = existsSync(SECRETS_FILE) ? JSON.parse(readFileSync(SECRETS_FILE, "utf8")) : {};
-    const next = {
-      ...current,
-      client_id: clientId,
-      client_secret: clientSecret,
-      refresh_token: data.refresh_token,
-    };
-    writeFileSync(SECRETS_FILE, `${JSON.stringify(next, null, 2)}\n`, { mode: 0o600 });
-    console.log(`saved to ${SECRETS_FILE}`);
-  }
+  writeFileSync(out, `${data.refresh_token}\n`, { mode: 0o600 });
+  chmodSync(out, 0o600);
+  console.log(
+    `\nThe refresh token is in ${out} (mode 600): it becomes the Forgejo secret CWS_REFRESH_TOKEN.`,
+  );
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

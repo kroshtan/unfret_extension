@@ -419,12 +419,12 @@ describe("the dry run", () => {
     expect(out).toContain(":publish");
     expect(out).toContain("[dry run] POST https://addons.mozilla.org/api/v5/addons/upload/");
     expect(out).toContain("[dry run] PATCH https://addons.mozilla.org/api/v5/addons/addon/unfret/versions/");
-    // CWS_CLIENT_ID alone picks the OAuth fallback; with nothing set, the service account is shown.
+    // The OAuth refresh token is the primary path; its secrets show as placeholders.
     expect(out).toContain("<CWS_REFRESH_TOKEN>");
     expect(out).not.toContain("must-not-appear");
   });
 
-  it("shows the service account flow and skips nothing it can't name", async () => {
+  it("shows the service account flow when only its key is set", async () => {
     const lines: string[] = [];
     const log = console.log;
     console.log = (line: string): void => {
@@ -438,14 +438,27 @@ describe("the dry run", () => {
     temp.push(store);
     writeFileSync(join(store, `unfret-chrome-${pkg.version}.zip`), "zip");
     try {
-      expect(await main(["--dry-run", "--chrome"], { UNFRET_STORE_DIR: store }, fetch)).toBe(0);
+      expect(
+        await main(
+          ["--dry-run", "--chrome"],
+          {
+            UNFRET_STORE_DIR: store,
+            CWS_SERVICE_ACCOUNT_KEY: JSON.stringify({
+              client_email: "sa@x.iam.gserviceaccount.com",
+              private_key: "k",
+            }),
+          },
+          fetch,
+        ),
+      ).toBe(0);
     } finally {
       console.log = log;
     }
     const out = lines.join("\n");
     expect(out).toMatch(/meets minBackendVersion/u);
-    expect(out).toMatch(/CWS_SERVICE_ACCOUNT_KEY, CWS_PUBLISHER_ID not set: a real run would skip/u);
+    expect(out).toMatch(/chrome: CWS_PUBLISHER_ID not set: a real run would skip/u);
     expect(out).toContain("grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer");
+    expect(out).toContain("iss sa@x.iam.gserviceaccount.com");
     expect(out).not.toContain("addons.mozilla.org");
   });
 
@@ -467,13 +480,26 @@ describe("the dry run", () => {
 });
 
 describe("the refresh-token helper", () => {
-  it("reads our JSON and Google's downloaded Desktop client file", () => {
-    expect(readClient({ client_id: "a", client_secret: "b" })).toEqual({ clientId: "a", clientSecret: "b" });
-    expect(readClient({ installed: { client_id: "a", client_secret: "b" } })).toEqual({
+  it("reads the two-line client file, our JSON and Google's downloads, without quoting them in errors", () => {
+    expect(readClient("1234-abc.apps.googleusercontent.com\nGOCSPX-secret\n")).toEqual({
+      clientId: "1234-abc.apps.googleusercontent.com",
+      clientSecret: "GOCSPX-secret",
+    });
+    expect(() => readClient("GOCSPX-secret-only")).toThrow(/^the client file needs the client ID on line 1/u);
+    expect(() => readClient("{GOCSPX-secret")).toThrow(/^the client file is not valid JSON$/u);
+    expect(readClient(JSON.stringify({ web: { client_id: "a", client_secret: "b" } }))).toEqual({
       clientId: "a",
       clientSecret: "b",
     });
-    expect(() => readClient({})).toThrow(/client_id/u);
+    expect(readClient(JSON.stringify({ client_id: "a", client_secret: "b" }))).toEqual({
+      clientId: "a",
+      clientSecret: "b",
+    });
+    expect(readClient(JSON.stringify({ installed: { client_id: "a", client_secret: "b" } }))).toEqual({
+      clientId: "a",
+      clientSecret: "b",
+    });
+    expect(() => readClient("{}")).toThrow(/client_id/u);
   });
 
   it("asks for offline access to the Chrome Web Store scope with PKCE", () => {
