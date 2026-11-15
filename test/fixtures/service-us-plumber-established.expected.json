@@ -1,0 +1,161 @@
+{
+ "platform": "generic",
+ "url": "https://www.bluebonnetplumbing.com/",
+ "title": "Plumbing repair and water heaters in Austin",
+ "brand": "",
+ "seller": "",
+ "seller_rating": null,
+ "ships_from": "",
+ "price": null,
+ "list_price": null,
+ "currency": "",
+ "date_first_available": null,
+ "rating": null,
+ "rating_count": null,
+ "rating_histogram": {},
+ "reviews": [],
+ "variations": [],
+ "json_ld": [],
+ "script_srcs": [
+  "https://www.googletagmanager.com/gtag/js?id=G-B7LU3BNT9X"
+ ],
+ "meta": {},
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [],
+ "fee_mentions": [],
+ "vat_ids": [],
+ "legal_mentions": [],
+ "copyright_lines": [
+  "© 2026 Bluebonnet Plumbing LLC. All rights reserved."
+ ],
+ "policy_links": {
+  "contact": "https://www.bluebonnetplumbing.com/contact"
+ },
+ "image_urls": [
+  "https://www.bluebonnetplumbing.com/photos/crew-manchaca.jpg"
+ ],
+ "product_ids": {},
+ "payment_methods": [],
+ "phones": [
+  {
+   "number": "+15125550142",
+   "kind": "local",
+   "country": "US"
+  }
+ ],
+ "emails": [
+  {
+   "address": "office@bluebonnetplumbing.com",
+   "kind": "own_domain"
+  }
+ ],
+ "addresses": [
+  "4120 Manchaca Rd, 78704, Austin, TX, US"
+ ],
+ "founded_claims": [
+  "since 2009",
+  "foundingDate 2009"
+ ],
+ "business_name": "Bluebonnet Plumbing LLC",
+ "legal_form": "LLC",
+ "kvk_numbers": [],
+ "licences": [
+  {
+   "number": "M-40123",
+   "state": "TX"
+  }
+ ],
+ "certifications": [
+  "Bluebonnet Plumbing | Licensed Plumbers in Austin, TX Home Services About Contact Plumbing repair and water heaters in Austin Fami",
+  "Licensed and insured"
+ ],
+ "cities_served": [
+  "Austin",
+  "Round Rock",
+  "Pflugerville"
+ ],
+ "internal_links": [
+  {
+   "text": "Home",
+   "url": "https://www.bluebonnetplumbing.com/"
+  },
+  {
+   "text": "Services",
+   "url": "https://www.bluebonnetplumbing.com/services"
+  },
+  {
+   "text": "About",
+   "url": "https://www.bluebonnetplumbing.com/about"
+  },
+  {
+   "text": "Contact",
+   "url": "https://www.bluebonnetplumbing.com/contact"
+  },
+  {
+   "text": "Plumber Round Rock",
+   "url": "https://www.bluebonnetplumbing.com/plumber-round-rock"
+  },
+  {
+   "text": "Plumber Pflugerville",
+   "url": "https://www.bluebonnetplumbing.com/plumber-pflugerville"
+  }
+ ],
+ "pricing_terms": [],
+ "promises": [],
+ "testimonials": [
+  {
+   "text": "They replaced our water heater the same week and walked us through the warranty. Fair price, clean work.",
+   "name": "Dana R.",
+   "rating": 5.0,
+   "posted": "2025-04-11"
+  },
+  {
+   "text": "Found the slab leak with a camera instead of tearing up the floor. Scheduling took a few days.",
+   "name": "Marcus T.",
+   "rating": 4.0,
+   "posted": "2025-08-02"
+  },
+  {
+   "text": "Written estimate before any work started, and the final bill matched it to the dollar.",
+   "name": "Priya S.",
+   "rating": 5.0,
+   "posted": "2026-02-19"
+  },
+  {
+   "text": "The fix worked but the technician showed up two hours late without calling.",
+   "name": "Glen W.",
+   "rating": 2.0,
+   "posted": "2026-09-30"
+  }
+ ],
+ "organization_ld": [
+  {
+   "@type": "Plumber",
+   "name": "Bluebonnet Plumbing LLC",
+   "telephone": "(512) 555-0142",
+   "email": "office@bluebonnetplumbing.com",
+   "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "4120 Manchaca Rd",
+    "addressLocality": "Austin",
+    "addressRegion": "TX",
+    "postalCode": "78704",
+    "addressCountry": "US"
+   },
+   "areaServed": [
+    "Austin",
+    "Round Rock",
+    "Pflugerville"
+   ],
+   "foundingDate": "2009",
+   "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "4.7",
+    "reviewCount": "212"
+   }
+  }
+ ],
+ "seller_profile": null,
+ "listing": null
+}

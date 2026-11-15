@@ -1,0 +1,128 @@
+{
+ "platform": "werkspot",
+ "url": "https://www.werkspot.nl/profiel/loodgietersbedrijf-jansen",
+ "title": "Loodgietersbedrijf Jansen",
+ "brand": "",
+ "seller": "",
+ "seller_rating": null,
+ "ships_from": "",
+ "price": null,
+ "list_price": null,
+ "currency": "",
+ "date_first_available": null,
+ "rating": null,
+ "rating_count": null,
+ "rating_histogram": {},
+ "reviews": [
+  {
+   "rating": 5.0,
+   "posted": "2026-06-14",
+   "title": "",
+   "body": "Badkamer volledig vernieuwd, binnen de afgesproken tijd en prijs.",
+   "verified": null
+  },
+  {
+   "rating": 4.0,
+   "posted": "2026-09-02",
+   "title": "",
+   "body": "Kraan vervangen, prima werk, wel een uur later dan gepland.",
+   "verified": null
+  },
+  {
+   "rating": 5.0,
+   "posted": "2026-10-21",
+   "title": "",
+   "body": "Verstopping snel opgelost en goed uitgelegd hoe het kwam.",
+   "verified": null
+  }
+ ],
+ "variations": [],
+ "json_ld": [],
+ "script_srcs": [],
+ "meta": {},
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [],
+ "fee_mentions": [],
+ "vat_ids": [],
+ "legal_mentions": [
+  "ietersbedrijf Jansen Amersfoort · werkt tot 25 km Topvakman KvK geverifieerd 4,6 · 87 beoordelingen Lid sinds maart 2017 312 klussen uitgevoerd Reageert binnen 2 u",
+  "020 215 4000 · KvK 34236345"
+ ],
+ "copyright_lines": [],
+ "policy_links": {},
+ "image_urls": [],
+ "product_ids": {},
+ "payment_methods": [],
+ "phones": [
+  {
+   "number": "+31202154000",
+   "kind": "local",
+   "country": "NL"
+  }
+ ],
+ "emails": [],
+ "addresses": [
+  "Amersfoort, NL"
+ ],
+ "founded_claims": [],
+ "business_name": "Loodgietersbedrijf Jansen",
+ "legal_form": "",
+ "kvk_numbers": [
+  "34236345"
+ ],
+ "licences": [],
+ "certifications": [],
+ "cities_served": [],
+ "internal_links": [
+  {
+   "text": "Loodgieter",
+   "url": "https://www.werkspot.nl/loodgieter"
+  },
+  {
+   "text": "Schilder",
+   "url": "https://www.werkspot.nl/schilder"
+  },
+  {
+   "text": "Klus plaatsen",
+   "url": "https://www.werkspot.nl/klus-plaatsen"
+  }
+ ],
+ "pricing_terms": [],
+ "promises": [
+  "lingen Lid sinds maart 2017 312 klussen uitgevoerd Reageert binnen 2 uur 96% reactiepercentage 18 jaar ervaring Over ons Wij zijn een familiebedrijf voor sanitair, cv en le"
+ ],
+ "testimonials": [],
+ "organization_ld": [
+  {
+   "@type": "LocalBusiness",
+   "name": "Loodgietersbedrijf Jansen",
+   "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Amersfoort",
+    "addressCountry": "NL"
+   },
+   "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "4,6",
+    "reviewCount": "87"
+   }
+  }
+ ],
+ "seller_profile": {
+  "seller_type": "",
+  "member_since": "2017-03-01",
+  "rating": 4.6,
+  "rating_count": 87,
+  "badges": [
+   "Topvakman",
+   "KvK geverifieerd"
+  ],
+  "other_listings": null,
+  "response_time": "binnen 2 uur",
+  "response_rate": 96.0,
+  "jobs_completed": 312,
+  "years_in_business": 18
+ },
+ "listing": null
+}

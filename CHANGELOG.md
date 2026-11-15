@@ -5,6 +5,15 @@ backend's changelog, which lists each one published at `/extension`.)
 
 ## Unreleased
 
+- **Testimonials and service platform profiles** (in parity with the backend, `make parity`): `testimonials` is now
+  `{text, name, rating, posted}`, from the company's structured data (its `review`s) or elements marked as one
+  testimonial or review (and Review microdata), never from forms or account areas and not on a product page; the name
+  only as the site prints it. On Werkspot, Thumbtack, Angi and the other service platforms, `seller_profile` (with the
+  new `years_in_business`) comes from the profile's structured data and the platform's wording outside the visitor's
+  areas (a logged-in visitor's own "member since" is skipped), and the platform's reviews go into `reviews` without
+  names. New parity fixtures: NL and US service sites (an established company and a doorway-style locksmith each) and
+  Werkspot, Thumbtack and Angi profiles. The privacy policy says what is read from service pages. Needs a backend
+  with the service providers' facts (an older one rejects testimonial objects)
 - **Page facts for more kinds of pages** (kept in parity with the backend's extractors, `make parity`): public product
   IDs (GTIN/EAN, MPN, ASIN), payment methods mentioned, the phone numbers (typed: mobile, local, national, toll-free,
   premium), e-mail addresses (own domain or webmail) and addresses a business publishes, "since 1998" claims, business

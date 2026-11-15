@@ -1,6 +1,6 @@
 # Unfret privacy policy (browser extension)
 
-_Last updated: 10 November 2026 (version 0.9.0). Draft for the store listings; to be reviewed before publication._
+_Last updated: 15 November 2026 (version 0.9.0; photo lookup corrected, service providers added). Draft for the store listings; to be reviewed before publication._
 
 Unfret is made by Kroshtan (Floris van Beers, the Netherlands).
 
@@ -10,13 +10,17 @@ Nothing, until you click **Analyse this page**. Then it reads the page in the ta
 product facts (title, brand, seller, price, ratings, review texts and dates, shop policies, hidden text,
 checkboxes, countdowns), what the shop or company publishes about itself (its phone numbers, e-mail addresses and
 address from its contact, legal or imprint section, footer or structured data; registration and licence numbers;
-payment methods it mentions) and the visible product text.
+payment methods it mentions) and the visible product text. On a service company's own site (a plumber, a
+locksmith) it also reads the testimonials the company publishes: their text, the name as the site prints it, the
+rating and the date. On a provider's profile on a platform (Werkspot, Thumbtack, Angi, …) it reads the platform's
+figures (member since, jobs, rating, badges, response rate) and its reviews, without the reviewers' names.
 
 Before anything leaves your browser, the extension removes account menus, greetings, forms and input fields,
 checkout, billing and delivery areas, and any address that isn't in the business's own contact section, from a copy
 of the page. These rules are there to keep your own name, address, e-mail address and phone number in your browser;
 when in doubt, the extension strips. On a classifieds site (Marktplaats, Vinted, …) the seller's name is not read
-either. The page itself is not changed.
+either. Testimonials inside a form, and "member since" in your own account menu, are not read. The page itself is
+not changed.
 
 The extension has no standing access to any website. It can read a page only after you click its toolbar button on
 that page (the browser's `activeTab` grant, for that one tab). On Amazon and bol.com product pages the toolbar icon
@@ -59,9 +63,10 @@ hash of the shop's domain and that number, the day, the price and the claimed "w
 IP address or time of day. That is how Unfret tells whether a "was" price was ever really charged. A result you
 share is kept for 90 days (or until you delete it) as the preview showed it, without anything about who shared it;
 the server keeps only a fingerprint of its delete code. An invite is kept only as a fingerprint with the day it was
-issued and the day it was used, with no buyer and no redeemer. The product
-photo itself (the image only, fetched by the server) is looked up with Google Cloud Vision to find copies on
-wholesale sites. The full server-side statement: <https://unfret.net/privacy>.
+issued and the day it was used, with no buyer and no redeemer. The main
+product photo (on a service company's page, its first photo that isn't a logo) is fingerprinted on Unfret's own
+server, to spot the same photo on another shop: the photo goes to no one else, and no outside image search is
+used. The full server-side statement: <https://unfret.net/privacy>.
 
 ## Your consent
 

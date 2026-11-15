@@ -1,0 +1,114 @@
+{
+ "platform": "thumbtack",
+ "url": "https://www.thumbtack.com/tx/austin/plumbing/bluebonnet-plumbing/service/123456789",
+ "title": "Bluebonnet Plumbing",
+ "brand": "",
+ "seller": "",
+ "seller_rating": null,
+ "ships_from": "",
+ "price": null,
+ "list_price": null,
+ "currency": "",
+ "date_first_available": null,
+ "rating": null,
+ "rating_count": null,
+ "rating_histogram": {},
+ "reviews": [
+  {
+   "rating": 5.0,
+   "posted": "2026-03-08",
+   "title": "",
+   "body": "Showed up on time, explained the options for our leaking toilet and fixed it for the quoted price.",
+   "verified": null
+  },
+  {
+   "rating": 5.0,
+   "posted": "2026-07-19",
+   "title": "",
+   "body": "Installed a new garbage disposal and cleaned up afterwards. Would hire again.",
+   "verified": null
+  }
+ ],
+ "variations": [],
+ "json_ld": [],
+ "script_srcs": [],
+ "meta": {},
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [],
+ "fee_mentions": [],
+ "vat_ids": [],
+ "legal_mentions": [],
+ "copyright_lines": [
+  "© 2026 Thumbtack, Inc."
+ ],
+ "policy_links": {},
+ "image_urls": [],
+ "product_ids": {},
+ "payment_methods": [],
+ "phones": [],
+ "emails": [],
+ "addresses": [
+  "Austin, TX"
+ ],
+ "founded_claims": [
+  "since 2018",
+  "since 2009"
+ ],
+ "business_name": "Bluebonnet Plumbing",
+ "legal_form": "INC",
+ "kvk_numbers": [],
+ "licences": [],
+ "certifications": [
+  "n Thumbtack since 2018 Responds within a day About this pro Licensed master plumber serving Austin since 2009"
+ ],
+ "cities_served": [],
+ "internal_links": [
+  {
+   "text": "Thumbtack",
+   "url": "https://www.thumbtack.com/"
+  },
+  {
+   "text": "Plumbers near me",
+   "url": "https://www.thumbtack.com/near-me/plumbers"
+  }
+ ],
+ "pricing_terms": [
+  "Free estimates, upfront pricing before any work starts"
+ ],
+ "promises": [],
+ "testimonials": [],
+ "organization_ld": [
+  {
+   "@type": "LocalBusiness",
+   "name": "Bluebonnet Plumbing",
+   "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Austin",
+    "addressRegion": "TX"
+   },
+   "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": 4.9,
+    "reviewCount": 143
+   }
+  }
+ ],
+ "seller_profile": {
+  "seller_type": "",
+  "member_since": "2018-01-01",
+  "rating": 4.9,
+  "rating_count": 143,
+  "badges": [
+   "Top Pro",
+   "Background checked",
+   "License verified"
+  ],
+  "other_listings": null,
+  "response_time": "within a day",
+  "response_rate": null,
+  "jobs_completed": 388,
+  "years_in_business": 17
+ },
+ "listing": null
+}

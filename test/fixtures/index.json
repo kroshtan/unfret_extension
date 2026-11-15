@@ -13,5 +13,12 @@
   "service-site-nl": "https://www.loodgietersnel.nl/",
   "service-site-us": "https://acmeplumbing.example/",
   "marktplaats-ad": "https://www.marktplaats.nl/v/fietsen-en-brommers/fietsen-dames-damesfietsen/m2187654321-gazelle-damesfiets",
-  "logged-in-shop": "https://lumen.example/products/glow-lamp"
+  "logged-in-shop": "https://lumen.example/products/glow-lamp",
+  "service-nl-locksmith-doorway": "https://slotenmaker-utrecht-spoed.nl/",
+  "service-nl-installer-established": "https://www.devries-installatie.nl/",
+  "service-us-plumber-established": "https://www.bluebonnetplumbing.com/",
+  "service-us-locksmith-doorway": "https://houston-locksmith-247.com/",
+  "service-werkspot-profile": "https://www.werkspot.nl/profiel/loodgietersbedrijf-jansen",
+  "service-thumbtack-profile": "https://www.thumbtack.com/tx/austin/plumbing/bluebonnet-plumbing/service/123456789",
+  "service-angi-profile": "https://www.angi.com/companylist/us/tx/houston/lone-star-rooter-reviews-7654321.htm"
 }
