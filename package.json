@@ -1,6 +1,7 @@
 {
   "name": "unfret-extension",
   "version": "0.10.0",
+  "minBackendVersion": "0.10.6",
   "description": "Spot junk, dropshipping and scams on product pages before you buy.",
   "private": true,
   "license": "MIT",

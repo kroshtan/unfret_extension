@@ -1,4 +1,4 @@
-.PHONY: help install lint typecheck test smoke build build-dev parity icons screenshots crx-key release store-package publish-dev verify-release clean
+.PHONY: help install lint typecheck test smoke build build-dev parity icons screenshots crx-key release store-package store-publish publish-dev verify-release clean
 .DEFAULT_GOAL := help
 
 # The backend checkout, next to this one unless set (make parity BACKEND=…)
@@ -45,6 +45,9 @@ release: build  ## Signed self-hosted release in dist/release: CRX, updates.xml,
 
 store-package: build  ## Check the Chrome and Firefox store packages, add the source zip, put them with SHA256SUMS in dist/store
 	node scripts/store-package.mjs
+
+store-publish: store-package  ## Submit dist/store to the stores (DRY=1: only show the requests; secrets: store/SUBMIT.md)
+	node scripts/store-publish.mjs $(if $(DRY),--dry-run)
 
 publish-dev:  ## Put dist/release's Unfret Dev into the backend checkout (BACKEND=path); CI does this on main
 	node scripts/publish-dev.mjs $(BACKEND)
