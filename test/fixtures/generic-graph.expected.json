@@ -88,5 +88,44 @@
  "image_urls": [
   "https://cdn.zentrashop.example/lamp-1.jpg",
   "https://cdn.zentrashop.example/lamp-2.jpg"
- ]
+ ],
+ "product_ids": {
+  "gtin13": "8712345678901"
+ },
+ "payment_methods": [],
+ "phones": [],
+ "emails": [
+  {
+   "address": "help@zentrashop.example",
+   "kind": "own_domain"
+  }
+ ],
+ "addresses": [],
+ "founded_claims": [],
+ "business_name": "",
+ "legal_form": "",
+ "kvk_numbers": [],
+ "licences": [],
+ "certifications": [],
+ "cities_served": [],
+ "internal_links": [
+  {
+   "text": "Returns",
+   "url": "https://www.zentrashop.example/pages/return-policy"
+  },
+  {
+   "text": "Terms of Service",
+   "url": "https://www.zentrashop.example/policies/terms-of-service"
+  },
+  {
+   "text": "Privacy",
+   "url": "https://www.zentrashop.example/policies/privacy-policy"
+  }
+ ],
+ "pricing_terms": [],
+ "promises": [],
+ "testimonials": [],
+ "organization_ld": [],
+ "seller_profile": null,
+ "listing": null
 }

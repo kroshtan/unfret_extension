@@ -74,5 +74,45 @@
  },
  "image_urls": [
   "https://gadget-handel.example/wp-content/uploads/gun.jpg"
- ]
+ ],
+ "product_ids": {},
+ "payment_methods": [],
+ "phones": [],
+ "emails": [],
+ "addresses": [],
+ "founded_claims": [],
+ "business_name": "",
+ "legal_form": "",
+ "kvk_numbers": [],
+ "licences": [],
+ "certifications": [],
+ "cities_served": [],
+ "internal_links": [
+  {
+   "text": "AGB",
+   "url": "https://gadget-handel.example/agb"
+  },
+  {
+   "text": "Datenschutzerklärung",
+   "url": "https://gadget-handel.example/datenschutz"
+  },
+  {
+   "text": "Versand & Lieferung",
+   "url": "https://gadget-handel.example/versand"
+  },
+  {
+   "text": "Kontakt",
+   "url": "https://gadget-handel.example/kontakt"
+  },
+  {
+   "text": "Impressum",
+   "url": "https://gadget-handel.example/impressum"
+  }
+ ],
+ "pricing_terms": [],
+ "promises": [],
+ "testimonials": [],
+ "organization_ld": [],
+ "seller_profile": null,
+ "listing": null
 }

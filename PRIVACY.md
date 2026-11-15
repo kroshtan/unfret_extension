@@ -8,10 +8,15 @@ Unfret is made by Kroshtan (Floris van Beers, the Netherlands).
 
 Nothing, until you click **Analyse this page**. Then it reads the page in the tab you are looking at:
 product facts (title, brand, seller, price, ratings, review texts and dates, shop policies, hidden text,
-checkboxes, countdowns) and the visible product text.
+checkboxes, countdowns), what the shop or company publishes about itself (its phone numbers, e-mail addresses and
+address from its contact, legal or imprint section, footer or structured data; registration and licence numbers;
+payment methods it mentions) and the visible product text.
 
-Before anything leaves your browser, the extension removes account menus, delivery addresses, greetings, forms
-and input fields from a copy of the page. The page itself is not changed.
+Before anything leaves your browser, the extension removes account menus, greetings, forms and input fields,
+checkout, billing and delivery areas, and any address that isn't in the business's own contact section, from a copy
+of the page. These rules are there to keep your own name, address, e-mail address and phone number in your browser;
+when in doubt, the extension strips. On a classifieds site (Marktplaats, Vinted, …) the seller's name is not read
+either. The page itself is not changed.
 
 The extension has no standing access to any website. It can read a page only after you click its toolbar button on
 that page (the browser's `activeTab` grant, for that one tab). On Amazon and bol.com product pages the toolbar icon

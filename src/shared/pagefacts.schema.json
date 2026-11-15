@@ -24,6 +24,208 @@
    "title": "Checkbox",
    "type": "object"
   },
+  "Email": {
+   "description": "An e-mail address the business publishes.",
+   "properties": {
+    "address": {
+     "default": "",
+     "maxLength": 254,
+     "title": "Address",
+     "type": "string"
+    },
+    "kind": {
+     "default": "other",
+     "description": "own_domain (same domain as the page), webmail (Gmail, Hotmail, \u2026) or other.",
+     "enum": [
+      "own_domain",
+      "webmail",
+      "other"
+     ],
+     "title": "Kind",
+     "type": "string"
+    }
+   },
+   "title": "Email",
+   "type": "object"
+  },
+  "Licence": {
+   "description": "A (US) licence number the page states, with its state when given (\"CA Lic. #1234567\").",
+   "properties": {
+    "number": {
+     "default": "",
+     "maxLength": 40,
+     "title": "Number",
+     "type": "string"
+    },
+    "state": {
+     "default": "",
+     "maxLength": 2,
+     "title": "State",
+     "type": "string"
+    }
+   },
+   "title": "Licence",
+   "type": "object"
+  },
+  "Link": {
+   "description": "A link to another page on the same site.",
+   "properties": {
+    "text": {
+     "default": "",
+     "maxLength": 300,
+     "title": "Text",
+     "type": "string"
+    },
+    "url": {
+     "default": "",
+     "maxLength": 500,
+     "title": "Url",
+     "type": "string"
+    }
+   },
+   "title": "Link",
+   "type": "object"
+  },
+  "ListingDetails": {
+   "description": "A peer-to-peer ad: the item and the deal as the platform shows them (price: ``PageFacts.price``).",
+   "properties": {
+    "negotiable": {
+     "anyOf": [
+      {
+       "type": "boolean"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Negotiable"
+    },
+    "bidding": {
+     "anyOf": [
+      {
+       "type": "boolean"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Bidding"
+    },
+    "condition": {
+     "default": "",
+     "maxLength": 100,
+     "title": "Condition",
+     "type": "string"
+    },
+    "category": {
+     "default": "",
+     "maxLength": 300,
+     "title": "Category",
+     "type": "string"
+    },
+    "listed": {
+     "anyOf": [
+      {
+       "format": "date",
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Listed"
+    },
+    "location": {
+     "default": "",
+     "maxLength": 300,
+     "title": "Location",
+     "type": "string"
+    },
+    "delivery": {
+     "items": {
+      "enum": [
+       "shipping",
+       "pickup"
+      ],
+      "type": "string"
+     },
+     "maxItems": 2,
+     "title": "Delivery",
+     "type": "array"
+    },
+    "payment_protection": {
+     "anyOf": [
+      {
+       "type": "boolean"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "description": "The platform's own payment or buyer protection.",
+     "title": "Payment Protection"
+    },
+    "contact_methods": {
+     "description": "Ways to reach the seller the ad text mentions (whatsapp, \u2026).",
+     "items": {
+      "type": "string"
+     },
+     "maxItems": 10,
+     "title": "Contact Methods",
+     "type": "array"
+    },
+    "payment_requests": {
+     "description": "Payment the ad text asks for (bank_transfer, deposit, \u2026).",
+     "items": {
+      "type": "string"
+     },
+     "maxItems": 10,
+     "title": "Payment Requests",
+     "type": "array"
+    }
+   },
+   "title": "ListingDetails",
+   "type": "object"
+  },
+  "Phone": {
+   "description": "A phone number the business publishes (``tel:`` links, contact areas, structured data).",
+   "properties": {
+    "number": {
+     "default": "",
+     "description": "+ and digits when the country is known, else digits.",
+     "maxLength": 20,
+     "title": "Number",
+     "type": "string"
+    },
+    "kind": {
+     "default": "unknown",
+     "description": "mobile, local (geographic), national (non-geographic), toll_free, premium (NL and US numbers).",
+     "enum": [
+      "mobile",
+      "local",
+      "national",
+      "toll_free",
+      "premium",
+      "unknown"
+     ],
+     "title": "Kind",
+     "type": "string"
+    },
+    "country": {
+     "default": "",
+     "description": "ISO country code from the number, when known.",
+     "maxLength": 2,
+     "title": "Country",
+     "type": "string"
+    }
+   },
+   "title": "Phone",
+   "type": "object"
+  },
   "Review": {
    "description": "One review as shown on the page.",
    "properties": {
@@ -81,9 +283,123 @@
    },
    "title": "Review",
    "type": "object"
+  },
+  "SellerProfile": {
+   "description": "The seller (peer-to-peer) or provider (service platform) as the platform shows them: never their name.\n\nUsed during the check only.",
+   "properties": {
+    "seller_type": {
+     "default": "",
+     "description": "business or private, as the platform labels them.",
+     "enum": [
+      "",
+      "business",
+      "private"
+     ],
+     "title": "Seller Type",
+     "type": "string"
+    },
+    "member_since": {
+     "anyOf": [
+      {
+       "format": "date",
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Member Since"
+    },
+    "rating": {
+     "anyOf": [
+      {
+       "maximum": 5,
+       "minimum": 0,
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Rating"
+    },
+    "rating_count": {
+     "anyOf": [
+      {
+       "minimum": 0,
+       "type": "integer"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Rating Count"
+    },
+    "badges": {
+     "description": "Verified ID, Top seller, \u2026",
+     "items": {
+      "type": "string"
+     },
+     "maxItems": 20,
+     "title": "Badges",
+     "type": "array"
+    },
+    "other_listings": {
+     "anyOf": [
+      {
+       "minimum": 0,
+       "type": "integer"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Other Listings"
+    },
+    "response_time": {
+     "default": "",
+     "maxLength": 100,
+     "title": "Response Time",
+     "type": "string"
+    },
+    "response_rate": {
+     "anyOf": [
+      {
+       "maximum": 100,
+       "minimum": 0,
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "description": "In percent.",
+     "title": "Response Rate"
+    },
+    "jobs_completed": {
+     "anyOf": [
+      {
+       "minimum": 0,
+       "type": "integer"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Jobs Completed"
+    }
+   },
+   "title": "SellerProfile",
+   "type": "object"
   }
  },
- "description": "Structured facts about one product page. Absent facts are ``None`` or empty, never guessed.",
+ "description": "Structured facts about one page. Absent facts are ``None`` or empty, never guessed.",
  "properties": {
   "platform": {
    "default": "generic",
@@ -93,6 +409,21 @@
     "walmart",
     "shopify",
     "woocommerce",
+    "ebay",
+    "marktplaats",
+    "2dehands",
+    "vinted",
+    "craigslist",
+    "facebook",
+    "werkspot",
+    "thumbtack",
+    "angi",
+    "homeadvisor",
+    "checkatrade",
+    "taskrabbit",
+    "bark",
+    "houzz",
+    "myhammer",
     "generic"
    ],
    "title": "Platform",
@@ -339,6 +670,171 @@
    "maxItems": 50,
    "title": "Image Urls",
    "type": "array"
+  },
+  "product_ids": {
+   "additionalProperties": {
+    "type": "string"
+   },
+   "description": "Public product IDs by kind: gtin, gtin8/12/13/14, mpn, asin.",
+   "title": "Product Ids",
+   "type": "object"
+  },
+  "payment_methods": {
+   "description": "Payment methods the page mentions (paypal, ideal, crypto, \u2026).",
+   "items": {
+    "type": "string"
+   },
+   "maxItems": 30,
+   "title": "Payment Methods",
+   "type": "array"
+  },
+  "phones": {
+   "items": {
+    "$ref": "#/$defs/Phone"
+   },
+   "maxItems": 20,
+   "title": "Phones",
+   "type": "array"
+  },
+  "emails": {
+   "items": {
+    "$ref": "#/$defs/Email"
+   },
+   "maxItems": 20,
+   "title": "Emails",
+   "type": "array"
+  },
+  "addresses": {
+   "description": "Postal addresses from structured data and contact areas.",
+   "items": {
+    "type": "string"
+   },
+   "maxItems": 20,
+   "title": "Addresses",
+   "type": "array"
+  },
+  "founded_claims": {
+   "description": "\"Since 1998\", \"opgericht in 2004\", a foundingDate.",
+   "items": {
+    "type": "string"
+   },
+   "maxItems": 10,
+   "title": "Founded Claims",
+   "type": "array"
+  },
+  "business_name": {
+   "default": "",
+   "description": "From Organization/LocalBusiness data.",
+   "maxLength": 300,
+   "title": "Business Name",
+   "type": "string"
+  },
+  "legal_form": {
+   "default": "",
+   "description": "BV, VOF, LLC, Inc, GmbH, \u2026 as stated.",
+   "maxLength": 20,
+   "title": "Legal Form",
+   "type": "string"
+  },
+  "kvk_numbers": {
+   "description": "Dutch Chamber of Commerce.",
+   "items": {
+    "type": "string"
+   },
+   "maxItems": 10,
+   "title": "Kvk Numbers",
+   "type": "array"
+  },
+  "licences": {
+   "items": {
+    "$ref": "#/$defs/Licence"
+   },
+   "maxItems": 10,
+   "title": "Licences",
+   "type": "array"
+  },
+  "certifications": {
+   "description": "Licence, insurance and certification claims (snippets).",
+   "items": {
+    "type": "string"
+   },
+   "maxItems": 20,
+   "title": "Certifications",
+   "type": "array"
+  },
+  "cities_served": {
+   "items": {
+    "type": "string"
+   },
+   "maxItems": 100,
+   "title": "Cities Served",
+   "type": "array"
+  },
+  "internal_links": {
+   "items": {
+    "$ref": "#/$defs/Link"
+   },
+   "maxItems": 100,
+   "title": "Internal Links",
+   "type": "array"
+  },
+  "pricing_terms": {
+   "description": "Call-out fees, quotes, deposits, hourly rates (snippets).",
+   "items": {
+    "type": "string"
+   },
+   "maxItems": 20,
+   "title": "Pricing Terms",
+   "type": "array"
+  },
+  "promises": {
+   "description": "\"24/7\", \"within 30 minutes\", same-day (snippets).",
+   "items": {
+    "type": "string"
+   },
+   "maxItems": 20,
+   "title": "Promises",
+   "type": "array"
+  },
+  "testimonials": {
+   "items": {
+    "type": "string"
+   },
+   "maxItems": 50,
+   "title": "Testimonials",
+   "type": "array"
+  },
+  "organization_ld": {
+   "description": "Organization/LocalBusiness JSON-LD, trimmed.",
+   "items": {
+    "additionalProperties": true,
+    "type": "object"
+   },
+   "maxItems": 10,
+   "title": "Organization Ld",
+   "type": "array"
+  },
+  "seller_profile": {
+   "anyOf": [
+    {
+     "$ref": "#/$defs/SellerProfile"
+    },
+    {
+     "type": "null"
+    }
+   ],
+   "default": null
+  },
+  "listing": {
+   "anyOf": [
+    {
+     "$ref": "#/$defs/ListingDetails"
+    },
+    {
+     "type": "null"
+    }
+   ],
+   "default": null
   }
  },
  "title": "PageFacts",

@@ -1,0 +1,158 @@
+{
+ "platform": "generic",
+ "url": "https://www.loodgietersnel.nl/",
+ "title": "Loodgieter in Amsterdam, 24/7 bereikbaar",
+ "brand": "",
+ "seller": "",
+ "seller_rating": null,
+ "ships_from": "",
+ "price": null,
+ "list_price": null,
+ "currency": "",
+ "date_first_available": null,
+ "rating": null,
+ "rating_count": null,
+ "rating_histogram": {},
+ "reviews": [],
+ "variations": [],
+ "json_ld": [],
+ "script_srcs": [],
+ "meta": {},
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [],
+ "fee_mentions": [],
+ "vat_ids": [
+  "NL123456789B01"
+ ],
+ "legal_mentions": [
+  "com · KvK-nummer: 1234 5678 · BTW NL123456789B01 · IBAN NL91 ABNA 0417 1643 00 Wij accepteren © 2026 Loodgiet"
+ ],
+ "copyright_lines": [
+  "© 2026 Loodgieter Snel B.V. Alle rechten voorbehouden."
+ ],
+ "policy_links": {},
+ "image_urls": [
+  "https://www.loodgietersnel.nl/logo.png",
+  "https://www.loodgietersnel.nl/pay/visa.png",
+  "https://www.loodgietersnel.nl/pay/klarna.png"
+ ],
+ "product_ids": {},
+ "payment_methods": [
+  "visa",
+  "ideal",
+  "klarna",
+  "cash"
+ ],
+ "phones": [
+  {
+   "number": "+318001234",
+   "kind": "toll_free",
+   "country": "NL"
+  },
+  {
+   "number": "+31201234567",
+   "kind": "local",
+   "country": "NL"
+  },
+  {
+   "number": "+31611223344",
+   "kind": "mobile",
+   "country": "NL"
+  }
+ ],
+ "emails": [
+  {
+   "address": "planning@loodgietersnel.nl",
+   "kind": "own_domain"
+  },
+  {
+   "address": "info@loodgietersnel.nl",
+   "kind": "own_domain"
+  },
+  {
+   "address": "snelloodgieter@gmail.com",
+   "kind": "webmail"
+  }
+ ],
+ "addresses": [
+  "Damrak 1, 1012 AB, Amsterdam, NL",
+  "Loodgieter Snel B.V., Damrak 1, 1012 AB Amsterdam"
+ ],
+ "founded_claims": [
+  "sinds 1998",
+  "foundingDate 1998"
+ ],
+ "business_name": "Loodgieter Snel B.V.",
+ "legal_form": "BV",
+ "kvk_numbers": [
+  "12345678"
+ ],
+ "licences": [],
+ "certifications": [
+  "Erkend installateur, sinds 1998"
+ ],
+ "cities_served": [
+  "Amsterdam",
+  "Utrecht",
+  "Haarlem"
+ ],
+ "internal_links": [
+  {
+   "text": "",
+   "url": "https://www.loodgietersnel.nl/"
+  },
+  {
+   "text": "Loodgieter Utrecht",
+   "url": "https://www.loodgietersnel.nl/loodgieter-utrecht"
+  },
+  {
+   "text": "Loodgieter Haarlem",
+   "url": "https://www.loodgietersnel.nl/loodgieter-haarlem"
+  },
+  {
+   "text": "Loodgieter Almere",
+   "url": "https://loodgietersnel.nl/loodgieter-almere"
+  }
+ ],
+ "pricing_terms": [
+  "Geen voorrijkosten, vaste prijs vooraf"
+ ],
+ "promises": [
+  "Loodgieter Snel | Loodgieter Amsterdam 24/7 Bel gratis 0800-1234 Loodgieter in Amsterdam, 24/7 bereikbaar Lekkage of verstopping? Binnen 30 min",
+  "msterdam 24/7 Bel gratis 0800-1234 Loodgieter in Amsterdam, 24/7 bereikbaar Lekkage of verstopping? Binnen 30 minuten ter plaatse",
+  "ieter in Amsterdam, 24/7 bereikbaar Lekkage of verstopping? Binnen 30 minuten ter plaatse",
+  ", Damrak 1, 1012 AB Amsterdam Spoed: +31 (0)6 1122 3344 · Vragen: snelloodgieter@gmail"
+ ],
+ "testimonials": [],
+ "organization_ld": [
+  {
+   "@type": "Plumber",
+   "name": "Loodgieter Snel B.V.",
+   "telephone": "020-1234567",
+   "email": "info@loodgietersnel.nl",
+   "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "Damrak 1",
+    "postalCode": "1012 AB",
+    "addressLocality": "Amsterdam",
+    "addressCountry": {
+     "@type": "Country",
+     "name": "NL"
+    }
+   },
+   "areaServed": [
+    "Amsterdam",
+    {
+     "@type": "City",
+     "name": "Utrecht"
+    },
+    "Haarlem"
+   ],
+   "foundingDate": "1998",
+   "vatID": "NL123456789B01"
+  }
+ ],
+ "seller_profile": null,
+ "listing": null
+}

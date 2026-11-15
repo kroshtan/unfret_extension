@@ -1,0 +1,97 @@
+{
+ "platform": "generic",
+ "url": "https://lumen.example/products/glow-lamp",
+ "title": "Glow Lamp",
+ "brand": "",
+ "seller": "",
+ "seller_rating": null,
+ "ships_from": "",
+ "price": 49.0,
+ "list_price": null,
+ "currency": "EUR",
+ "date_first_available": null,
+ "rating": null,
+ "rating_count": null,
+ "rating_histogram": {},
+ "reviews": [],
+ "variations": [],
+ "json_ld": [
+  {
+   "@type": "Product",
+   "name": "Glow Lamp",
+   "gtin13": "8712345678901",
+   "offers": {
+    "@type": "Offer",
+    "price": "49.00",
+    "priceCurrency": "EUR"
+   }
+  }
+ ],
+ "script_srcs": [],
+ "meta": {},
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [],
+ "fee_mentions": [],
+ "vat_ids": [],
+ "legal_mentions": [
+  "example Impressum: Lumen Store GmbH, Handelsregister HRB 12345 B"
+ ],
+ "copyright_lines": [],
+ "policy_links": {},
+ "image_urls": [],
+ "product_ids": {
+  "gtin13": "8712345678901"
+ },
+ "payment_methods": [
+  "paypal",
+  "credit_card",
+  "klarna"
+ ],
+ "phones": [
+  {
+   "number": "+49301234567",
+   "kind": "unknown",
+   "country": "DE"
+  }
+ ],
+ "emails": [
+  {
+   "address": "hello@lumen.example",
+   "kind": "own_domain"
+  }
+ ],
+ "addresses": [
+  "Hauptstraße 5, 10115, Berlin, DE"
+ ],
+ "founded_claims": [
+  "Seit 2012"
+ ],
+ "business_name": "Lumen Store GmbH",
+ "legal_form": "GMBH",
+ "kvk_numbers": [],
+ "licences": [],
+ "certifications": [],
+ "cities_served": [],
+ "internal_links": [],
+ "pricing_terms": [],
+ "promises": [],
+ "testimonials": [],
+ "organization_ld": [
+  {
+   "@type": "OnlineStore",
+   "name": "Lumen Store GmbH",
+   "telephone": "+49 30 1234567",
+   "email": "hello@lumen.example",
+   "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "Hauptstraße 5",
+    "postalCode": "10115",
+    "addressLocality": "Berlin",
+    "addressCountry": "DE"
+   }
+  }
+ ],
+ "seller_profile": null,
+ "listing": null
+}

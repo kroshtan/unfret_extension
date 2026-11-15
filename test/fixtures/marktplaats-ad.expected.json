@@ -1,0 +1,68 @@
+{
+ "platform": "marktplaats",
+ "url": "https://www.marktplaats.nl/v/fietsen-en-brommers/fietsen-dames-damesfietsen/m2187654321-gazelle-damesfiets",
+ "title": "Gazelle damesfiets",
+ "brand": "",
+ "seller": "",
+ "seller_rating": null,
+ "ships_from": "",
+ "price": 150.0,
+ "list_price": null,
+ "currency": "EUR",
+ "date_first_available": null,
+ "rating": null,
+ "rating_count": null,
+ "rating_histogram": {},
+ "reviews": [],
+ "variations": [],
+ "json_ld": [
+  {
+   "@type": "Product",
+   "name": "Gazelle damesfiets",
+   "offers": {
+    "@type": "Offer",
+    "price": "150.00",
+    "priceCurrency": "EUR"
+   }
+  }
+ ],
+ "script_srcs": [],
+ "meta": {
+  "og:image": "https://images.marktplaats.com/api/v1/listing-mp-p/images/ab/abc.jpg"
+ },
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [],
+ "fee_mentions": [],
+ "vat_ids": [],
+ "legal_mentions": [],
+ "copyright_lines": [
+  "© 2026 Marktplaats B.V."
+ ],
+ "policy_links": {},
+ "image_urls": [
+  "https://images.marktplaats.com/api/v1/listing-mp-p/images/ab/abc.jpg"
+ ],
+ "product_ids": {},
+ "payment_methods": [
+  "bank_transfer",
+  "tikkie"
+ ],
+ "phones": [],
+ "emails": [],
+ "addresses": [],
+ "founded_claims": [],
+ "business_name": "",
+ "legal_form": "",
+ "kvk_numbers": [],
+ "licences": [],
+ "certifications": [],
+ "cities_served": [],
+ "internal_links": [],
+ "pricing_terms": [],
+ "promises": [],
+ "testimonials": [],
+ "organization_ld": [],
+ "seller_profile": null,
+ "listing": null
+}
