@@ -170,7 +170,7 @@
      "title": "Payment Protection"
     },
     "contact_methods": {
-     "description": "Ways to reach the seller the ad text mentions (whatsapp, \u2026).",
+     "description": "Ways to reach the seller the ad text mentions: whatsapp, telegram, phone, email.",
      "items": {
       "type": "string"
      },
@@ -179,13 +179,20 @@
      "type": "array"
     },
     "payment_requests": {
-     "description": "Payment the ad text asks for (bank_transfer, deposit, \u2026).",
+     "description": "Payment the ad text asks for: bank_transfer, payment_link, deposit, gift_card, crypto, money_transfer, payment_app.",
      "items": {
       "type": "string"
      },
      "maxItems": 10,
      "title": "Payment Requests",
      "type": "array"
+    },
+    "description": {
+     "default": "",
+     "description": "The ad's own text as the seller wrote it (not the platform's), for the check only.",
+     "maxLength": 5000,
+     "title": "Description",
+     "type": "string"
     }
    },
    "title": "ListingDetails",

@@ -1,6 +1,6 @@
 # Unfret privacy policy (browser extension)
 
-_Last updated: 15 November 2026 (version 0.9.0; photo lookup corrected, service providers added). Draft for the store listings; to be reviewed before publication._
+_Last updated: 15 November 2026 (version 0.9.0; photo lookup corrected, service providers and private sellers' ads added). Draft for the store listings; to be reviewed before publication._
 
 Unfret is made by Kroshtan (Floris van Beers, the Netherlands).
 
@@ -18,9 +18,13 @@ figures (member since, jobs, rating, badges, response rate) and its reviews, wit
 Before anything leaves your browser, the extension removes account menus, greetings, forms and input fields,
 checkout, billing and delivery areas, and any address that isn't in the business's own contact section, from a copy
 of the page. These rules are there to keep your own name, address, e-mail address and phone number in your browser;
-when in doubt, the extension strips. On a classifieds site (Marktplaats, Vinted, …) the seller's name is not read
-either. Testimonials inside a form, and "member since" in your own account menu, are not read. The page itself is
-not changed.
+when in doubt, the extension strips. Testimonials inside a form, and "member since" in your own account menu, are
+not read. The page itself is not changed.
+
+On a private seller's ad (Marktplaats, 2dehands, Vinted, Craigslist, Facebook Marketplace, or a private seller on
+eBay) it also reads the ad's own text, the item details (price, condition, category, delivery, location) and what the
+platform shows about the seller's account: since when, ratings, badges, other ads, reply time. **The seller's name is
+never read.**
 
 The extension has no standing access to any website. It can read a page only after you click its toolbar button on
 that page (the browser's `activeTab` grant, for that one tab). On Amazon and bol.com product pages the toolbar icon
@@ -63,7 +67,10 @@ hash of the shop's domain and that number, the day, the price and the claimed "w
 IP address or time of day. That is how Unfret tells whether a "was" price was ever really charged. A result you
 share is kept for 90 days (or until you delete it) as the preview showed it, without anything about who shared it;
 the server keeps only a fingerprint of its delete code. An invite is kept only as a fingerprint with the day it was
-issued and the day it was used, with no buyer and no redeemer. The main
+issued and the day it was used, with no buyer and no redeemer. For a private seller's ad it keeps, for 90 days, only
+a fingerprint of the ad's text (from which the text can't be read back), the platform, a one-way hash of the ad's
+address and the day, and any phone number or e-mail address written in the ad as a keyed one-way hash, to notice the
+same ad or number behind many ads; never the seller's name, account, location or the text itself. The main
 product photo (on a service company's page, its first photo that isn't a logo) is fingerprinted on Unfret's own
 server, to spot the same photo on another shop: the photo goes to no one else, and no outside image search is
 used. The full server-side statement: <https://unfret.net/privacy>.

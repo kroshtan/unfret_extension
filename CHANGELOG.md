@@ -14,6 +14,13 @@ backend's changelog, which lists each one published at `/extension`.)
   names. New parity fixtures: NL and US service sites (an established company and a doorway-style locksmith each) and
   Werkspot, Thumbtack and Angi profiles. The privacy policy says what is read from service pages. Needs a backend
   with the service providers' facts (an older one rejects testimonial objects)
+- **Peer-to-peer ads are read** (`src/extract/p2p.ts`, a port of the backend's `facts/p2p.py`, in parity): on
+  Marktplaats, 2dehands, eBay, Vinted, Craigslist and Facebook Marketplace the extension fills `listing` (price
+  handling, condition, category, listing date, location, delivery, the platform's payment protection, the contact
+  methods and payment requests the ad text mentions, and the ad's own text as `listing.description`) and
+  `seller_profile` (seller type, member since, rating and count, badges, other ads, reply time). Never the seller's
+  name. Facebook Marketplace needs a login, so the extension is the only way to check it; its areas are found by
+  their headings. Parity fixtures for each platform; the backend's results for ads need its expansion classes on.
 - **Page facts for more kinds of pages** (kept in parity with the backend's extractors, `make parity`): public product
   IDs (GTIN/EAN, MPN, ASIN), payment methods mentioned, the phone numbers (typed: mobile, local, national, toll-free,
   premium), e-mail addresses (own domain or webmail) and addresses a business publishes, "since 1998" claims, business

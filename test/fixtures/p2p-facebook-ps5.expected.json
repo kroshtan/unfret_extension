@@ -1,0 +1,85 @@
+{
+ "platform": "facebook",
+ "url": "https://www.facebook.com/marketplace/item/123456789012345/",
+ "title": "PlayStation 5 Disc Edition + 2 controllers",
+ "brand": "",
+ "seller": "",
+ "seller_rating": null,
+ "ships_from": "",
+ "price": 280.0,
+ "list_price": null,
+ "currency": "EUR",
+ "date_first_available": null,
+ "rating": null,
+ "rating_count": null,
+ "rating_histogram": {},
+ "reviews": [],
+ "variations": [],
+ "json_ld": [],
+ "script_srcs": [],
+ "meta": {
+  "og:image": "https://scontent.xx.fbcdn.net/v/t45.5328-4/4567_n.jpg"
+ },
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [],
+ "fee_mentions": [],
+ "vat_ids": [],
+ "legal_mentions": [],
+ "copyright_lines": [],
+ "policy_links": {},
+ "image_urls": [
+  "https://scontent.xx.fbcdn.net/v/t45.5328-4/4567_n.jpg"
+ ],
+ "product_ids": {},
+ "payment_methods": [
+  "tikkie",
+  "cash"
+ ],
+ "phones": [],
+ "emails": [],
+ "addresses": [],
+ "founded_claims": [],
+ "business_name": "",
+ "legal_form": "",
+ "kvk_numbers": [],
+ "licences": [],
+ "certifications": [],
+ "cities_served": [],
+ "internal_links": [],
+ "pricing_terms": [],
+ "promises": [],
+ "testimonials": [],
+ "organization_ld": [],
+ "seller_profile": {
+  "seller_type": "",
+  "member_since": "2011-01-01",
+  "rating": 4.9,
+  "rating_count": 27,
+  "badges": [
+   "Highly rated"
+  ],
+  "other_listings": null,
+  "response_time": "Typically replies within an hour",
+  "response_rate": null,
+  "jobs_completed": null,
+  "years_in_business": null
+ },
+ "listing": {
+  "negotiable": null,
+  "bidding": false,
+  "condition": "Used - like new",
+  "category": "",
+  "listed": null,
+  "location": "Utrecht, Netherlands",
+  "delivery": [
+   "pickup"
+  ],
+  "payment_protection": null,
+  "contact_methods": [],
+  "payment_requests": [
+   "payment_link"
+  ],
+  "description": "PS5 disc edition, bought in 2023, works perfectly. Two DualSense controllers and the original box. Pick up in Utrecht Overvecht, you can test it before paying. Cash or Tikkie at pickup."
+ }
+}

@@ -35,6 +35,11 @@ const MONTH_DAY_YEAR_RE = new RegExp(
   String.raw`${NOT_WORD_BEFORE}(\p{L}{3,10})\.?\s+(\d{1,2}),?\s+(\d{4})${NOT_WORD_AFTER}`,
   "u",
 );
+const MONTH_YEAR_RE = new RegExp(
+  String.raw`${NOT_WORD_BEFORE}(\p{L}{3,10})\.?\s+((?:19|20)\d\d)${NOT_WORD_AFTER}`,
+  "u",
+);
+const YEAR_RE = /(?<!\d)((?:19|20)\d\d)(?!\d)/u;
 // Digits with dots, commas, no-break spaces (U+00A0) and narrow no-break spaces (U+202F) as separators.
 const NUMBER_RE = /\d[\d.,\u00a0\u202f]*/u;
 const CURRENCY_SYMBOLS: [string, string][] = [
@@ -79,6 +84,17 @@ export function parseDate(text: string): string | null {
     if (iso) return iso;
   }
   return null;
+}
+
+/** The date a "member since" statement gives: a full date, else the first of a month, else of a year. */
+export function parseSince(text: string): string | null {
+  const found = parseDate(text);
+  if (found) return found;
+  const m = MONTH_YEAR_RE.exec(text);
+  const month = m ? MONTHS.get((m[1] ?? "").toLowerCase()) : undefined;
+  if (m && month) return validDate(Number(m[2]), month, 1);
+  const y = YEAR_RE.exec(text);
+  return y ? validDate(Number(y[1]), 1, 1) : null;
 }
 
 /**
