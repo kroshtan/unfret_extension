@@ -1,6 +1,6 @@
 # Unfret privacy policy (browser extension)
 
-_Last updated: 10 November 2026 (version 0.9.0). Draft for the store listings; to be reviewed before publication._
+_Last updated: 15 November 2026 (version 0.9.0; photo lookup corrected, service providers added). Draft for the store listings; to be reviewed before publication._
 
 Unfret is made by Kroshtan (Floris van Beers, the Netherlands).
 
@@ -63,9 +63,10 @@ hash of the shop's domain and that number, the day, the price and the claimed "w
 IP address or time of day. That is how Unfret tells whether a "was" price was ever really charged. A result you
 share is kept for 90 days (or until you delete it) as the preview showed it, without anything about who shared it;
 the server keeps only a fingerprint of its delete code. An invite is kept only as a fingerprint with the day it was
-issued and the day it was used, with no buyer and no redeemer. The product
-photo itself (the image only, fetched by the server) is looked up with Google Cloud Vision to find copies on
-wholesale sites. The full server-side statement: <https://unfret.net/privacy>.
+issued and the day it was used, with no buyer and no redeemer. The main
+product photo (on a service company's page, its first photo that isn't a logo) is fingerprinted on Unfret's own
+server, to spot the same photo on another shop: the photo goes to no one else, and no outside image search is
+used. The full server-side statement: <https://unfret.net/privacy>.
 
 ## Your consent
 
