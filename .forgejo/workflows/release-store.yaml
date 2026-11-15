@@ -1,15 +1,30 @@
 name: Release to the extension stores
 
 # Production Unfret is released only by hand: Actions → "Release to the extension stores" → Run workflow. Nothing runs
-# here automatically. Leave the input at `main` to release main's newest commit as v<version in package.json>
-# (refused if that tag already names another commit, so bump the version first). Or give an existing release tag,
-# e.g. v0.8.4, to package that release again. Either way the commit must be on main, with CI passed and the same
-# commit published as Unfret Dev.
+# here automatically. Leave `ref` at `main` to release main's newest commit as v<version in package.json> (refused if
+# that tag already names another commit, so bump the version first). Or give an existing release tag, e.g. v0.8.4, to
+# package that release again. Either way the commit must be on main, with CI passed and the same commit published as
+# Unfret Dev.
 #
 # It builds the store packages, checks them (scripts/store-package.mjs: package.json's version, production API, no
 # `key` or `update_url`) and attaches them with their checksums to the Forgejo release v<version>: the Chrome zip,
-# the Firefox zip and the source zip addons.mozilla.org asks for. Uploading them is left by hand (store/SUBMIT.md,
-# store/AMO.md): the stores' APIs need credentials this repository doesn't have.
+# the Firefox zip and the source zip addons.mozilla.org asks for. Then it submits them to the stores picked in
+# `stores` (scripts/store-publish.mjs): the Chrome zip to the Chrome Web Store item for review, the Firefox zip with
+# its source as a new listed version on addons.mozilla.org. Each store is its own step: one failing doesn't stop the
+# other, a store whose secrets aren't set is skipped with a notice, and a version a store already has is left alone,
+# so a run can be repeated.
+#
+# Order guard: nothing goes to a store unless production's backend (https://unfret.net/v1/health) runs at least
+# package.json's `minBackendVersion`: newer extensions send page data older backends refuse. Deploy the backend first.
+#
+# `dry_run` (on by default) builds and checks everything, runs the order guard (a failure is a warning) and prints
+# every store request a real run would send, without secrets; it attaches nothing and creates no tag or release.
+#
+# Repo secrets (Settings → Actions → Secrets; store/SUBMIT.md says how to get them): CWS_PUBLISHER_ID and
+# CWS_SERVICE_ACCOUNT_KEY (a service account's JSON key) for the Chrome Web Store, or instead of the key the OAuth
+# fallback CWS_CLIENT_ID, CWS_CLIENT_SECRET and CWS_REFRESH_TOKEN; AMO_JWT_ISSUER and
+# AMO_JWT_SECRET for addons.mozilla.org, and optionally AMO_APPROVAL_NOTES (the notes to the reviewer, with the test
+# key). They reach only the two submit steps, on the deploy runner.
 on:
   workflow_dispatch:
     inputs:
@@ -18,6 +33,17 @@ on:
         required: true
         default: main
         type: string
+      stores:
+        description: "Submit to: both, chrome, firefox, or none (only build and attach)"
+        required: true
+        default: both
+        type: choice
+        options: [both, chrome, firefox, none]
+      dry_run:
+        description: "Dry run: build, check and show the store requests; attach and submit nothing"
+        required: true
+        default: true
+        type: boolean
 
 concurrency:
   group: release-unfret-store
@@ -37,9 +63,21 @@ jobs:
         id: release
         env:
           REF: ${{ inputs.ref }}
+          STORES: ${{ inputs.stores }}
+          DRY_RUN: ${{ inputs.dry_run }}
           API: ${{ forgejo.server_url }}/api/v1/repos/${{ forgejo.repository }}
         run: |
           set -euo pipefail
+          dry="$([[ "$DRY_RUN" == true ]] && echo true || echo false)"
+          # What a real run refuses, a dry run only warns about, so it can show everything else.
+          fail() {
+            if [[ "$dry" == true ]]; then
+              echo "::warning::(dry run; a real run stops here) $*"
+            else
+              echo "::error::$*"
+              exit 1
+            fi
+          }
           git fetch -q --tags origin main
           if [[ "$REF" == main ]]; then
             sha="$(git rev-parse origin/main)"
@@ -50,7 +88,7 @@ jobs:
               || { echo "::error::package.json version '$version' is not a release version"; exit 1; }
             if git rev-parse -q --verify "refs/tags/$tag" > /dev/null; then
               [[ "$(git rev-parse "$tag^{commit}")" == "$sha" ]] \
-                || { echo "::error::$tag already names another commit: bump the version in package.json first"; exit 1; }
+                || fail "$tag already names another commit: bump the version in package.json first"
             fi
           else
             tag="$REF"
@@ -65,32 +103,54 @@ jobs:
           git merge-base --is-ancestor "$sha" origin/main \
             || { echo "::error::$tag ($sha) is not on main"; exit 1; }
           # The repository is public, so its commit statuses can be read without a token.
-          curl -fsS "$API/commits/$sha/status" | node -e '
+          green="$(curl -fsS "$API/commits/$sha/status" | node -e '
             const { statuses = [] } = JSON.parse(require("fs").readFileSync(0, "utf8"));
             const state = Object.fromEntries(statuses.map((s) => [s.context, s.status]));
             const bad = ["CI / check (push)", "CI / publish-dev (push)"].filter((c) => state[c] !== "success");
-            if (bad.length) {
-              console.log(`::error::not green on main/dev for this commit: ${bad.map((c) => `${c}=${state[c] ?? "missing"}`).join(", ")}`);
-              process.exit(1);
-            }
-            console.log("check and publish-dev succeeded for this commit");'
+            console.log(bad.map((c) => `${c}=${state[c] ?? "missing"}`).join(", "));')"
+          if [[ -n "$green" ]]; then
+            fail "not green on main/dev for this commit: $green"
+          else
+            echo "check and publish-dev succeeded for this commit"
+          fi
+          chrome=false
+          firefox=false
+          [[ "$STORES" == both || "$STORES" == chrome ]] && chrome=true
+          [[ "$STORES" == both || "$STORES" == firefox ]] && firefox=true
+          if [[ "$STORES" != none && ! -f scripts/store-publish.mjs ]]; then
+            echo "::error::$tag predates automated store submission: run with stores=none and upload by hand" \
+              "(store/SUBMIT.md, store/AMO.md)"
+            exit 1
+          fi
           {
             echo "sha=$sha"
             echo "tag=$tag"
             echo "version=$version"
+            echo "dry_run=$dry"
+            echo "chrome=$chrome"
+            echo "firefox=$firefox"
           } >> "$FORGEJO_OUTPUT"
-          echo "Packaging $tag ($sha) for the extension stores"
+          echo "Packaging $tag ($sha) for the extension stores (stores: $STORES, dry run: $dry)"
+      # The order guard, before anything is tagged: the same check runs again right before each submission.
+      - name: Check the production backend
+        if: inputs.stores != 'none'
+        env:
+          DRY: ${{ steps.release.outputs.dry_run == 'true' && '--dry-run' || '' }}
+        run: node scripts/store-publish.mjs --gate-only $DRY
       - name: Install dependencies
         run: npm ci
       - name: Test
         run: npm test
       - name: Build and check the store package
+        id: package
         run: |
           set -euo pipefail
           npm run build
           node scripts/store-package.mjs
           cat dist/store/SHA256SUMS
       - name: Attach it to the release
+        id: attach
+        if: steps.release.outputs.dry_run != 'true'
         env:
           TAG: ${{ steps.release.outputs.tag }}
           SHA: ${{ steps.release.outputs.sha }}
@@ -141,6 +201,27 @@ jobs:
               "$API/releases/$id/assets?name=$name"
             echo "attached $name"
           done
-          echo "::notice::Unfret $VERSION is ready at $SERVER/$REPO/releases/tag/$TAG: upload" \
-            "unfret-chrome-$VERSION.zip to the Chrome Web Store (store/SUBMIT.md) and unfret-firefox-$VERSION.zip" \
-            "with unfret-source-$VERSION.zip to addons.mozilla.org (store/AMO.md)."
+          echo "::notice::Unfret $VERSION is attached to $SERVER/$REPO/releases/tag/$TAG."
+      # The stores. Each runs once the packages are built (and attached, outside a dry run), whatever the other did.
+      - name: Submit to the Chrome Web Store
+        if: >-
+          !cancelled() && steps.release.outputs.chrome == 'true' && steps.package.outcome == 'success' &&
+          steps.attach.outcome != 'failure'
+        env:
+          DRY: ${{ steps.release.outputs.dry_run == 'true' && '--dry-run' || '' }}
+          CWS_SERVICE_ACCOUNT_KEY: ${{ secrets.CWS_SERVICE_ACCOUNT_KEY }}
+          CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+          CWS_PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID }}
+        run: node scripts/store-publish.mjs --chrome $DRY
+      - name: Submit to addons.mozilla.org
+        if: >-
+          !cancelled() && steps.release.outputs.firefox == 'true' && steps.package.outcome == 'success' &&
+          steps.attach.outcome != 'failure'
+        env:
+          DRY: ${{ steps.release.outputs.dry_run == 'true' && '--dry-run' || '' }}
+          AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
+          AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+          AMO_APPROVAL_NOTES: ${{ secrets.AMO_APPROVAL_NOTES }}
+        run: node scripts/store-publish.mjs --firefox $DRY

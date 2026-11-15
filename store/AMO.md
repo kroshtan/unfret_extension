@@ -4,8 +4,8 @@ Everything Claude could prepare is here. The steps only you can do are marked **
 
 ## The files
 
-From the Forgejo release `v<version>` (Actions → **Release to the extension stores** attaches them; for 0.9.1 they
-were attached by hand, built the same way):
+From the Forgejo release `v<version>` (Actions → **Release to the extension stores** attaches them and, with the AMO
+secrets set, submits them; for 0.9.1 they were attached by hand, built the same way):
 
 - `unfret-firefox-<version>.zip`: the add-on.
 - `unfret-source-<version>.zip`: its source (`git archive` of the release commit). AMO asks for it because the add-on
@@ -16,7 +16,23 @@ Checked before upload: `npx web-ext lint --source-dir dist/firefox` (CI runs it 
 the source zip in `node:22-bookworm` (Node 22.23.5, npm 10.9.9) gives a byte-identical Firefox zip. The sign-in relay
 was tested in Firefox 158 on https://unfret.net/connect: it runs without an extra permission grant.
 
-## Steps
+## Releasing a new version (automated)
+
+After the first submission below, "Release to the extension stores" with `stores` `both` or `firefox` (store/SUBMIT.md,
+"Releasing a new version") does steps 2 and 3 through AMO's API v5, authenticated with a JWT from `AMO_JWT_ISSUER` and
+`AMO_JWT_SECRET` (made once as in store/SUBMIT.md, "addons.mozilla.org: an API key"):
+
+1. `GET /api/v5/addons/addon/unfret/versions/<version>/`: a version AMO already has is left alone.
+2. `POST /api/v5/addons/upload/` with `unfret-firefox-<version>.zip` and `channel=listed`, then
+   `GET /api/v5/addons/upload/<uuid>/` until AMO's validator has processed it; a failed validation stops here with
+   its errors.
+3. `POST /api/v5/addons/addon/unfret/versions/` (multipart: the upload and `unfret-source-<version>.zip` as `source`).
+4. `PATCH` that version with `compatibility: ["firefox"]` (desktop only, as below; set `AMO_ANDROID=1` to keep the
+   manifest's Android too) and, if the `AMO_APPROVAL_NOTES` secret is set, the notes to the reviewer.
+
+The listing (texts, images, categories, privacy policy) isn't touched. Review then runs as for a manual upload.
+
+## The first submission (by hand)
 
 1. **You**: a developer account at https://addons.mozilla.org/developers/ (free). Use the same public contact
    address as for the Chrome Web Store.

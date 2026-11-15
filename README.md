@@ -108,9 +108,17 @@ self-hosted release in `dist/release/` (see [INSTALL.md](INSTALL.md#for-maintain
 - **Merge to `main` ⇒ Unfret Dev.** CI (`.forgejo/workflows/ci.yaml`, job `publish-dev`) builds Unfret Dev as
   `<version>.<run number>`, signs it and opens a self-merging pull request on the backend, whose pipeline deploys it to
   dev.unfret.net.
-- **Production ⇒ by hand only.** Actions → "Release to the extension stores" (`release-store.yaml`) builds and checks the
-  store packages (Chrome, Firefox and the source zip addons.mozilla.org asks for) and attaches them to the release
-  `v<version>`; the uploads are manual ([store/SUBMIT.md](store/SUBMIT.md), [store/AMO.md](store/AMO.md)).
+- **Production ⇒ by hand only.** Actions → "Release to the extension stores" (`release-store.yaml`, manual) builds and
+  checks the store packages (Chrome, Firefox and the source zip addons.mozilla.org asks for), attaches them to the
+  release `v<version>` and submits them (`scripts/store-publish.mjs`): the Chrome zip to the Chrome Web Store for
+  review (API v2, a service account), the Firefox zip with its source as a new listed version on addons.mozilla.org
+  (API v5). Inputs pick the stores (both, chrome, firefox, none) and a dry run (the default) that only shows the
+  requests. A store without its secrets is skipped. See [store/SUBMIT.md](store/SUBMIT.md) and
+  [store/AMO.md](store/AMO.md).
+- **Backend first.** `minBackendVersion` in `package.json` is the oldest backend release that accepts this
+  extension's page data (newer extensions send fields and platform values older backends refuse with 422). The store
+  workflow refuses to submit while https://unfret.net/v1/health reports an older `version`. Raise it whenever the
+  extension starts sending something only a newer backend knows.
 
 ## Parity with the backend
 
