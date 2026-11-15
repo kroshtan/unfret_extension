@@ -1,0 +1,110 @@
+{
+ "platform": "angi",
+ "url": "https://www.angi.com/companylist/us/tx/houston/lone-star-rooter-reviews-7654321.htm",
+ "title": "Lone Star Rooter",
+ "brand": "",
+ "seller": "",
+ "seller_rating": null,
+ "ships_from": "",
+ "price": null,
+ "list_price": null,
+ "currency": "",
+ "date_first_available": null,
+ "rating": null,
+ "rating_count": null,
+ "rating_histogram": {},
+ "reviews": [
+  {
+   "rating": 5.0,
+   "posted": "2026-10-30",
+   "title": "",
+   "body": "Amazing service, very fast and professional, best plumber in Houston!",
+   "verified": null
+  },
+  {
+   "rating": 5.0,
+   "posted": "2026-10-31",
+   "title": "",
+   "body": "Amazing service, very fast and professional, best plumber in Houston!",
+   "verified": null
+  },
+  {
+   "rating": 5.0,
+   "posted": "2026-11-01",
+   "title": "",
+   "body": "Amazing service, very fast and professional, best plumber in Katy!",
+   "verified": null
+  }
+ ],
+ "variations": [],
+ "json_ld": [],
+ "script_srcs": [],
+ "meta": {},
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [],
+ "fee_mentions": [],
+ "vat_ids": [],
+ "legal_mentions": [],
+ "copyright_lines": [
+  "© 2026 Angi Inc."
+ ],
+ "policy_links": {},
+ "image_urls": [],
+ "product_ids": {},
+ "payment_methods": [],
+ "phones": [],
+ "emails": [],
+ "addresses": [
+  "Houston, TX"
+ ],
+ "founded_claims": [],
+ "business_name": "Lone Star Rooter",
+ "legal_form": "INC",
+ "kvk_numbers": [],
+ "licences": [],
+ "certifications": [
+  "0 (3 reviews) Licensed Member since October 2026 1 years in business 40% response rate ★★★★★ Amazing service, very fast an"
+ ],
+ "cities_served": [],
+ "internal_links": [
+  {
+   "text": "Angi",
+   "url": "https://www.angi.com/"
+  },
+  {
+   "text": "Plumbing near me",
+   "url": "https://www.angi.com/nearme/plumbing/"
+  }
+ ],
+ "pricing_terms": [],
+ "promises": [],
+ "testimonials": [],
+ "organization_ld": [
+  {
+   "@type": [
+    "LocalBusiness",
+    "Plumber"
+   ],
+   "name": "Lone Star Rooter",
+   "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Houston",
+    "addressRegion": "TX"
+   }
+  }
+ ],
+ "seller_profile": {
+  "seller_type": "",
+  "member_since": "2026-10-01",
+  "rating": 5.0,
+  "rating_count": 3,
+  "badges": [],
+  "other_listings": null,
+  "response_time": "",
+  "response_rate": 40.0,
+  "jobs_completed": null,
+  "years_in_business": 1
+ },
+ "listing": null
+}

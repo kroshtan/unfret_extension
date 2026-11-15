@@ -78,6 +78,15 @@ export interface SellerProfile {
   response_time: string;
   response_rate: number | null;
   jobs_completed: number | null;
+  years_in_business: number | null;
+}
+
+/** A testimonial a service company publishes on its own site; the name only as the site prints it. */
+export interface Testimonial {
+  text: string;
+  name: string;
+  rating: number | null;
+  posted: string | null;
 }
 
 /** A peer-to-peer ad: the item and the deal as the platform shows them (the price is `PageFacts.price`). */
@@ -152,7 +161,7 @@ export interface PageFacts {
   internal_links: Link[];
   pricing_terms: string[];
   promises: string[];
-  testimonials: string[];
+  testimonials: Testimonial[];
   organization_ld: Record<string, unknown>[];
   seller_profile: SellerProfile | null;
   listing: ListingDetails | null;

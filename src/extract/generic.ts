@@ -10,13 +10,16 @@ import {
   emptyFacts,
   emptyReview,
   P2P_PLATFORMS,
+  PRIVATE_SELLER_PLATFORMS,
   type PageFacts,
   type Platform,
 } from "../shared/facts.js";
 import * as amazon from "./amazon.js";
 import * as bolcom from "./bolcom.js";
 import * as walmart from "./walmart.js";
-import { extractBusiness } from "./business.js";
+import { extractBusiness, organizations } from "./business.js";
+import { extractServiceProfile, SERVICE_PLATFORMS } from "./services.js";
+import { extractTestimonials } from "./testimonials.js";
 import { attr, cut, dedupe, hostname, squash, tagName, text, urljoin } from "./dom.js";
 import { parseDate, parseNumber, parseRating } from "./parse.js";
 import { pyJsonLength } from "./pyjson.js";
@@ -162,6 +165,14 @@ export function extractFacts(doc: Document, html: string, url = ""): PageFacts {
     facts.json_ld = withoutSeller(facts.json_ld);
   }
   extractBusiness(doc, url, facts);
+  if (!PRIVATE_SELLER_PLATFORMS.has(facts.platform)) {
+    const orgs = organizations(doc);
+    // A provider's profile: the platform's reviews, without names.
+    if (SERVICE_PLATFORMS.has(facts.platform)) extractServiceProfile(doc, facts, orgs);
+    // Not on a product page, whose reviews are already in `reviews`.
+    else if (facts.json_ld.length === 0 && facts.price === null)
+      facts.testimonials = extractTestimonials(doc, orgs);
+  }
   return facts;
 }
 

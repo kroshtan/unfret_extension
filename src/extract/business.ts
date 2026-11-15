@@ -135,6 +135,11 @@ function scanPage(doc: Document): Scan {
   return scan;
 }
 
+/** The page's text outside the areas that could hold the visitor's details (forms, account menus, checkout). */
+export function publicText(doc: Document): string {
+  return squash(scanPage(doc).public.join(" "));
+}
+
 function collect(el: Element, inside: boolean, scan: Scan): void {
   const name = tagName(el);
   if (name === "a" && el.hasAttribute("href")) scan.links.push([attr(el, "href"), text(el)]);
@@ -407,7 +412,8 @@ function kinds(node: Json): string[] {
   return (Array.isArray(kind) ? kind : [kind]).filter((k): k is string => typeof k === "string" && k !== "");
 }
 
-function organizations(doc: Document): Json[] {
+/** The page's Organization and LocalBusiness JSON-LD nodes, untrimmed, in document order. */
+export function organizations(doc: Document): Json[] {
   const orgs: Json[] = [];
   const walk = (node: unknown): void => {
     if (Array.isArray(node)) {

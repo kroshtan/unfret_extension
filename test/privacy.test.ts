@@ -91,6 +91,34 @@ describe("contacts and addresses in the facts", () => {
     expect(text).toContain("Lumen Store GmbH, Hauptstraße 5, 10115 Berlin");
   });
 
+  it.each(["service-werkspot-profile", "service-thumbtack-profile"])(
+    "%s: a logged-in visitor's name and membership aren't the provider's",
+    async (name) => {
+      const index = JSON.parse(readFileSync(join(FIXTURES, "index.json"), "utf8")) as Record<string, string>;
+      const doc = parse(readFileSync(join(FIXTURES, `${name}.html`), "utf8"));
+
+      const { facts } = await extractPage(doc, index[name] ?? "", { live: false });
+
+      expect(JSON.stringify(facts)).not.toMatch(/Jane/u);
+      expect(facts.seller_profile?.member_since).not.toMatch(/^201[46]/u); // the account menus' "member since"
+      expect(facts.testimonials).toEqual([]); // a platform's reviews go into reviews, without names
+      expect(facts.reviews.length).toBeGreaterThan(0);
+    },
+  );
+
+  it("reads a company's testimonials, never one in a form", async () => {
+    const doc = parse(`<body>
+      <div class="testimonial"><blockquote>Keurig gewerkt en precies volgens de offerte.</blockquote><cite>— Marieke</cite></div>
+      <form><div class="testimonial"><blockquote>Mijn eigen ervaring, nog niet verstuurd.</blockquote><cite>Jane Doe</cite></div></form>
+    </body>`);
+
+    const { facts } = await extractPage(doc, "https://loodgieter.example/", { live: false });
+
+    expect(facts.testimonials).toEqual([
+      { text: "Keurig gewerkt en precies volgens de offerte.", name: "Marieke", rating: null, posted: null },
+    ]);
+  });
+
   it("never keeps a private seller's name", async () => {
     const doc = parse(readFileSync(join(FIXTURES, "marktplaats-ad.html"), "utf8"));
 
