@@ -47,21 +47,28 @@
       <p id="account-until" class="muted small" hidden></p>
       <p id="credits" class="muted" hidden></p>
       <div class="row">
+        <button id="sign-in-key" type="button" class="secondary">API key</button>
         <button id="sign-in" type="button" class="secondary">Wallet in this browser</button>
         <button id="sign-in-phone" type="button" class="secondary">Wallet on your phone</button>
-        <button id="sign-in-key" type="button" class="secondary">API key</button>
         <button id="buy" type="button" class="secondary" hidden>Buy checks</button>
         <button id="sign-out" type="button" class="secondary" hidden>Sign out</button>
       </div>
       <details id="invite" class="invite small" hidden>
-        <summary>Have an invite?</summary>
+        <summary>Have an invite or intro code?</summary>
         <p class="muted">
-          An invite adds 3 checks to a new wallet or a new API key, one that never had checks.
+          An invite adds 3 checks, an intro code a few, to a new wallet or a new API key, one that never had
+          checks.
         </p>
-        <label for="invite-input">Invite code</label>
-        <input id="invite-input" type="text" spellcheck="false" autocomplete="off" placeholder="ufi_…" />
+        <label for="invite-input">Invite or intro code</label>
+        <input
+          id="invite-input"
+          type="text"
+          spellcheck="false"
+          autocomplete="off"
+          placeholder="ufi_… or a code like FRIENDS"
+        />
         <div class="row">
-          <button id="invite-use" type="button" class="secondary">Use invite</button>
+          <button id="invite-use" type="button" class="secondary">Use code</button>
         </div>
         <p id="invite-status" class="muted small" role="status" aria-live="polite"></p>
       </details>
@@ -78,7 +85,8 @@
       </div>
       <p class="small"><a id="key-get" class="link" href="#">No key yet? Get one on the checkout page</a></p>
       <p class="muted small">
-        Have an invite? Sign in with a new key (or a new wallet), then enter it under “Have an invite?”.
+        Have an invite or intro code? Sign in with a new key (or a new wallet), then enter it under “Have an
+        invite or intro code?”.
       </p>
     </section>
 

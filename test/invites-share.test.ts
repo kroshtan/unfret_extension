@@ -49,11 +49,29 @@ describe("invites", () => {
     expect(INVITE_RE.test(INVITE_OK)).toBe(true);
   });
 
+  it("recognises intro codes such as FRIENDS, in any case", () => {
+    expect(normaliseInvite(" friends ")).toBe("FRIENDS");
+    expect(normaliseInvite("DEV")).toBe("DEV");
+    expect(normaliseInvite("ab")).toBeNull(); // too short
+    expect(normaliseInvite("free checks")).toBeNull();
+  });
+
+  it("redeems an intro code, and words the daily cap as the server does", async () => {
+    expect(await redeemInvite(api.url, KEY, "friends")).toEqual({ ok: true, checksAdded: 5, checks: 5 });
+    expect(api.requests.at(-1)).toMatchObject({ path: "/v1/invites/redeem", body: { code: "FRIENDS" } });
+    const capped = await redeemInvite(api.url, KEY, "CAPPED");
+    expect(capped).toEqual({
+      ok: false,
+      message: "Today's free checks from codes are gone: they're back tomorrow (UTC).",
+      signedOut: false,
+    });
+  });
+
   it("refuses something that isn't a code without asking the server", async () => {
     const before = api.requests.length;
     expect(await redeemInvite(api.url, KEY, "not a code")).toEqual({
       ok: false,
-      message: "That isn't an invite code (it starts with ufi_).",
+      message: "That isn't an invite (ufi_…) or an intro code.",
       signedOut: false,
     });
     expect(api.requests).toHaveLength(before);
@@ -73,7 +91,10 @@ describe("invites", () => {
   it.each([
     [INVITE_USED_CODE, "This invite has already been used."],
     [INVITE_UNKNOWN_CODE, "Unknown invite code."],
-    [INVITE_NOT_NEW_CODE, "Invites are for new accounts: this one has had checks before, or used an invite."],
+    [
+      INVITE_NOT_NEW_CODE,
+      "Invites and intro codes are for new accounts: this one has had checks before, or used one.",
+    ],
   ])("shows the server's reason for a refused code (%s)", async (code, message) => {
     expect(await redeemInvite(api.url, KEY, code)).toEqual({ ok: false, message, signedOut: false });
   });
