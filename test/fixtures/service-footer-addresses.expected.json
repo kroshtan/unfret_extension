@@ -1,0 +1,104 @@
+{
+ "platform": "generic",
+ "url": "https://www.loneoakplumbing.com/",
+ "title": "Plumbing repairs across Central Texas",
+ "brand": "",
+ "seller": "",
+ "seller_rating": null,
+ "ships_from": "",
+ "price": null,
+ "list_price": null,
+ "currency": "",
+ "date_first_available": null,
+ "rating": null,
+ "rating_count": null,
+ "rating_histogram": {},
+ "reviews": [],
+ "variations": [],
+ "json_ld": [],
+ "script_srcs": [],
+ "meta": {},
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [],
+ "fee_mentions": [],
+ "vat_ids": [],
+ "legal_mentions": [],
+ "copyright_lines": [
+  "© 2026 Lone Oak Plumbing LLC"
+ ],
+ "policy_links": {},
+ "image_urls": [],
+ "product_ids": {},
+ "payment_methods": [],
+ "phones": [
+  {
+   "number": "+15125550100",
+   "kind": "local",
+   "country": "US"
+  },
+  {
+   "number": "+12545550111",
+   "kind": "local",
+   "country": "US"
+  }
+ ],
+ "emails": [],
+ "addresses": [
+  "12111 Menchaca Rd Austin, Texas 78748",
+  "2505 Washington Ave, Ste 3 Waco, TX 76710",
+  "605 Martin Luther King Jr Dr Temple, TX 76504",
+  "Tingietersweg 129 2031 ER"
+ ],
+ "founded_claims": [
+  "since 2004"
+ ],
+ "business_name": "",
+ "legal_form": "LLC",
+ "kvk_numbers": [],
+ "licences": [
+  {
+   "number": "MP.00188386",
+   "state": ""
+  }
+ ],
+ "certifications": [
+  "r Temple Plumber Waco Plumbing repairs across Central Texas Licensed and insured plumbers",
+  "ber Waco Plumbing repairs across Central Texas Licensed and insured plumbers"
+ ],
+ "cities_served": [],
+ "internal_links": [
+  {
+   "text": "Plumber Austin",
+   "url": "https://www.loneoakplumbing.com/plumber-austin"
+  },
+  {
+   "text": "Plumber Round Rock",
+   "url": "https://www.loneoakplumbing.com/plumber-round-rock"
+  },
+  {
+   "text": "Plumber Cedar Park",
+   "url": "https://www.loneoakplumbing.com/plumber-cedar-park"
+  },
+  {
+   "text": "Plumber Georgetown",
+   "url": "https://www.loneoakplumbing.com/plumber-georgetown"
+  },
+  {
+   "text": "Plumber Temple",
+   "url": "https://www.loneoakplumbing.com/plumber-temple"
+  },
+  {
+   "text": "Plumber Waco",
+   "url": "https://www.loneoakplumbing.com/plumber-waco"
+  }
+ ],
+ "pricing_terms": [
+  "Upfront written estimates before any work starts"
+ ],
+ "promises": [],
+ "testimonials": [],
+ "organization_ld": [],
+ "seller_profile": null,
+ "listing": null
+}
