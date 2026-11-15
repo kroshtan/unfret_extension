@@ -15,6 +15,7 @@ import {
   type Platform,
 } from "../shared/facts.js";
 import * as amazon from "./amazon.js";
+import * as p2p from "./p2p.js";
 import * as bolcom from "./bolcom.js";
 import * as walmart from "./walmart.js";
 import { extractBusiness, organizations } from "./business.js";
@@ -159,6 +160,7 @@ export function extractFacts(doc: Document, html: string, url = ""): PageFacts {
   if (!facts.title) facts.title = text(doc.querySelector("h1")) || meta(doc, "og:title");
   const ogImage = meta(doc, "og:image");
   if (facts.image_urls.length === 0 && ogImage) facts.image_urls = [urljoin(url, ogImage)];
+  if (PRIVATE_SELLER_PLATFORMS.has(facts.platform)) p2p.extract(doc, facts); // the ad and the account, never the name
   if (P2P_PLATFORMS.has(facts.platform)) {
     // A private seller's name is never kept.
     facts.seller = "";

@@ -63,6 +63,29 @@
  "promises": [],
  "testimonials": [],
  "organization_ld": [],
- "seller_profile": null,
- "listing": null
+ "seller_profile": {
+  "seller_type": "",
+  "member_since": "2015-01-01",
+  "rating": null,
+  "rating_count": 12,
+  "badges": [],
+  "other_listings": null,
+  "response_time": "",
+  "response_rate": null,
+  "jobs_completed": null,
+  "years_in_business": null
+ },
+ "listing": {
+  "negotiable": null,
+  "bidding": null,
+  "condition": "",
+  "category": "",
+  "listed": null,
+  "location": "",
+  "delivery": [],
+  "payment_protection": null,
+  "contact_methods": [],
+  "payment_requests": [],
+  "description": ""
+ }
 }

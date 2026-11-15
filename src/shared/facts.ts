@@ -45,6 +45,7 @@ export const PRIVATE_SELLER_PLATFORMS = new Set<Platform>([...P2P_PLATFORMS, "eb
 export type PhoneKind = "mobile" | "local" | "national" | "toll_free" | "premium" | "unknown";
 export type EmailKind = "own_domain" | "webmail" | "other";
 export type SellerType = "" | "business" | "private";
+export type Delivery = "shipping" | "pickup";
 
 export interface Phone {
   number: string;
@@ -97,10 +98,14 @@ export interface ListingDetails {
   category: string;
   listed: string | null;
   location: string;
-  delivery: ("shipping" | "pickup")[];
+  delivery: Delivery[];
   payment_protection: boolean | null;
+  /** whatsapp, telegram, phone, email. */
   contact_methods: string[];
+  /** bank_transfer, payment_link, deposit, gift_card, crypto, money_transfer, payment_app. */
   payment_requests: string[];
+  /** The ad's own text as the seller wrote it (not the platform's), for the check only. */
+  description: string;
 }
 
 export interface Review {

@@ -1,0 +1,95 @@
+{
+ "platform": "vinted",
+ "url": "https://www.vinted.nl/items/5123456789-winterjas-only-maat-m",
+ "title": "Winterjas Only maat M",
+ "brand": "Only",
+ "seller": "",
+ "seller_rating": null,
+ "ships_from": "",
+ "price": 18.0,
+ "list_price": null,
+ "currency": "EUR",
+ "date_first_available": null,
+ "rating": null,
+ "rating_count": null,
+ "rating_histogram": {},
+ "reviews": [],
+ "variations": [],
+ "json_ld": [
+  {
+   "@type": "Product",
+   "name": "Winterjas Only maat M",
+   "brand": {
+    "@type": "Brand",
+    "name": "Only"
+   },
+   "offers": {
+    "@type": "Offer",
+    "price": "18.00",
+    "priceCurrency": "EUR",
+    "itemCondition": "https://schema.org/UsedCondition"
+   }
+  }
+ ],
+ "script_srcs": [],
+ "meta": {
+  "og:image": "https://images1.vinted.net/t/03_01a2b/f800/1730000000.jpeg"
+ },
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [],
+ "fee_mentions": [],
+ "vat_ids": [],
+ "legal_mentions": [],
+ "copyright_lines": [],
+ "policy_links": {},
+ "image_urls": [
+  "https://images1.vinted.net/t/03_01a2b/f800/1730000000.jpeg"
+ ],
+ "product_ids": {},
+ "payment_methods": [],
+ "phones": [],
+ "emails": [],
+ "addresses": [],
+ "founded_claims": [],
+ "business_name": "",
+ "legal_form": "",
+ "kvk_numbers": [],
+ "licences": [],
+ "certifications": [],
+ "cities_served": [],
+ "internal_links": [],
+ "pricing_terms": [],
+ "promises": [],
+ "testimonials": [],
+ "organization_ld": [],
+ "seller_profile": {
+  "seller_type": "",
+  "member_since": "2019-03-04",
+  "rating": 4.9,
+  "rating_count": 131,
+  "badges": [
+   "Verified e-mail"
+  ],
+  "other_listings": 42,
+  "response_time": "reactietijd: 1 uur",
+  "response_rate": null,
+  "jobs_completed": null,
+  "years_in_business": null
+ },
+ "listing": {
+  "negotiable": null,
+  "bidding": false,
+  "condition": "Zeer goed",
+  "category": "Dames > Bovenkleding > Jassen",
+  "listed": null,
+  "location": "Utrecht, Nederland",
+  "delivery": [
+   "shipping"
+  ],
+  "payment_protection": true,
+  "contact_methods": [],
+  "payment_requests": [],
+  "description": "Warme winterjas van Only, maat M. Twee winters gedragen, geen vlekken of gaten. Rits werkt perfect. Bundelkorting bij meerdere items!"
+ }
+}

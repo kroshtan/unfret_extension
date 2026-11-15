@@ -1,0 +1,70 @@
+{
+ "platform": "craigslist",
+ "url": "https://sfbay.craigslist.org/sfc/apa/d/san-francisco-sunny-2br-apartment/7801234567.html",
+ "title": "Sunny 2BR apartment, Mission district",
+ "brand": "",
+ "seller": "",
+ "seller_rating": null,
+ "ships_from": "",
+ "price": 1100.0,
+ "list_price": null,
+ "currency": "USD",
+ "date_first_available": null,
+ "rating": null,
+ "rating_count": null,
+ "rating_histogram": {},
+ "reviews": [],
+ "variations": [],
+ "json_ld": [],
+ "script_srcs": [],
+ "meta": {
+  "og:image": "https://images.craigslist.org/00a0a_abcDEF_600x450.jpg"
+ },
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [],
+ "fee_mentions": [],
+ "vat_ids": [],
+ "legal_mentions": [],
+ "copyright_lines": [],
+ "policy_links": {},
+ "image_urls": [
+  "https://images.craigslist.org/00a0a_abcDEF_600x450.jpg"
+ ],
+ "product_ids": {},
+ "payment_methods": [],
+ "phones": [],
+ "emails": [],
+ "addresses": [],
+ "founded_claims": [],
+ "business_name": "",
+ "legal_form": "",
+ "kvk_numbers": [],
+ "licences": [],
+ "certifications": [],
+ "cities_served": [],
+ "internal_links": [],
+ "pricing_terms": [],
+ "promises": [],
+ "testimonials": [],
+ "organization_ld": [],
+ "seller_profile": null,
+ "listing": {
+  "negotiable": null,
+  "bidding": false,
+  "condition": "",
+  "category": "SF bay area > san francisco > housing > apts/housing for rent",
+  "listed": "2026-11-12",
+  "location": "mission district",
+  "delivery": [],
+  "payment_protection": false,
+  "contact_methods": [
+   "email"
+  ],
+  "payment_requests": [
+   "deposit",
+   "payment_app"
+  ],
+  "description": "Beautiful sunny 2 bedroom apartment in the heart of the Mission, hardwood floors, washer and dryer in unit. I am currently out of the country on a missionary trip, so I can't show the apartment in person. To reserve it send a deposit of $1,100 via Zelle and I will mail you the keys. Email me at rentals.sunny.sf@gmail.com for the application."
+ }
+}

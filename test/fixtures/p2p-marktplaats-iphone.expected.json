@@ -1,0 +1,98 @@
+{
+ "platform": "marktplaats",
+ "url": "https://www.marktplaats.nl/v/telecommunicatie/mobiele-telefoons-apple-iphone/m2201234567-apple-iphone-15-pro-256gb-zwart",
+ "title": "Apple iPhone 15 Pro 256GB Zwart",
+ "brand": "",
+ "seller": "",
+ "seller_rating": null,
+ "ships_from": "",
+ "price": 350.0,
+ "list_price": null,
+ "currency": "EUR",
+ "date_first_available": null,
+ "rating": null,
+ "rating_count": null,
+ "rating_histogram": {},
+ "reviews": [],
+ "variations": [],
+ "json_ld": [
+  {
+   "@type": "Product",
+   "name": "Apple iPhone 15 Pro 256GB Zwart",
+   "offers": {
+    "@type": "Offer",
+    "price": "350.00",
+    "priceCurrency": "EUR"
+   }
+  }
+ ],
+ "script_srcs": [],
+ "meta": {
+  "og:image": "https://images.marktplaats.com/api/v1/listing-mp-p/images/7c/7c1f.jpg?rule=ecg_mp_eps$_85"
+ },
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [],
+ "fee_mentions": [],
+ "vat_ids": [],
+ "legal_mentions": [],
+ "copyright_lines": [
+  "© 2026 Marktplaats B.V."
+ ],
+ "policy_links": {},
+ "image_urls": [
+  "https://images.marktplaats.com/api/v1/listing-mp-p/images/7c/7c1f.jpg?rule=ecg_mp_eps$_85"
+ ],
+ "product_ids": {},
+ "payment_methods": [
+  "bank_transfer"
+ ],
+ "phones": [],
+ "emails": [],
+ "addresses": [],
+ "founded_claims": [],
+ "business_name": "",
+ "legal_form": "",
+ "kvk_numbers": [],
+ "licences": [],
+ "certifications": [],
+ "cities_served": [],
+ "internal_links": [],
+ "pricing_terms": [],
+ "promises": [],
+ "testimonials": [],
+ "organization_ld": [],
+ "seller_profile": {
+  "seller_type": "",
+  "member_since": "2026-10-01",
+  "rating": null,
+  "rating_count": 0,
+  "badges": [],
+  "other_listings": 23,
+  "response_time": "",
+  "response_rate": null,
+  "jobs_completed": null,
+  "years_in_business": null
+ },
+ "listing": {
+  "negotiable": null,
+  "bidding": false,
+  "condition": "Zo goed als nieuw",
+  "category": "Marktplaats > Telecommunicatie > Mobiele telefoons | Apple iPhone",
+  "listed": "2026-11-13",
+  "location": "Amsterdam",
+  "delivery": [
+   "shipping"
+  ],
+  "payment_protection": null,
+  "contact_methods": [
+   "whatsapp",
+   "phone"
+  ],
+  "payment_requests": [
+   "bank_transfer",
+   "deposit"
+  ],
+  "description": "Te koop mijn iPhone 15 Pro 256GB, zo goed als nieuw, altijd in hoesje gezeten. Doos en lader erbij. Alleen verzenden, ik woon momenteel in het buitenland voor mijn werk. Betaling vooraf via overboeking, daarna verstuur ik het pakket met track & trace. Geen gelijk oversteken. Stuur me een WhatsApp: 06-12345678"
+ }
+}

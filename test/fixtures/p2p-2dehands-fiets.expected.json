@@ -1,0 +1,94 @@
+{
+ "platform": "2dehands",
+ "url": "https://www.2dehands.be/v/fietsen-en-brommers/fietsen-heren-herenfietsen/m1987654321-gazelle-orange-c7-herenfiets",
+ "title": "Gazelle Orange C7 herenfiets",
+ "brand": "",
+ "seller": "",
+ "seller_rating": null,
+ "ships_from": "",
+ "price": 425.0,
+ "list_price": null,
+ "currency": "EUR",
+ "date_first_available": null,
+ "rating": null,
+ "rating_count": null,
+ "rating_histogram": {},
+ "reviews": [],
+ "variations": [],
+ "json_ld": [
+  {
+   "@type": "Product",
+   "name": "Gazelle Orange C7 herenfiets",
+   "offers": {
+    "@type": "Offer",
+    "price": "425.00",
+    "priceCurrency": "EUR",
+    "itemCondition": "https://schema.org/UsedCondition"
+   }
+  }
+ ],
+ "script_srcs": [],
+ "meta": {
+  "og:image": "https://images.2dehands.com/api/v1/listing-twh-p/images/3a/3a9d.jpg"
+ },
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [],
+ "fee_mentions": [],
+ "vat_ids": [],
+ "legal_mentions": [],
+ "copyright_lines": [],
+ "policy_links": {},
+ "image_urls": [
+  "https://images.2dehands.com/api/v1/listing-twh-p/images/3a/3a9d.jpg"
+ ],
+ "product_ids": {},
+ "payment_methods": [
+  "cash"
+ ],
+ "phones": [],
+ "emails": [],
+ "addresses": [],
+ "founded_claims": [],
+ "business_name": "",
+ "legal_form": "",
+ "kvk_numbers": [],
+ "licences": [],
+ "certifications": [],
+ "cities_served": [],
+ "internal_links": [],
+ "pricing_terms": [],
+ "promises": [],
+ "testimonials": [],
+ "organization_ld": [],
+ "seller_profile": {
+  "seller_type": "",
+  "member_since": "2014-01-01",
+  "rating": 4.8,
+  "rating_count": 48,
+  "badges": [
+   "Verified phone"
+  ],
+  "other_listings": null,
+  "response_time": "Reageert meestal binnen een uur",
+  "response_rate": null,
+  "jobs_completed": null,
+  "years_in_business": null
+ },
+ "listing": {
+  "negotiable": null,
+  "bidding": true,
+  "condition": "Gebruikt",
+  "category": "Fietsen en Brommers > Fietsen | Heren | Herenfietsen",
+  "listed": "2026-11-02",
+  "location": "Gent",
+  "delivery": [
+   "shipping",
+   "pickup"
+  ],
+  "payment_protection": true,
+  "contact_methods": [],
+  "payment_requests": [],
+  "description": "Gazelle Orange C7, framemaat 57, 7 versnellingen, naaf-dynamo. Twee jaar geleden nieuw gekocht, onderhouden bij de fietsenmaker (bonnetje aanwezig). Kleine kras op het spatbord, verder in goede staat. Proefrit en ophalen in Gent, betalen contant bij ophalen."
+ }
+}

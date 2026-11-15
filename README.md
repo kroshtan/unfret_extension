@@ -54,7 +54,7 @@ The API contract is in the backend repository (credits door, contract v1).
 src/
   background/   service worker / event page: session relay, icon hint, badge, analysis runner
   content/      extract-entry.ts (injected on demand), connect-relay.ts (connect page only), relay.ts (checks)
-  extract/      PageFacts extraction: parse, dom, generic, business, amazon, bolcom, walmart (ports); live, clean (browser-only)
+  extract/      PageFacts extraction: parse, dom, generic, business, p2p, amazon, bolcom, walmart (ports); live, clean (browser-only)
   api/          API client and SSE parser
   popup/        popup UI
   options/      options page (API base URL, sign out)
