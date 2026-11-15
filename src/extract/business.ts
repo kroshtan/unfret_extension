@@ -183,7 +183,32 @@ const FOUNDED_RE =
 const KVK_RE =
   /(?<![a-z])(?:kvk|k\.v\.k\.|kamer van koophandel|chamber of commerce|coc)(?:[\s.:#-]|nummer|number|nr|no)*(\d{4} ?\d{4})(?![0-9])/giu;
 const LICENCE_RE =
-  /(?<![A-Za-z])(?:([A-Z]{2})\s+)?(?:[Ss]tate\s+)?(?:[Cc]ontractor'?s?\s+)?(?:[Ll]ic(?:ense|ence)?|LIC(?:ENSE|ENCE)?|CSLB|ROC)\.?\s*(?:#|[Nn]o\.?|[Nn]umber|[Nn]r\.?)?\s*:?\s*#?\s*([A-Z]{0,4}-?\d{5,10})(?![0-9])/gu;
+  /(?<![A-Za-z])(?:([A-Z]{2})\s+)?(?:[Ss]tate\s+)?(?:[Cc]ontractor'?s?\s+)?(?:[Ll]ic(?:ense|ence)?|LIC(?:ENSE|ENCE)?|CSLB|ROC)\.?\s*(?:#|[Nn]o\.?|[Nn]umber|[Nn]r\.?)?\s*:?\s*#?\s*([A-Z]{0,4}[-.]?\d{5,10})(?![0-9])/gu;
+// Street addresses written out in a business area (a footer, a contact block) rather than marked up: a house number,
+// a street and a ZIP, or a street, a number and a Dutch postcode. A post-office box is not one (backend parity).
+const US_STREET_ADDRESS_RE =
+  /(?<![A-Za-z0-9#])\d{1,6} (?:(?:[A-Z][A-Za-z.'-]*|\d{1,3}(?:st|nd|rd|th)) ){1,5}?(?:St|Street|Rd|Road|Dr|Drive|Ave|Avenue|Blvd|Boulevard|Ln|Lane|Way|Pkwy|Parkway|Hwy|Highway|Ct|Court|Cir|Circle|Pl|Place|Trl|Trail|Ter|Terrace|Pike|Loop|Sq|Square)\.?,?(?: (?:Ste|Suite|Unit|Apt|Bldg|#)\.? ?#?[A-Za-z0-9-]+,?)? (?:[A-Z][A-Za-z.'-]* ){0,3}?[A-Z][A-Za-z.'-]*,? (?:[A-Z]{2}|[A-Z][a-z]+(?: [A-Z][a-z]+)?) \d{5}(?:-\d{4})?(?![0-9])/gu;
+const NL_STREET_ADDRESS_RE =
+  /(?<![A-Za-zÀ-ÿ0-9.])[A-Z][a-zà-ÿ'-]+(?:[ -][A-Za-zà-ÿ'-]+){0,3} \d{1,5}(?: ?[a-zA-Z](?![a-zA-Z])| ?- ?\d{1,4})?,? [1-9]\d{3} ?[A-Z]{2}(?![A-Za-z])/gu;
+
+/** Street addresses written out in the business areas' text (not marked up as an address), in page order. */
+function textAddresses(business: string): string[] {
+  const found = [...business.matchAll(US_STREET_ADDRESS_RE), ...business.matchAll(NL_STREET_ADDRESS_RE)];
+  return found
+    .sort((a, b) => a.index - b.index)
+    .map((m) => m[0])
+    .filter((a) => !a.toLowerCase().includes("postbus"));
+}
+
+/** Whether a written-out address is one already known in another spelling: its house number and postcode are in it. */
+function alreadyKnown(address: string, known: string[]): boolean {
+  const numbers = address.match(/[0-9]+/g) ?? [];
+  const first = numbers[0];
+  const last = numbers.at(-1);
+  if (first === undefined || last === undefined) return false;
+  return known.some((k) => k.includes(first) && k.includes(last));
+}
+
 const US_STATES = new Set(
   (
     "AL AK AZ AR CA CO CT DE DC FL GA HI ID IL IN IA KS KY LA ME MD MA MI MN MS MO MT NE NV NH NJ NM NY NC ND OH OK " +
@@ -336,7 +361,9 @@ export function extractBusiness(doc: Document, url: string, facts: PageFacts): v
   facts.organization_ld = orgs.slice(0, 10).map(trim);
   facts.phones = phones(scan, businessText, orgs, host);
   facts.emails = emails(scan, businessText, orgs, host);
-  facts.addresses = dedupe([...orgs.map((o) => ldAddress(o.address)), ...scan.addresses]).slice(0, 20);
+  const known = [...orgs.map((o) => ldAddress(o.address)), ...scan.addresses];
+  const written = textAddresses(businessText).filter((a) => !alreadyKnown(a, known));
+  facts.addresses = dedupe([...known, ...written]).slice(0, 20);
   const founding = orgs
     .filter((o) => typeof o.foundingDate === "string")
     .map((o) => `foundingDate ${String(o.foundingDate)}`);

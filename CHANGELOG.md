@@ -5,6 +5,11 @@ backend's changelog, which lists each one published at `/extension`.)
 
 ## Unreleased
 
+- **Addresses written out in a footer or contact block** (a house number, street and ZIP, or a street, number and
+  Dutch postcode) are read into `addresses` too, in parity with the backend, so a service company with several branch
+  addresses in its footer is no longer told it shows none; a licence number with a dot (`#MP.00188386`) is read as
+  one. Still only from the business's own areas, never from forms or the visitor's account. New parity fixture
+  `service-footer-addresses`
 - **Automated store submission.** "Release to the extension stores" now also submits the packages it builds
   (`scripts/store-publish.mjs`, plain HTTPS, no new dependencies): the Chrome zip to the Chrome Web Store item for
   review through the API v2, authenticated with the owner's OAuth client and refresh token (`CWS_CLIENT_ID`,
