@@ -294,6 +294,26 @@ describe("with the access a click grants (activeTab)", () => {
     expect(await granted.worker.evaluate((id) => chrome.action.getBadgeText({ tabId: id }), tabId)).toBe("✕");
   });
 
+  it('shows one next step: signed in, no "Get started"; signed out, "Get started" alone', async () => {
+    const extensionId = new URL(granted.worker.url()).host;
+    const popup = await granted.context.newPage();
+    await popup.goto(`chrome-extension://${extensionId}/popup/popup.html`);
+    await popup.waitForSelector("#sign-out", { state: "visible" });
+    expect(await popup.isVisible("#get-started")).toBe(false);
+    expect(await popup.isVisible("#sign-in-key")).toBe(false);
+    await popup.close();
+
+    const { session } = await granted.worker.evaluate(() => chrome.storage.local.get("session"));
+    await granted.worker.evaluate(() => chrome.storage.local.remove("session"));
+    const signedOut = await granted.context.newPage();
+    await signedOut.goto(`chrome-extension://${extensionId}/popup/popup.html`);
+    await signedOut.waitForSelector("#get-started", { state: "visible" });
+    expect(await signedOut.isVisible("#sign-out")).toBe(false);
+    expect(await signedOut.isVisible("#sign-in-key")).toBe(false);
+    await signedOut.close();
+    await granted.worker.evaluate((s) => chrome.storage.local.set({ session: s }), session);
+  });
+
   it("keeps the result when the service worker sleeps, and shows it as a shopper reads it (English)", async () => {
     const tabId = analysedTab;
     const stored = await granted.worker.evaluate(
