@@ -72,7 +72,8 @@ describe("consent", () => {
     expect(panels[0]).toMatch(/^Unfret checks product pages/u);
     expect(panels[1]).toContain("unfret.net");
     expect(panels[1]).toContain("90");
-    expect(panels[2]).toMatch(/prepaid checks/u);
+    expect(panels[2]).toMatch(/never a private seller's name/u);
+    expect(panels[3]).toMatch(/prepaid checks/u);
     expect(popup.querySelector("#consent-agree")?.textContent).toBe("I agree");
     expect(PRIVACY_URL).toBe("https://unfret.net/privacy");
   });

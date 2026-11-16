@@ -36,7 +36,7 @@ Share a result: turn a check into a link to send to someone. Unfret shows you ex
 
 Private by design
 • Nothing is read or sent until you click "Check this page".
-• Only the product facts and the cleaned visible text of that one page are sent; account menus, addresses, forms and anything you typed are removed in your browser first.
+• Only the product facts and the cleaned visible text of that one page are sent; account menus, your addresses, forms and anything you typed are removed in your browser first.
 • The pages you check aren't stored and are never linked to you. A result becomes public only if you share it.
 • No tracking, no ads, no affiliate links, no browsing history.
 

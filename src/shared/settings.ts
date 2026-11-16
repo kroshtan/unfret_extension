@@ -120,8 +120,11 @@ export async function expireSession(): Promise<void> {
   await chrome.storage.local.set({ sessionExpired: true });
 }
 
-/** Bump when what the consent screen says changes materially: everyone is asked again. */
-export const CONSENT_VERSION = 1;
+/**
+ * Bump when what the consent screen says changes materially: everyone is asked again. Only the consent is asked
+ * again; the session (wallet or API key) is stored apart and stays. 2 (0.11.0): marketplace ads and service providers.
+ */
+export const CONSENT_VERSION = 2;
 export const PRIVACY_URL = `${DEFAULT_API_BASE}/privacy`;
 
 /** Whether the current consent screen was accepted. */

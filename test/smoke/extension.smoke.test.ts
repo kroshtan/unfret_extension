@@ -199,7 +199,7 @@ describe("with the access a click grants (activeTab)", () => {
     await popup.click("#consent-agree");
     await popup.waitForSelector("#consent", { state: "hidden" });
     const stored = await granted.worker.evaluate(() => chrome.storage.local.get("consent"));
-    expect(stored.consent).toEqual({ version: 1 });
+    expect(stored.consent).toEqual({ version: 2 });
     await popup.close();
   });
 
@@ -209,7 +209,7 @@ describe("with the access a click grants (activeTab)", () => {
         chrome.storage.local.set({
           apiBase: base,
           session: { token: `good-token-${"x".repeat(20)}`, address, expiresAt: "2999-01-01T00:00:00.000Z" },
-          consent: { version: 1 },
+          consent: { version: 2 },
         }),
       { base: api.url, address: ADDRESS },
     );
@@ -428,7 +428,7 @@ describe("in a Dutch browser", () => {
         chrome.storage.local.set({
           apiBase: base,
           session: { token: `good-token-${"x".repeat(20)}`, address, expiresAt: "2999-01-01T00:00:00.000Z" },
-          consent: { version: 1 },
+          consent: { version: 2 },
         }),
       { base: api.url, address: ADDRESS },
     );

@@ -13,6 +13,9 @@ export const INVITE_RE = /^ufi_[a-z2-7]{32}$/u;
 /** An intro code someone shared, such as FRIENDS: 3 to 24 letters or digits, upper case. */
 export const INTRO_RE = /^[A-Z0-9]{3,24}$/u;
 
+/** The website's "I have a code" checkout (path on the API base): a new API key with the code redeemed onto it. */
+export const CODE_CHECKOUT = "/checkout?mode=code";
+
 export const NOT_AN_INVITE = "That isn't an invite (ufi_…) or an intro code.";
 
 /** The refusals the server explains itself (its `detail` is shown); the wording here is the fallback. */

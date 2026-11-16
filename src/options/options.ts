@@ -2,7 +2,7 @@
 
 import { UnfretApi } from "../api/client.js";
 import { checksText } from "../popup/view.js";
-import { inviteAdded, redeemInvite } from "../shared/invites.js";
+import { CODE_CHECKOUT, inviteAdded, redeemInvite } from "../shared/invites.js";
 import { KEY_FAILURE, signInWithKey } from "../shared/key-sign-in.js";
 import {
   accountLabel,
@@ -39,6 +39,7 @@ async function renderAccount(): Promise<void> {
       : `Signed in as ${shortAddress(session.address)} until ${new Date(session.expiresAt).toLocaleDateString("en")}.`;
   el("sign-out").hidden = !session;
   el("invite").hidden = !session;
+  el("have-code-row").hidden = Boolean(session);
   if (session) {
     try {
       // Hide "Have an invite?" for an account that has had credit, where no code would be accepted.
@@ -49,6 +50,7 @@ async function renderAccount(): Promise<void> {
     }
   }
   el("key-get").setAttribute("href", `${apiBase}/checkout?for=key`);
+  el("have-code").setAttribute("href", `${apiBase}${CODE_CHECKOUT}`);
 }
 
 /** Check a pasted API key with the server (its balance), then use it in place of a wallet sign-in. */
