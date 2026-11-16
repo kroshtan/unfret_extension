@@ -29,7 +29,7 @@ const HIDDEN_STYLE_RE =
   /display\s*:\s*none|visibility\s*:\s*hidden|font-size\s*:\s*0(?![.\d])|opacity\s*:\s*0(?![.\d])|(?:left|top|text-indent)\s*:\s*-\d{3,}px/iu;
 export const TIMER_ATTR_RE = /countdown|count-down|timer|hurry|urgency|limited-time|flash-?sale/iu;
 const TIMER_SCRIPT_RE =
-  /countdown|setInterval\s*\(.{0,200}?(?:hours|minutes|seconds)|evergreen|deadline\s*=/isu;
+  /countdown|setInterval\s*\(.{0,200}?(?:hours|minutes|seconds)|evergreen[\s_-]?(?:timer|countdown|clock)|deadline\s*=/isu;
 const FEE_RE =
   /(?:service fee|handling fee|processing fee|booking fee|convenience fee|admin(?:istration)? fee|shipping (?:is )?calculated at checkout|taxes and shipping calculated|plus shipping|excl\.? shipping|verzendkosten|servicekosten|administratiekosten|bearbeitungsgebühr|servicegebühr|zzgl\.? versand|frais de (?:service|dossier|traitement)|gastos de (?:gestión|envío)|spese di (?:gestione|spedizione))/giu;
 // EU VAT numbers per country (VIES formats), matched against a candidate with its separators removed.
@@ -76,6 +76,7 @@ const HOST_PATTERNS: [Platform, string][] = [
   ["bark", String.raw`bark\.com`],
   ["houzz", String.raw`houzz\.[a-z.]+`],
   ["myhammer", String.raw`my-hammer\.de|myhammer\.de`],
+  ["homeguide", String.raw`homeguide\.com`],
 ];
 const PLATFORM_HOSTS: [Platform, RegExp][] = [
   ["bol.com", BOL_HOST_RE],

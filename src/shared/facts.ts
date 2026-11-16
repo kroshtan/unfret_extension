@@ -29,6 +29,7 @@ export type Platform =
   | "bark"
   | "houzz"
   | "myhammer"
+  | "homeguide"
   | "generic";
 
 /** Platforms where the seller is usually a private person: their name is never kept. */

@@ -1,0 +1,98 @@
+{
+ "platform": "houzz",
+ "url": "https://www.houzz.com/professionals/kitchen-and-bath-remodelers/lakeside-remodeling-llc-pfvwus-pf~1234567",
+ "title": "Lakeside Remodeling LLC",
+ "brand": "",
+ "seller": "",
+ "seller_rating": null,
+ "ships_from": "",
+ "price": null,
+ "list_price": null,
+ "currency": "",
+ "date_first_available": null,
+ "rating": null,
+ "rating_count": null,
+ "rating_histogram": {},
+ "reviews": [
+  {
+   "rating": null,
+   "posted": null,
+   "title": "",
+   "body": "Our kitchen came out exactly as designed, on schedule.",
+   "verified": null
+  }
+ ],
+ "variations": [],
+ "json_ld": [],
+ "script_srcs": [],
+ "meta": {},
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [],
+ "fee_mentions": [],
+ "vat_ids": [],
+ "legal_mentions": [],
+ "copyright_lines": [
+  "© 2026 Houzz Inc."
+ ],
+ "policy_links": {},
+ "image_urls": [],
+ "product_ids": {},
+ "payment_methods": [],
+ "phones": [],
+ "emails": [],
+ "addresses": [
+  "2100 N Clark St, 60614, Chicago, IL, US"
+ ],
+ "founded_claims": [],
+ "business_name": "Lakeside Remodeling LLC",
+ "legal_form": "LLC",
+ "kvk_numbers": [],
+ "licences": [],
+ "certifications": [],
+ "cities_served": [],
+ "internal_links": [
+  {
+   "text": "Houzz",
+   "url": "https://www.houzz.com/"
+  }
+ ],
+ "pricing_terms": [],
+ "promises": [],
+ "testimonials": [],
+ "organization_ld": [
+  {
+   "@type": "HomeAndConstructionBusiness",
+   "name": "Lakeside Remodeling LLC",
+   "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "2100 N Clark St",
+    "addressLocality": "Chicago",
+    "addressRegion": "IL",
+    "postalCode": "60614",
+    "addressCountry": "US"
+   },
+   "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": 4.9,
+    "reviewCount": 38
+   }
+  }
+ ],
+ "seller_profile": {
+  "seller_type": "",
+  "member_since": null,
+  "rating": 4.9,
+  "rating_count": 38,
+  "badges": [
+   "Best of Houzz",
+   "Verified License"
+  ],
+  "other_listings": null,
+  "response_time": "",
+  "response_rate": null,
+  "jobs_completed": null,
+  "years_in_business": null
+ },
+ "listing": null
+}

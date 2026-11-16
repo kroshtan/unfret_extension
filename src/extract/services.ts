@@ -26,29 +26,47 @@ export const SERVICE_PLATFORMS = new Set<Platform>([
   "bark",
   "houzz",
   "myhammer",
+  "homeguide",
 ]);
-const PLATFORM_NAMES = "thumbtack|angi|homeadvisor|werkspot|bark|houzz|taskrabbit|checkatrade|myhammer";
+const PLATFORM_NAMES =
+  "thumbtack|angi|homeadvisor|werkspot|bark|houzz|taskrabbit|checkatrade|myhammer|homeguide";
 const MEMBER_SINCE_RE = new RegExp(
   String.raw`(?:lid sinds|actief sinds|op werkspot sinds|member since|on (?:${PLATFORM_NAMES}) since|joined(?: in)?)` +
     String.raw`\s*:?\s*(?:([a-zé]{3,10})\.?\s+)?((?:19|20)\d\d)(?![0-9])`,
   "iu",
 );
 const JOBS_RES = [
-  /(\d[\d.,]*)\s+(?:klussen|opdrachten)\s+(?:uitgevoerd|afgerond|voltooid)/iu,
+  /(\d[\d.,]*)\s+(?:klussen|opdrachten)\s+(?:uitgevoerd|afgerond|voltooid|via werkspot|op werkspot)/iu,
   /(\d[\d.,]*)\s+hires?(?![a-z])/iu,
   /hired\s+(\d[\d.,]*)\s+times?/iu,
   /(\d[\d.,]*)\s+(?:jobs|tasks|projects)\s+completed/iu,
   /(\d[\d.,]*)\s+(?:completed|verified)\s+(?:jobs|tasks|projects)/iu,
 ];
-const YEARS_RE = /(\d{1,3})\s+(?:years? in business|jaar (?:actief|ervaring|in bedrijf))/iu;
-const RATING_RE =
-  /(?<![\d.,])([0-5](?:[.,]\d)?)\s*(?:\/\s*5|out of 5|uit 5|van 5)?(?:\s*(?:stars?|sterren))?\s*[(·|-]?\s*(\d[\d.,]*)\s*(?:reviews?|beoordelingen|ratings?|recensies)(?![a-z])/iu;
+const YEARS_RES = [
+  /(\d{1,3})\s+(?:years? in business|jaar (?:actief|ervaring|in bedrijf))/iu,
+  /years? in business\s*:?\s*(\d{1,3})(?![\d])/iu,
+];
+// A rating and its count: "4.8 (127 reviews)", "4,5 ★ uit 160 beoordelingen", "5.0 · 23 Reviews". The rating is never
+// the first digit of a longer number ("160 beoordelingen" is not a 1 from 60). Thumbtack and Angi write the count
+// alone in brackets after the stars: "4.9 ★★★★★ (143)".
+const RATING_RE = new RegExp(
+  String.raw`(?<![\d.,])([0-5](?:[.,]\d{1,2})?)(?![\d])\s*(?:\/\s*5|out of 5|uit 5|van 5)?(?![\d])` +
+    String.raw`(?:\s*(?:stars?|sterren|[★☆]+))?\s*(?:[(·|-]|uit|from|based on|op basis van)?\s*` +
+    String.raw`(\d[\d.,]*)\s*\)?\s*(?:verified\s+)?(?:reviews?|beoordelingen|ratings?|recensies)(?![a-z])` +
+    String.raw`|(?<![\d.,])([0-5][.,]\d{1,2})\s*[★☆]*\s*\((\d[\d.,]*)\)`,
+  "iu",
+);
+// A count of reviews without a rating next to it ("2 reviews"), and a profile that says it has none yet.
+const REVIEW_COUNT_RE =
+  /(?<![\d.,])(\d[\d.,]*)\s+(?:verified\s+)?(?:reviews?|beoordelingen|recensies)(?![a-z])/iu;
+const NO_REVIEWS_RE =
+  /(?<![a-z])(?:no reviews(?: yet)?|nog geen (?:beoordelingen|reviews|recensies)|geen beoordelingen)(?![a-z])/iu;
 const RESPONSE_RATE_RES = [
   /(\d{1,3})\s?%\s*(?:response rate|reactiepercentage|reageert)/iu,
   /(?:response rate|reactiepercentage)\s*:?\s*(\d{1,3})\s?%/iu,
 ];
 const RESPONSE_TIME_RE =
-  /(?:responds|reageert|reactietijd|response time)\s*:?\s*((?:within|in about|about|binnen|gemiddeld binnen)\s+(?:a|an|one|een|\d+)\s+(?:minutes?|hours?|days?|minuten|uur|uren|dag|dagen))/iu;
+  /(?:responds|reageert|reactietijd|response time)\s*:?\s*(?:usually|typically|meestal|gemiddeld)?\s*((?:within|in about|about|binnen)(?:\s+about)?\s+(?:a|an|one|een|\d+)\s+(?:minutes?|hours?|days?|minuten|uur|uren|dag|dagen))/iu;
 // Badges the platforms award, as they write them (matched case-insensitively, recorded as written here).
 export const BADGES = [
   "Top Pro",
@@ -64,6 +82,9 @@ export const BADGES = [
   "KvK geverifieerd",
   "Identiteit geverifieerd",
   "Erkend vakman",
+  "KvK-nummer gecontroleerd",
+  "Best of Houzz",
+  "Verified License",
 ];
 const BADGE_RES: [string, RegExp][] = BADGES.map((badge) => [
   badge,
@@ -106,9 +127,14 @@ function rating(orgs: Json[], value: string): [number | null, number | null] {
   }
   const m = RATING_RE.exec(value);
   if (m) {
-    const r = parseNumber(m[1] ?? "");
-    return [r !== null && r <= 5 ? r : null, parseCount(m[2] ?? "")];
+    const r = parseNumber(m[1] ?? m[3] ?? "");
+    const count = parseCount(m[2] ?? m[4] ?? "");
+    // "0.0 (0 reviews)" is no rating at all.
+    return [r !== null && r <= 5 && count !== 0 ? r : null, count];
   }
+  if (NO_REVIEWS_RE.test(value)) return [null, 0];
+  const c = REVIEW_COUNT_RE.exec(value);
+  if (c) return [null, parseCount(c[1] ?? "")];
   return [null, null];
 }
 
@@ -123,7 +149,7 @@ function responseRate(value: string): number | null {
 /** The provider as the platform shows them, or null when the page shows none of it. */
 export function profile(value: string, orgs: Json[]): SellerProfile | null {
   const [r, count] = rating(orgs, value);
-  const years = YEARS_RE.exec(value);
+  const years = YEARS_RES.map((re) => re.exec(value)).find((m) => m !== null) ?? null;
   const time = RESPONSE_TIME_RE.exec(value);
   const found: SellerProfile = {
     seller_type: "",

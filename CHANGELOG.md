@@ -10,6 +10,13 @@ backend's changelog, which lists each one published at `/extension`.)
   before the name and the rating after it are dropped, and the page text is only a fallback when the offer's JSON-LD
   names no seller. A "Bedrijfsgegevens" or "Company details" link counts as the shop's imprint page. Both in parity
   with the backend; new parity fixture `bolcom-partner-rating`
+- **Service platform profiles read as the platforms write them**, in parity with the backend: "4.5 ★ uit 160
+  beoordelingen" is a 4.5 from 160 reviews (it was read as a 1 from 60), and "★ (350 reviews)", "4.9 ★★★★★ (143)",
+  "312 verified reviews", "Years in Business: 15", "Responds within about 2 hours", "Reageert meestal binnen 2 uur",
+  "356 klussen via Werkspot" and "KvK-nummer gecontroleerd" are read; "No reviews yet" / "Nog geen beoordelingen"
+  is zero reviews. **HomeGuide** is a known platform (`homeguide`), and Houzz's "Best of Houzz" and "Verified
+  License" are badges. A town called Evergreen in a page script is no longer a countdown. New parity fixtures for
+  Werkspot (new and established), HomeAdvisor, Houzz, HomeGuide and a Dutch locksmith call-centre page
 
 ## 0.11.0 (2026-11-16)
 
