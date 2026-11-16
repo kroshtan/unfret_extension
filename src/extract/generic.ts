@@ -49,7 +49,10 @@ const POLICY_KINDS: [string, RegExp][] = [
   ["terms", /terms|conditions|voorwaarden|\bagb\b|cgv|condiciones|termini/iu],
   ["privacy", /privacy|datenschutz|confidentialit|privacidad/iu],
   ["contact", /contact|kontakt|contacto|contatti/iu],
-  ["imprint", /impressum|imprint|legal notice|mentions légales|colofon|aviso legal/iu],
+  [
+    "imprint",
+    /impressum|imprint|legal notice|mentions légales|colofon|aviso legal|bedrijfsgegevens|company details/iu,
+  ],
 ];
 const SHOPIFY_RE = /cdn\.shopify\.com|Shopify\.theme|myshopify\.com/iu;
 const WOO_RE = /woocommerce|wp-content\/plugins\/woocommerce/iu;
