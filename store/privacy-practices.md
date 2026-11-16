@@ -27,7 +27,7 @@ user shared it. No browsing history is stored.
 product pages (Amazon, bol.com), so the user knows a check is possible there. The extension never sees those pages:
 the browser applies the rule, and no page access is granted.
 
-_*Host permission (content scripts on https://unfret.net/connect\* and https://unfret.net/checkout\_)**: two of
+**Host permission (content scripts on `https://unfret.net/connect*` and `https://unfret.net/checkout*`)**: two of
 Unfret's own pages. After the user signs in with their wallet on the sign-in page, that page hands the session to the
 extension; when the checkout page shows the user a new Unfret API key (from an intro code, a card payment, a key
 recovery), it hands that key to the extension, so the user doesn't have to copy and paste it. Each content script
