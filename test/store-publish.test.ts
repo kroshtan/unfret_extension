@@ -430,7 +430,10 @@ describe("the dry run", () => {
     console.log = (line: string): void => {
       lines.push(line);
     };
-    const { fetch } = fakeFetch([["GET /v1/health", { version: "0.11.0" }]]);
+    const { minBackendVersion } = JSON.parse(readFileSync(join(__dirname, "..", "package.json"), "utf8")) as {
+      minBackendVersion: string;
+    };
+    const { fetch } = fakeFetch([["GET /v1/health", { version: minBackendVersion }]]); // production is new enough
     const pkg = JSON.parse(readFileSync(join(__dirname, "..", "package.json"), "utf8")) as {
       version: string;
     };

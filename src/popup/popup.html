@@ -50,18 +50,22 @@
       <p id="account-status">Not signed in.</p>
       <p id="account-until" class="muted small" hidden></p>
       <p id="credits" class="muted" hidden></p>
+      <div id="get-started-row" class="row" hidden>
+        <button id="get-started" type="button" class="primary">Get started</button>
+      </div>
+      <p id="sign-in-more-row" class="small" hidden>
+        <a id="sign-in-more" class="link" href="#">Sign in with an API key or wallet</a>
+      </p>
       <div class="row">
-        <button id="sign-in-key" type="button" class="secondary">API key</button>
-        <button id="sign-in" type="button" class="secondary">Wallet in this browser</button>
-        <button id="sign-in-phone" type="button" class="secondary">Wallet on your phone</button>
+        <button id="sign-in-key" type="button" class="secondary" hidden>API key</button>
+        <button id="sign-in" type="button" class="secondary" hidden>Wallet in this browser</button>
+        <button id="sign-in-phone" type="button" class="secondary" hidden>Wallet on your phone</button>
         <button id="buy" type="button" class="secondary" hidden>Buy checks</button>
         <button id="sign-out" type="button" class="secondary" hidden>Sign out</button>
       </div>
       <p id="have-code-row" class="small" hidden>
         <a id="have-code" class="link" href="#">Have a code?</a>
-        <span class="muted"
-          >The website makes you an API key with its checks; then sign in here with “API key”.</span
-        >
+        <span class="muted">The website gives you a key with its checks and signs Unfret in with it.</span>
       </p>
       <details id="invite" class="invite small" hidden>
         <summary>Have an invite or intro code?</summary>

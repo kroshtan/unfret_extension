@@ -6,6 +6,7 @@ import { CODE_CHECKOUT, inviteAdded, redeemInvite } from "../shared/invites.js";
 import { KEY_FAILURE, signInWithKey } from "../shared/key-sign-in.js";
 import {
   accountLabel,
+  checkoutPath,
   clearSession,
   DEFAULT_API_BASE,
   expireSession,
@@ -38,6 +39,10 @@ async function renderAccount(): Promise<void> {
       ? `Using API key ${accountLabel(session)}.`
       : `Signed in as ${shortAddress(session.address)} until ${new Date(session.expiresAt).toLocaleDateString("en")}.`;
   el("sign-out").hidden = !session;
+  // Signed in with a key: its own top-up, the key's ID filled in.
+  el("buy").hidden = !session;
+  el("buy").setAttribute("href", `${apiBase}${checkoutPath(session)}`);
+  el("buy").textContent = isKeySession(session) ? "Buy checks for this key" : "Buy checks";
   el("invite").hidden = !session;
   el("have-code-row").hidden = Boolean(session);
   if (session) {
@@ -49,7 +54,10 @@ async function renderAccount(): Promise<void> {
       // Offline or an expired sign-in: keep the field; redeeming explains what's wrong.
     }
   }
-  el("key-get").setAttribute("href", `${apiBase}/checkout?for=key`);
+  el("key-get").setAttribute(
+    "href",
+    `${apiBase}${isKeySession(session) ? checkoutPath(session) : "/checkout?for=key"}`,
+  );
   el("have-code").setAttribute("href", `${apiBase}${CODE_CHECKOUT}`);
 }
 

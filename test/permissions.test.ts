@@ -28,6 +28,11 @@ describe("manifest permissions", () => {
         js: ["connect-relay.js"],
         run_at: "document_start",
       },
+      {
+        matches: ["https://unfret.net/checkout*"],
+        js: ["key-relay.js"],
+        run_at: "document_start",
+      },
     ]);
   });
 
@@ -64,6 +69,7 @@ describe("manifest permissions", () => {
     expect(m.key).toBe("DEVKEY");
     expect(m.update_url).toBe("https://dev.unfret.net/extension/updates-dev.xml");
     expect(m.content_scripts[0]?.matches).toEqual(["https://dev.unfret.net/connect*"]);
+    expect(m.content_scripts[1]?.matches).toEqual(["https://dev.unfret.net/checkout*"]);
     expect(m.content_security_policy.extension_pages).toContain("connect-src https://dev.unfret.net ");
     expect(m.content_security_policy.extension_pages).not.toContain("https://unfret.net");
     expect(m.permissions).toEqual(manifest("chrome-selfhosted", options).permissions);

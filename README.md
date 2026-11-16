@@ -38,7 +38,17 @@ toolbar click ─► popup ─► background ─► inject extract.js into the t
   message in your wallet, that page posts the session to itself and the extension's content script (injected only
   there) relays it. The relay accepts it only from that window on the configured Unfret origin, and the
   background checks the sender again. Signing grants no spending rights. "Buy checks" opens `/checkout`, which also
-  shows the invite codes a pack comes with, once, after payment.
+  shows the invite codes a pack comes with, once, after payment; signed in with an API key, it opens that key's
+  top-up (`/checkout?mode=topup&key_id=<key id>`: the key's public ID, never the key itself).
+- **New keys sign in by themselves.** When `/checkout` shows a key it just made (an intro code, a card payment, a
+  recovery, "Make a new key"), it posts `{type: "unfret-key", key}` to itself; the content script `key-relay.ts`
+  (injected only on `/checkout*`) accepts it only from that window on the configured Unfret origin, and the
+  background (`onboarding.ts`) checks the sender again and signs in with it. Signed in with another key or a wallet,
+  it changes nothing and says so (`other-account`) until the page asks again with `replace: true` after the user
+  agreed. The page gets `{type: "unfret-key-received", status}` back: no key, account or balance.
+- **First run.** After a new install (not an update) the background opens `<API base>/welcome` once: a code, buying
+  checks, or a key you have. Signed out, the popup's one primary button is "Get started" (that page), with the
+  sign-in choices behind "Sign in with an API key or wallet"; out of checks, "Get more checks".
 - **"Have an invite?"** (popup and settings, when signed in) redeems a code onto the account in use
   (`POST /v1/invites/redeem`, with its own sign-in); only a new wallet or a never-funded key can. The code isn't kept.
 - **"Share this result"** asks the API for a preview of the public page (`POST /v1/shares/preview`), and only on
@@ -52,8 +62,9 @@ The API contract is in the backend repository (credits door, contract v1).
 
 ```
 src/
-  background/   service worker / event page: session relay, icon hint, badge, analysis runner
-  content/      extract-entry.ts (injected on demand), connect-relay.ts (connect page only), relay.ts (checks)
+  background/   service worker / event page: session and key relay, welcome page, icon hint, badge, analysis runner
+  content/      extract-entry.ts (injected on demand), connect-relay.ts (connect page only), key-relay.ts (checkout
+                page only), relay.ts (checks)
   extract/      PageFacts extraction: parse, dom, generic, business, p2p, amazon, bolcom, walmart (ports); live, clean (browser-only)
   api/          API client and SSE parser
   popup/        popup UI
@@ -72,6 +83,7 @@ test/           unit, parity (jsdom vs the Python extractors), mock API; smoke/ 
 | `storage`                                           | Your session (token, wallet address, expiry) and settings; nothing else     |
 | `declarativeContent` (Chromium)                     | The browser marks the icon on marketplace product pages; no page access     |
 | `https://unfret.net/connect*`                       | The sign-in relay on the Unfret sign-in page (the API itself is CORS)       |
+| `https://unfret.net/checkout*`                      | The relay of a new API key the Unfret checkout page shows                   |
 | optional `http://localhost/*`, `http://127.0.0.1/*` | Only if you point the extension at a local dev server                       |
 
 ## Development

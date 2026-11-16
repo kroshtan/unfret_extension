@@ -1,7 +1,8 @@
 /**
  * The background (service worker in Chrome, event page in Firefox):
  *
- * - stores the session the connect page relays, after checking where it came from;
+ * - stores the session the connect page relays, and the new API key the checkout page relays, after checking where
+ *   they came from (onboarding.ts); opens the website's welcome page once, after installing;
  * - registers the marketplace icon hint (declarativeContent: the browser matches URLs, the extension reads nothing);
  * - runs an analysis only when the user asks, for the active tab (activeTab, granted by that click): injects the
  *   extractor, streams the result. It holds no standing access to any shop.
@@ -11,7 +12,7 @@
  */
 
 import { ApiError, type ReportReason, UnfretApi } from "../api/client.js";
-import { SESSION_MESSAGE } from "../content/relay.js";
+import { KEY_MESSAGE, SESSION_MESSAGE } from "../content/relay.js";
 import {
   ANALYSIS_PORT,
   type BackgroundUpdate,
@@ -25,8 +26,13 @@ import { CONSENT_HINT, OFFLINE, SESSION_EXPIRED } from "../shared/text.js";
 import { badgeFor } from "./badge.js";
 import { registerMarketplaceHint } from "./icon-hint.js";
 import { extractFromTab } from "./inject.js";
+import { fromUnfretPage, receiveKey, welcomeOnInstall } from "./onboarding.js";
 
-const DEV_RELAY_ID = "unfret-connect-dev";
+// Content scripts registered for a local dev API, by id suffix (releases before the rename used another prefix).
+const DEV_RELAYS = [
+  { id: "unfret-connect-dev", path: "/connect*", js: "connect-relay.js" },
+  { id: "unfret-key-dev", path: "/checkout*", js: "key-relay.js" },
+];
 const states = new Map<number, TabState>();
 const watchers = new Map<number, Set<chrome.runtime.Port>>();
 
@@ -79,24 +85,23 @@ function setState(tabId: number, state: TabState): void {
 
 // ── Session relay ────────────────────────────────────────────────────────────
 
-function senderOrigin(sender: chrome.runtime.MessageSender): string {
-  try {
-    return new URL(sender.url ?? "").origin;
-  } catch {
-    return "";
-  }
-}
-
 chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) => {
-  const m = message as { type?: unknown; session?: unknown } | null;
+  const m = message as { type?: unknown; session?: unknown; key?: unknown; replace?: unknown } | null;
+  if (m?.type === KEY_MESSAGE) {
+    void receiveKey(m, sender, chrome.runtime.id).then(
+      (status) => {
+        sendResponse({ status });
+      },
+      () => {
+        sendResponse({ status: "invalid" });
+      },
+    );
+    return true; // async response
+  }
   if (m?.type !== SESSION_MESSAGE) return false;
   void (async () => {
     const { apiBase } = await loadSettings();
-    const fromConnectPage =
-      sender.id === chrome.runtime.id &&
-      sender.frameId === 0 &&
-      senderOrigin(sender) === new URL(apiBase).origin &&
-      new URL(sender.url ?? "").pathname.startsWith("/connect");
+    const fromConnectPage = fromUnfretPage(sender, chrome.runtime.id, apiBase, "/connect");
     const session = fromConnectPage ? parseSession(m.session) : null;
     if (session) await saveSession(session);
     sendResponse({ ok: session !== null });
@@ -328,23 +333,24 @@ async function syncDevRelay(): Promise<void> {
   // Registrations persist across updates, and releases before the rename used another ID: match the suffix.
   const ids = (await chrome.scripting.getRegisteredContentScripts())
     .map((script) => script.id)
-    .filter((id) => id.endsWith("-connect-dev"));
+    .filter((id) => id.endsWith("-connect-dev") || id.endsWith("-key-dev"));
   if (ids.length > 0) await chrome.scripting.unregisterContentScripts({ ids });
   if (!isDevBase(apiBase)) return;
   // Match patterns can't carry a port; the relay itself checks the exact origin.
   const { protocol, hostname } = new URL(apiBase);
   if (!(await chrome.permissions.contains({ origins: [`${protocol}//${hostname}/*`] }))) return;
-  await chrome.scripting.registerContentScripts([
-    {
-      id: DEV_RELAY_ID,
-      matches: [`${protocol}//${hostname}/connect*`],
-      js: ["connect-relay.js"],
-      runAt: "document_start",
-    },
-  ]);
+  await chrome.scripting.registerContentScripts(
+    DEV_RELAYS.map(({ id, path, js }) => ({
+      id,
+      matches: [`${protocol}//${hostname}${path}`],
+      js: [js],
+      runAt: "document_start" as const,
+    })),
+  );
 }
 
-chrome.runtime.onInstalled.addListener(() => {
+chrome.runtime.onInstalled.addListener((details) => {
+  welcomeOnInstall(details);
   void syncDevRelay();
   void registerMarketplaceHint();
 });
