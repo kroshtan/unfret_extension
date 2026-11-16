@@ -22,7 +22,7 @@ import {
   saveSession,
   type Session,
 } from "../shared/settings.js";
-import { inviteAdded, redeemInvite } from "../shared/invites.js";
+import { CODE_CHECKOUT, inviteAdded, redeemInvite } from "../shared/invites.js";
 import { KEY_FAILURE, signInWithKey } from "../shared/key-sign-in.js";
 import { isAnalysable } from "../shared/sites.js";
 import { CONSENT_HINT, OFFLINE, SESSION_EXPIRED } from "../shared/text.js";
@@ -219,6 +219,7 @@ function renderAccount(): void {
   show("sign-in", !session);
   show("sign-in-phone", !session);
   show("sign-in-key", !session);
+  show("have-code-row", !session);
   if (session) show("key", false);
   show("sign-out", Boolean(session));
   show("invite", Boolean(session) && inviteEligible !== false);
@@ -461,6 +462,13 @@ async function init(): Promise<void> {
     event.preventDefault();
     openTab("/checkout?for=key");
   });
+  // "Have a code?": the website makes a new API key and redeems the invite or intro code onto it, in one step.
+  for (const id of ["have-code", "key-code"]) {
+    el(id).addEventListener("click", (event) => {
+      event.preventDefault();
+      openTab(CODE_CHECKOUT);
+    });
+  }
   const useKey = async (): Promise<void> => {
     const field = el("key-input") as HTMLInputElement;
     const result = await signInWithKey(apiBase, field.value);

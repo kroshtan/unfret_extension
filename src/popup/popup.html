@@ -30,6 +30,10 @@
         is sold and there are no affiliate links. Product prices are kept anonymously for 90 days to spot fake
         discounts.
       </p>
+      <p class="small">
+        On a marketplace ad or a service provider's page, that includes the ad (never a private seller's name)
+        or the business details the provider publishes.
+      </p>
       <h3>Paying for checks</h3>
       <p class="small">Sign in with a Solana wallet, or use an API key, and use prepaid checks.</p>
       <p class="small">
@@ -53,6 +57,12 @@
         <button id="buy" type="button" class="secondary" hidden>Buy checks</button>
         <button id="sign-out" type="button" class="secondary" hidden>Sign out</button>
       </div>
+      <p id="have-code-row" class="small" hidden>
+        <a id="have-code" class="link" href="#">Have a code?</a>
+        <span class="muted"
+          >The website makes you an API key with its checks; then sign in here with “API key”.</span
+        >
+      </p>
       <details id="invite" class="invite small" hidden>
         <summary>Have an invite or intro code?</summary>
         <p class="muted">
@@ -85,8 +95,9 @@
       </div>
       <p class="small"><a id="key-get" class="link" href="#">No key yet? Get one on the checkout page</a></p>
       <p class="muted small">
-        Have an invite or intro code? Sign in with a new key (or a new wallet), then enter it under “Have an
-        invite or intro code?”.
+        Have an invite or intro code and no key yet?
+        <a id="key-code" class="link" href="#">Use it on the website</a>: you get a new key with its checks in
+        one step. With a new key or wallet you can also enter it under “Have an invite or intro code?”.
       </p>
     </section>
 

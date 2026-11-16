@@ -3,7 +3,28 @@
 Releases of the Unfret browser extension. (Earlier releases are described in their commit messages and in the
 backend's changelog, which lists each one published at `/extension`.)
 
-## Unreleased
+## 0.11.0 (2026-11-16)
+
+In short, since 0.10.0 (and for Firefox, whose store still has 0.9.1, also everything in 0.10.0):
+
+- **Marketplace ads and service providers.** When you check a private seller's ad (Marktplaats, 2dehands, eBay,
+  Vinted, Craigslist, Facebook Marketplace), Unfret now reads the ad and what the platform shows about the seller's
+  account, never the seller's name. On a service provider's site or platform profile (a plumber, a locksmith; Werkspot,
+  Thumbtack, Angi and others) it reads the business details the provider publishes: addresses, phone numbers, licence
+  and KvK numbers, testimonials. Only when you click "Check this page", as always. What the server does with them
+  depends on it having those checks switched on.
+- **Business addresses kept, yours stripped.** A business's own address (its contact or imprint section) is now sent;
+  your own details (account menu, delivery and billing addresses, forms) are still removed in the browser, and an
+  account or checkout page sends no text at all.
+- **"Have a code?"** When you aren't signed in, the popup and the settings page link to the website's one-step code
+  page (Unfret Dev: dev.unfret.net): it makes you an API key with the code's checks, which you then use here. The
+  in-extension "Have an invite or intro code?" stays for a new key or wallet.
+- **The consent screen says so** (one new line about ads and service providers) and is asked once more
+  (`CONSENT_VERSION` 2). Your sign-in stays; nothing is checked until you agree again.
+- **Firefox** gets intro codes and "API key" as the first sign-in option for the first time (both from 0.10.0).
+- **Privacy statement corrected:** product photos are fingerprinted on Unfret's own server, not sent to Google Cloud
+  Vision.
+- Needs backend 0.10.6 or later (`minBackendVersion`); production runs 0.11.1. Details of each change below.
 
 - **Addresses written out in a footer or contact block** (a house number, street and ZIP, or a street, number and
   Dutch postcode) are read into `addresses` too, in parity with the backend, so a service company with several branch
