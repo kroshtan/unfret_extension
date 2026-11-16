@@ -11,11 +11,14 @@ Writes test/fixtures/<name>.expected.json (PageFacts as JSON) for every entry in
 import importlib
 import json
 import sys
+from datetime import date
 from pathlib import Path
 
 from unfret.facts import parse_page
 
 FIXTURES = Path(__file__).resolve().parent.parent / "test" / "fixtures"
+# "On the platform for 4 months" counts back from today: both sides count from this day (test/parity.test.ts).
+PARITY_TODAY = date(2026, 11, 15)
 
 
 def main() -> None:
@@ -23,6 +26,9 @@ def main() -> None:
     backend = Path(sys.prefix).resolve().parent
     package = next(p.parent.parent.name for p in (backend / "src").glob("*/facts/__init__.py"))
     parse_page = importlib.import_module(f"{package}.facts").parse_page
+    p2p = importlib.import_module(f"{package}.facts.p2p")
+    if hasattr(p2p, "_today"):
+        p2p._today = lambda: PARITY_TODAY
     index = json.loads((FIXTURES / "index.json").read_text())
     for name, url in index.items():
         html = (FIXTURES / f"{name}.html").read_text()
