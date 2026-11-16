@@ -8,6 +8,12 @@
  * those areas is matched by wording (Dutch, English, German, French), so a redesign that keeps the words keeps the
  * facts. Anything not found stays empty. The seller box is read for what it says about the account, never for who
  * it is; the ad text is sent for the check only.
+ *
+ * Marktplaats and 2dehands carry the ad as JSON in a script (`window.__CONFIG__`), which `adevintaListing` reads:
+ * the deal (price type, bidding, pickup or shipping, payment protection, date placed, town) and the account
+ * (private or business, how long on the platform). That JSON names the seller too; only the listed fields are
+ * copied out of it, so the name never leaves the parser. Nothing else in the page's scripts is read (the header's
+ * JSON describes the visitor).
  */
 
 import type { Delivery, ListingDetails, PageFacts, SellerProfile, SellerType } from "../shared/facts.js";
@@ -342,6 +348,206 @@ export function adSignals(value: string): [string[], string[]] {
   return [contacts, payments];
 }
 
+// ── Marktplaats and 2dehands: the ad's JSON ─────────────────────────────────────────────────────────────────
+
+const CONFIG_RE = /window\.__CONFIG__\s*=\s*/u;
+const SINCE_DIFF_RE =
+  /(\d+)\s*(jaar|jaren|years?|ans?|maanden|maand|months?|mois|weken|week|weeks?|semaines?|dagen|dag|days?|jours?)/iu;
+// By prefix; anything else is years.
+const UNIT_DAYS: [string, number][] = [
+  ["jour", 1],
+  ["dag", 1],
+  ["day", 1],
+  ["we", 7],
+  ["sem", 7],
+  ["m", 30],
+];
+const SELLER_TYPES: Record<string, SellerType> = {
+  CONSUMER: "private",
+  TRADER: "business",
+  BUSINESS: "business",
+};
+const NEGOTIABLE_PRICE_TYPES: Record<string, boolean> = { NOTK: true, FIXED: false };
+const IMAGE_SIZE = "$_85"; // the gallery's "$_#" placeholder, as a large photo
+
+/** Today: "on the platform for 4 months" counts back from it (the parity tests fix the clock). */
+function today(): Date {
+  const now = new Date();
+  return new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+}
+
+function daysBefore(days: number): string {
+  const d = today();
+  d.setUTCDate(d.getUTCDate() - days);
+  return d.toISOString().slice(0, 10);
+}
+
+/** What Unfret reads from a Marktplaats or 2dehands ad's JSON. Deliberately no name, id or profile link. */
+export interface AdevintaListing {
+  title: string;
+  price: number | null;
+  priceType: string;
+  bidding: boolean | null;
+  delivery: Delivery[];
+  paymentProtection: boolean | null;
+  listed: string | null;
+  location: string;
+  category: string;
+  sellerType: SellerType;
+  memberSince: string | null;
+  imageUrls: string[];
+}
+
+/** One JSON value starting at `start` (Python's `raw_decode`): the text up to its matching close. */
+function rawDecode(value: string, start: number): unknown {
+  const open = value[start];
+  if (open !== "{" && open !== "[") return undefined;
+  let depth = 0;
+  let inString = false;
+  for (let i = start; i < value.length; i++) {
+    const c = value[i];
+    if (inString) {
+      if (c === "\\") i++;
+      else if (c === '"') inString = false;
+    } else if (c === '"') inString = true;
+    else if (c === "{" || c === "[") depth++;
+    else if (c === "}" || c === "]") {
+      depth--;
+      if (depth === 0) {
+        try {
+          return JSON.parse(value.slice(start, i + 1)) as unknown;
+        } catch {
+          return undefined;
+        }
+      }
+    }
+  }
+  return undefined;
+}
+
+function config(doc: Document): Json | null {
+  for (const script of Array.from(doc.querySelectorAll("script"))) {
+    const body = script.textContent;
+    const m = CONFIG_RE.exec(body);
+    if (!m) continue;
+    const value = rawDecode(body, m.index + m[0].length);
+    return isObject(value) ? value : null;
+  }
+  return null;
+}
+
+function dict(value: unknown, key: string): Json {
+  const found = isObject(value) ? value[key] : undefined;
+  return isObject(found) ? found : {};
+}
+
+function str(value: unknown, key: string): string {
+  const found = isObject(value) ? value[key] : undefined;
+  return typeof found === "string" ? found.trim() : "";
+}
+
+function isInt(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value);
+}
+
+function memberSince(seller: Json): string | null {
+  const m = SINCE_DIFF_RE.exec(str(seller, "activeSinceDiff"));
+  if (m) {
+    const unit = (m[2] ?? "").toLowerCase();
+    return daysBefore(Number(m[1]) * (UNIT_DAYS.find(([prefix]) => unit.startsWith(prefix))?.[1] ?? 365));
+  }
+  const years = seller.activeYears;
+  return isInt(years) && years >= 1 ? daysBefore(years * 365) : null;
+}
+
+function adDelivery(listing: Json): Delivery[] {
+  const kind = str(
+    dict(dict(listing, "shippingInformation"), "deliveryType"),
+    "attributeValueKey",
+  ).toLowerCase();
+  const kinds: Delivery[] = [];
+  if (kind.includes("verzenden") || kind.includes("envoi") || kind.includes("livraison"))
+    kinds.push("shipping");
+  if (kind.includes("ophalen") || kind.includes("enlèvement") || kind.includes("retrait"))
+    kinds.push("pickup");
+  return kinds;
+}
+
+/** The ad as a Marktplaats or 2dehands page carries it in `window.__CONFIG__`, without the seller's name. */
+export function adevintaListing(doc: Document): AdevintaListing | null {
+  const listing = dict(config(doc), "listing");
+  if (Object.keys(listing).length === 0) return null;
+  const seller = dict(listing, "seller");
+  const place = dict(seller, "location");
+  let town = str(place, "cityName");
+  const country = str(place, "countryName");
+  if (town && place.isAbroad === true && country) town = `${town}, ${country}`;
+  const category = dict(listing, "category");
+  const images = dict(listing, "gallery").imageUrls;
+  const bids = dict(listing, "bidsInfo").isBiddingEnabled;
+  const cents = dict(listing, "priceInfo").priceCents;
+  return {
+    title: cut(str(listing, "title"), 2_000),
+    price: isInt(cents) && cents > 0 ? cents / 100 : null,
+    priceType: str(dict(listing, "priceInfo"), "priceType").toUpperCase(),
+    bidding: typeof bids === "boolean" ? bids : null,
+    delivery: adDelivery(listing),
+    paymentProtection: listing.buyersProtectionAllowed === true ? true : null,
+    listed: parseDate(str(dict(listing, "stats"), "since").slice(0, 10)),
+    location: cut(town, 300),
+    category: cut([str(category, "parentName"), str(category, "name")].filter((c) => c).join(" > "), 300),
+    sellerType: SELLER_TYPES[str(seller, "sellerType").toUpperCase()] ?? "",
+    memberSince: memberSince(seller),
+    imageUrls: (Array.isArray(images) ? images : [])
+      .filter((u): u is string => typeof u === "string" && (u.startsWith("//") || u.startsWith("https://")))
+      .map((u) => (u.startsWith("//") ? `https:${u}` : u).replaceAll("$_#", IMAGE_SIZE))
+      .slice(0, 50),
+  };
+}
+
+/** Complete an ad's facts from its JSON: where it has a value, it is the platform's own word. */
+function withAdevinta(doc: Document, facts: PageFacts): void {
+  const ad = adevintaListing(doc);
+  const listing = facts.listing;
+  if (!ad || !listing) return;
+  if (ad.title && !facts.title) facts.title = ad.title;
+  if (ad.price !== null && facts.price === null) {
+    facts.price = ad.price;
+    facts.currency = facts.currency || "EUR";
+  }
+  if (ad.imageUrls.length > facts.image_urls.length) facts.image_urls = ad.imageUrls;
+  const negotiable = NEGOTIABLE_PRICE_TYPES[ad.priceType];
+  facts.listing = {
+    ...listing,
+    negotiable: negotiable ?? listing.negotiable,
+    bidding: ad.bidding ?? listing.bidding,
+    delivery: ad.delivery.length ? ad.delivery : listing.delivery,
+    payment_protection: ad.paymentProtection ?? listing.payment_protection,
+    listed: ad.listed ?? listing.listed,
+    location: ad.location || listing.location,
+    category: ad.category || listing.category,
+  };
+  if (ad.sellerType || ad.memberSince) {
+    const profile: SellerProfile = facts.seller_profile ?? {
+      seller_type: "",
+      member_since: null,
+      rating: null,
+      rating_count: null,
+      badges: [],
+      other_listings: null,
+      response_time: "",
+      response_rate: null,
+      jobs_completed: null,
+      years_in_business: null,
+    };
+    facts.seller_profile = {
+      ...profile,
+      seller_type: ad.sellerType || profile.seller_type,
+      member_since: ad.memberSince ?? profile.member_since,
+    };
+  }
+}
+
 /**
  * Fill `facts.listing` and `facts.seller_profile` for an ad on a peer-to-peer platform (or eBay). Runs after the
  * generic extraction (JSON-LD has given the price, the title and the photos where the platform has it).
@@ -380,6 +586,7 @@ export function extract(doc: Document, facts: PageFacts): void {
   };
   facts.listing = listing;
   if (seller) facts.seller_profile = sellerProfile(seller, facts);
+  if (facts.platform === "marktplaats" || facts.platform === "2dehands") withAdevinta(doc, facts);
   const share = facts.platform === "ebay" ? POSITIVE_SHARE_RE.exec(seller) : null;
   if (share) {
     const value = parseNumber(share[1] ?? "");

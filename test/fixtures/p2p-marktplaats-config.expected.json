@@ -1,0 +1,84 @@
+{
+ "platform": "marktplaats",
+ "url": "https://www.marktplaats.nl/v/fietsen-en-brommers/fietsen-dames-damesfietsen/m2400000001-gazelle-damesfiets-opknapper",
+ "title": "Gazelle damesfiets, opknapper",
+ "brand": "",
+ "seller": "",
+ "seller_rating": null,
+ "ships_from": "",
+ "price": 135.0,
+ "list_price": null,
+ "currency": "EUR",
+ "date_first_available": null,
+ "rating": null,
+ "rating_count": null,
+ "rating_histogram": {},
+ "reviews": [],
+ "variations": [],
+ "json_ld": [],
+ "script_srcs": [],
+ "meta": {
+  "og:image": "https://images.marktplaats.com/api/v1/listing-mp-p/images/aa/aa000000-0000-4000-8000-000000000001?rule=ecg_mp_eps$_84.jpg"
+ },
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [],
+ "fee_mentions": [],
+ "vat_ids": [],
+ "legal_mentions": [],
+ "copyright_lines": [],
+ "policy_links": {},
+ "image_urls": [
+  "https://images.marktplaats.com/api/v1/listing-mp-p/images/aa/aa000000-0000-4000-8000-000000000001?rule=ecg_mp_eps$_85.jpg",
+  "https://images.marktplaats.com/api/v1/listing-mp-p/images/aa/aa000000-0000-4000-8000-000000000002?rule=ecg_mp_eps$_85.jpg"
+ ],
+ "product_ids": {},
+ "payment_methods": [
+  "tikkie",
+  "cash"
+ ],
+ "phones": [],
+ "emails": [],
+ "addresses": [],
+ "founded_claims": [],
+ "business_name": "",
+ "legal_form": "",
+ "kvk_numbers": [],
+ "licences": [],
+ "certifications": [],
+ "cities_served": [],
+ "internal_links": [],
+ "pricing_terms": [],
+ "promises": [],
+ "testimonials": [],
+ "organization_ld": [],
+ "seller_profile": {
+  "seller_type": "private",
+  "member_since": "2015-11-18",
+  "rating": null,
+  "rating_count": null,
+  "badges": [],
+  "other_listings": null,
+  "response_time": "",
+  "response_rate": null,
+  "jobs_completed": null,
+  "years_in_business": null
+ },
+ "listing": {
+  "negotiable": null,
+  "bidding": true,
+  "condition": "",
+  "category": "Fietsen en Brommers > Damesfietsen",
+  "listed": "2026-11-10",
+  "location": "Groningen",
+  "delivery": [
+   "pickup"
+  ],
+  "payment_protection": null,
+  "contact_methods": [],
+  "payment_requests": [
+   "payment_link"
+  ],
+  "description": "Oude Gazelle damesfiets, moet wat aan gebeuren. Banden zijn net nieuw. Ophalen in Groningen, contant of Tikkie bij ophalen. Neem contact op voor meer foto's."
+ }
+}

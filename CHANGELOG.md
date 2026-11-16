@@ -55,6 +55,13 @@ In short, since 0.10.0 (and for Firefox, whose store still has 0.9.1, also every
 - Needs backend 0.11.2 or later (`minBackendVersion`: the welcome page and the key hand-off; the page data needs
   0.10.6); production runs 0.11.1, so the backend release goes first. Details of each change below.
 
+- **Marktplaats and 2dehands ads read from the ad's own JSON** (`window.__CONFIG__` in the page), in parity with the
+  backend: bidding, pickup or shipping, the platform's payment protection, the date placed, the town, the category,
+  the price and the whole photo gallery, and the account (private or business, how long on the platform). The same
+  JSON names the seller and links their profile: only the listed fields are copied out of it, so no name, id or
+  profile link is ever kept or sent (the header's JSON, which describes the visitor, isn't read). New parity fixture
+  `p2p-marktplaats-config`; the parity test and `make parity` count "on the platform for 4 months" from a fixed day
+
 - **Addresses written out in a footer or contact block** (a house number, street and ZIP, or a street, number and
   Dutch postcode) are read into `addresses` too, in parity with the backend, so a service company with several branch
   addresses in its footer is no longer told it shows none; a licence number with a dot (`#MP.00188386`) is read as

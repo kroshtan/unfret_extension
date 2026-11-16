@@ -7,7 +7,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { Ajv } from "ajv";
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { extractFacts } from "../src/extract/generic.js";
 import schema from "../src/shared/pagefacts.schema.json";
@@ -27,7 +27,18 @@ function load(name: string): { html: string; expected: unknown; url: string } {
   };
 }
 
+// "On the platform for 4 months" counts back from today: the same day as scripts/gen_parity.py's PARITY_TODAY.
+const PARITY_TODAY = new Date(2026, 10, 15, 12, 0, 0);
+
 describe("parity with the backend's extractors", () => {
+  beforeAll(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(PARITY_TODAY);
+  });
+  afterAll(() => {
+    vi.useRealTimers();
+  });
+
   it.each(Object.keys(index))("%s", (name) => {
     const { html, expected, url } = load(name);
     const doc = new DOMParser().parseFromString(html, "text/html");
