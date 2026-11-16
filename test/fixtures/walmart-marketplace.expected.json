@@ -31,9 +31,7 @@
  "meta": {},
  "hidden_text": [],
  "checkboxes": [],
- "timers": [
-  "script: var p = {\"pageId\":\"global_evergreen\"};"
- ],
+ "timers": [],
  "fee_mentions": [],
  "vat_ids": [],
  "legal_mentions": [],

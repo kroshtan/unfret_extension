@@ -1,0 +1,79 @@
+{
+ "platform": "homeadvisor",
+ "url": "https://www.homeadvisor.com/rated.FrontRangeHeating.12345678.html",
+ "title": "Front Range Heating & Air",
+ "brand": "",
+ "seller": "",
+ "seller_rating": null,
+ "ships_from": "",
+ "price": null,
+ "list_price": null,
+ "currency": "",
+ "date_first_available": null,
+ "rating": null,
+ "rating_count": null,
+ "rating_histogram": {},
+ "reviews": [
+  {
+   "rating": null,
+   "posted": null,
+   "title": "",
+   "body": "Replaced our furnace in a day, explained every option.",
+   "verified": null
+  }
+ ],
+ "variations": [],
+ "json_ld": [],
+ "script_srcs": [],
+ "meta": {},
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [],
+ "fee_mentions": [],
+ "vat_ids": [],
+ "legal_mentions": [],
+ "copyright_lines": [
+  "© 2026 HomeAdvisor, Inc."
+ ],
+ "policy_links": {},
+ "image_urls": [],
+ "product_ids": {},
+ "payment_methods": [],
+ "phones": [],
+ "emails": [],
+ "addresses": [],
+ "founded_claims": [],
+ "business_name": "",
+ "legal_form": "INC",
+ "kvk_numbers": [],
+ "licences": [],
+ "certifications": [],
+ "cities_served": [],
+ "internal_links": [
+  {
+   "text": "HomeAdvisor",
+   "url": "https://www.homeadvisor.com/"
+  }
+ ],
+ "pricing_terms": [],
+ "promises": [],
+ "testimonials": [],
+ "organization_ld": [],
+ "seller_profile": {
+  "seller_type": "",
+  "member_since": null,
+  "rating": 4.6,
+  "rating_count": 312,
+  "badges": [
+   "Screened & Approved",
+   "Elite Service",
+   "Top Rated"
+  ],
+  "other_listings": null,
+  "response_time": "",
+  "response_rate": null,
+  "jobs_completed": null,
+  "years_in_business": 15
+ },
+ "listing": null
+}

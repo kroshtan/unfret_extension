@@ -1,0 +1,81 @@
+{
+ "platform": "werkspot",
+ "url": "https://www.werkspot.nl/profiel/slotenservice-direct-7809630",
+ "title": "Slotenservice Direct",
+ "brand": "",
+ "seller": "",
+ "seller_rating": null,
+ "ships_from": "",
+ "price": null,
+ "list_price": null,
+ "currency": "",
+ "date_first_available": null,
+ "rating": null,
+ "rating_count": null,
+ "rating_histogram": {},
+ "reviews": [],
+ "variations": [],
+ "json_ld": [],
+ "script_srcs": [],
+ "meta": {},
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [],
+ "fee_mentions": [],
+ "vat_ids": [],
+ "legal_mentions": [],
+ "copyright_lines": [
+  "© 2026 Werkspot B.V. Klantenservice: 020 123 4567"
+ ],
+ "policy_links": {},
+ "image_urls": [],
+ "product_ids": {},
+ "payment_methods": [],
+ "phones": [
+  {
+   "number": "+31201234567",
+   "kind": "local",
+   "country": "NL"
+  }
+ ],
+ "emails": [],
+ "addresses": [],
+ "founded_claims": [],
+ "business_name": "",
+ "legal_form": "BV",
+ "kvk_numbers": [],
+ "licences": [],
+ "certifications": [],
+ "cities_served": [],
+ "internal_links": [
+  {
+   "text": "Werkspot",
+   "url": "https://www.werkspot.nl/"
+  },
+  {
+   "text": "Offerte aanvragen",
+   "url": "https://www.werkspot.nl/offerte"
+  }
+ ],
+ "pricing_terms": [
+  "Voorrijkosten € 0"
+ ],
+ "promises": [
+  "24/7 spoedservice, binnen 20 minuten bij u"
+ ],
+ "testimonials": [],
+ "organization_ld": [],
+ "seller_profile": {
+  "seller_type": "",
+  "member_since": "2026-10-01",
+  "rating": null,
+  "rating_count": 0,
+  "badges": [],
+  "other_listings": null,
+  "response_time": "",
+  "response_rate": null,
+  "jobs_completed": 0,
+  "years_in_business": null
+ },
+ "listing": null
+}

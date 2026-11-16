@@ -1,0 +1,109 @@
+{
+ "platform": "homeguide",
+ "url": "https://homeguide.com/co/denver/plumbers/mile-high-rooter-llc",
+ "title": "MILE HIGH ROOTER LLC",
+ "brand": "",
+ "seller": "",
+ "seller_rating": null,
+ "ships_from": "",
+ "price": null,
+ "list_price": null,
+ "currency": "",
+ "date_first_available": null,
+ "rating": null,
+ "rating_count": null,
+ "rating_histogram": {},
+ "reviews": [
+  {
+   "rating": null,
+   "posted": null,
+   "title": "",
+   "body": "Fixed our water heater the same day, fair price.",
+   "verified": null
+  }
+ ],
+ "variations": [],
+ "json_ld": [],
+ "script_srcs": [],
+ "meta": {},
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [],
+ "fee_mentions": [],
+ "vat_ids": [],
+ "legal_mentions": [],
+ "copyright_lines": [
+  "© 2026 HomeGuide"
+ ],
+ "policy_links": {},
+ "image_urls": [],
+ "product_ids": {},
+ "payment_methods": [],
+ "phones": [],
+ "emails": [],
+ "addresses": [
+  "80211, Denver, CO"
+ ],
+ "founded_claims": [],
+ "business_name": "MILE HIGH ROOTER LLC",
+ "legal_form": "LLC",
+ "kvk_numbers": [],
+ "licences": [],
+ "certifications": [
+  "About Family owned plumbing company, licensed Colorado master plumber, insured and bonded",
+  "y owned plumbing company, licensed Colorado master plumber, insured and bonded",
+  "bing company, licensed Colorado master plumber, insured and bonded"
+ ],
+ "cities_served": [],
+ "internal_links": [
+  {
+   "text": "HomeGuide",
+   "url": "https://homeguide.com/"
+  },
+  {
+   "text": "Join as a pro",
+   "url": "https://homeguide.com/pros"
+  },
+  {
+   "text": "Plumbers",
+   "url": "https://homeguide.com/co/denver/plumbers/"
+  }
+ ],
+ "pricing_terms": [],
+ "promises": [
+  "siness Serves Denver, CO Reviews Fixed our water heater the same day, fair price"
+ ],
+ "testimonials": [],
+ "organization_ld": [
+  {
+   "@type": "LocalBusiness",
+   "name": "MILE HIGH ROOTER LLC",
+   "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Denver",
+    "addressRegion": "CO",
+    "postalCode": "80211"
+   },
+   "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "4.80",
+    "reviewCount": "27",
+    "bestRating": "5",
+    "worstRating": "1"
+   }
+  }
+ ],
+ "seller_profile": {
+  "seller_type": "",
+  "member_since": null,
+  "rating": 4.8,
+  "rating_count": 27,
+  "badges": [],
+  "other_listings": null,
+  "response_time": "",
+  "response_rate": null,
+  "jobs_completed": 41,
+  "years_in_business": 12
+ },
+ "listing": null
+}

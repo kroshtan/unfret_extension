@@ -1,0 +1,83 @@
+{
+ "platform": "werkspot",
+ "url": "https://www.werkspot.nl/profiel/bos-elektrotechniek-2152848",
+ "title": "Bos Elektrotechniek",
+ "brand": "",
+ "seller": "",
+ "seller_rating": null,
+ "ships_from": "",
+ "price": null,
+ "list_price": null,
+ "currency": "",
+ "date_first_available": null,
+ "rating": null,
+ "rating_count": null,
+ "rating_histogram": {},
+ "reviews": [
+  {
+   "rating": null,
+   "posted": null,
+   "title": "",
+   "body": "Groepenkast netjes vervangen, prijs klopte met de offerte.",
+   "verified": null
+  }
+ ],
+ "variations": [],
+ "json_ld": [],
+ "script_srcs": [],
+ "meta": {},
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [],
+ "fee_mentions": [],
+ "vat_ids": [],
+ "legal_mentions": [
+  "t 163 beoordelingen Lid sinds 2012 356 klussen via Werkspot KvK-nummer gecontroleerd Reageert meestal binnen 2 uur Over ons Wij zijn Bos Elektrotechniek uit Hoorn"
+ ],
+ "copyright_lines": [
+  "© 2026 Werkspot B.V."
+ ],
+ "policy_links": {},
+ "image_urls": [],
+ "product_ids": {},
+ "payment_methods": [],
+ "phones": [],
+ "emails": [],
+ "addresses": [],
+ "founded_claims": [
+  "sinds 2012"
+ ],
+ "business_name": "",
+ "legal_form": "BV",
+ "kvk_numbers": [],
+ "licences": [],
+ "certifications": [],
+ "cities_served": [],
+ "internal_links": [
+  {
+   "text": "Werkspot",
+   "url": "https://www.werkspot.nl/"
+  }
+ ],
+ "pricing_terms": [],
+ "promises": [
+  "ssen via Werkspot KvK-nummer gecontroleerd Reageert meestal binnen 2 uur Over ons Wij zijn Bos Elektrotechniek uit Hoorn"
+ ],
+ "testimonials": [],
+ "organization_ld": [],
+ "seller_profile": {
+  "seller_type": "",
+  "member_since": "2012-01-01",
+  "rating": 4.8,
+  "rating_count": 163,
+  "badges": [
+   "KvK-nummer gecontroleerd"
+  ],
+  "other_listings": null,
+  "response_time": "binnen 2 uur",
+  "response_rate": null,
+  "jobs_completed": 356,
+  "years_in_business": null
+ },
+ "listing": null
+}
