@@ -3,25 +3,6 @@
 Releases of the Unfret browser extension. (Earlier releases are described in their commit messages and in the
 backend's changelog, which lists each one published at `/extension`.)
 
-## Unreleased
-
-- **Parity fixture for a Houzz page without the provider** (`service-houzz-frame`): both sides read no profile and
-  no reviews from it, which the backend now answers with "not analysed" (no check used) instead of "a few things to
-  check" about nothing. The walmart expectations already match backend main (no countdown: `timers` is `[]`), so a
-  regeneration changes nothing else
-- **bol.com seller names without their rating label**: the seller block reads "Verkoop door Light Gallery NL
-  beoordeeld met een 8,5", and the seller came out as "Verkoop door Light Gallery NL beoordeeld met een". The label
-  before the name and the rating after it are dropped, and the page text is only a fallback when the offer's JSON-LD
-  names no seller. A "Bedrijfsgegevens" or "Company details" link counts as the shop's imprint page. Both in parity
-  with the backend; new parity fixture `bolcom-partner-rating`
-- **Service platform profiles read as the platforms write them**, in parity with the backend: "4.5 ★ uit 160
-  beoordelingen" is a 4.5 from 160 reviews (it was read as a 1 from 60), and "★ (350 reviews)", "4.9 ★★★★★ (143)",
-  "312 verified reviews", "Years in Business: 15", "Responds within about 2 hours", "Reageert meestal binnen 2 uur",
-  "356 klussen via Werkspot" and "KvK-nummer gecontroleerd" are read; "No reviews yet" / "Nog geen beoordelingen"
-  is zero reviews. **HomeGuide** is a known platform (`homeguide`), and Houzz's "Best of Houzz" and "Verified
-  License" are badges. A town called Evergreen in a page script is no longer a countdown. New parity fixtures for
-  Werkspot (new and established), HomeAdvisor, Houzz, HomeGuide and a Dutch locksmith call-centre page
-
 ## 0.11.0 (2026-11-16)
 
 In short, since 0.10.0 (and for Firefox, whose store still has 0.9.1, also everything in 0.10.0):
@@ -58,6 +39,23 @@ In short, since 0.10.0 (and for Firefox, whose store still has 0.9.1, also every
   Vision.
 - Needs backend 0.11.2 or later (`minBackendVersion`: the welcome page and the key hand-off; the page data needs
   0.10.6); production runs 0.11.1, so the backend release goes first. Details of each change below.
+
+- **Parity fixture for a Houzz page without the provider** (`service-houzz-frame`): both sides read no profile and
+  no reviews from it, which the backend now answers with "not analysed" (no check used) instead of "a few things to
+  check" about nothing. The walmart expectations already match backend main (no countdown: `timers` is `[]`), so a
+  regeneration changes nothing else
+- **bol.com seller names without their rating label**: the seller block reads "Verkoop door Light Gallery NL
+  beoordeeld met een 8,5", and the seller came out as "Verkoop door Light Gallery NL beoordeeld met een". The label
+  before the name and the rating after it are dropped, and the page text is only a fallback when the offer's JSON-LD
+  names no seller. A "Bedrijfsgegevens" or "Company details" link counts as the shop's imprint page. Both in parity
+  with the backend; new parity fixture `bolcom-partner-rating`
+- **Service platform profiles read as the platforms write them**, in parity with the backend: "4.5 ★ uit 160
+  beoordelingen" is a 4.5 from 160 reviews (it was read as a 1 from 60), and "★ (350 reviews)", "4.9 ★★★★★ (143)",
+  "312 verified reviews", "Years in Business: 15", "Responds within about 2 hours", "Reageert meestal binnen 2 uur",
+  "356 klussen via Werkspot" and "KvK-nummer gecontroleerd" are read; "No reviews yet" / "Nog geen beoordelingen"
+  is zero reviews. **HomeGuide** is a known platform (`homeguide`), and Houzz's "Best of Houzz" and "Verified
+  License" are badges. A town called Evergreen in a page script is no longer a countdown. New parity fixtures for
+  Werkspot (new and established), HomeAdvisor, Houzz, HomeGuide and a Dutch locksmith call-centre page
 
 - **Marktplaats and 2dehands ads read from the ad's own JSON** (`window.__CONFIG__` in the page), in parity with the
   backend: bidding, pickup or shipping, the platform's payment protection, the date placed, the town, the category,
