@@ -41,7 +41,7 @@ In short, since 0.10.0 (and for Firefox, whose store still has 0.9.1, also every
   sign in with a key you have.
 - **One next step in the popup.** Signed out: "Get started" (the welcome page), with the sign-in choices behind "Sign
   in with an API key or wallet"; after an expired sign-in the choices show at once. Out of checks: "Get more checks"
-  in place of "Check this page". Signed in with an API key, "Buy checks" and "Get more checks" (popup and settings)
+  in place of "Check this page"; signed in, "Get started" stays out of the way. Signed in with an API key, "Buy checks" and "Get more checks" (popup and settings)
   open that key's own top-up with its ID filled in (`/checkout?mode=topup&key_id=…`, never the key itself); they used
   to open the page that makes a new key.
 - **"Have a code?"** When you aren't signed in, the popup and the settings page link to the website's one-step code

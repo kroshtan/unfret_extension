@@ -120,6 +120,11 @@ input {
   margin: 8px 12px;
 }
 
+/* A class that sets display (.row) would otherwise show an element its hidden attribute hides. */
+[hidden] {
+  display: none !important;
+}
+
 .row {
   display: flex;
   gap: 8px;
