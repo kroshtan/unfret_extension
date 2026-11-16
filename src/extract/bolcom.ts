@@ -8,6 +8,15 @@ import { cut, text } from "./dom.js";
 import { parseCount, parseNumber, parsePrice, parseRating } from "./parse.js";
 
 const SELLER_RE = /verkoop door\s+(.+?)(?:\s{2,}|$|\s+\d)/iu;
+// The seller block reads "Verkoop door Light Gallery NL beoordeeld met een 8,5": the label before the name and the
+// rating after it are not part of it.
+const SELLER_LABEL_RE = /^(?:verkoop|verkocht) door\s+/iu;
+const SELLER_TAIL_RE = /\s+(?:beoordeeld\b|met een\b|\d).*$/isu;
+
+/** The seller's name from bol.com's seller block, without its label or rating (parity with the backend). */
+export function sellerName(blockText: string): string {
+  return blockText.trim().replace(SELLER_LABEL_RE, "").replace(SELLER_TAIL_RE, "").trim();
+}
 
 /** Fill bol.com-specific facts into `facts` (JSON-LD has already been read). */
 export function extract(doc: Document, facts: PageFacts): void {
@@ -20,11 +29,12 @@ export function extract(doc: Document, facts: PageFacts): void {
     facts.currency = currency || "EUR";
   }
   let seller = text(doc.querySelector('[data-test="seller-name"], .seller-name, [data-test="party-link"]'));
-  if (!seller) {
+  // The page text is a last resort: the offer's seller in the JSON-LD (read already) is cleaner.
+  if (!seller && !facts.seller) {
     const m = SELLER_RE.exec(text(doc.body));
     if (m) seller = m[1] ?? "";
   }
-  facts.seller = cut(seller, 300) || facts.seller;
+  facts.seller = cut(sellerName(seller), 300) || facts.seller;
   const sellerRating = text(doc.querySelector('[data-test="seller-rating"], .seller-rating'));
   if (sellerRating) {
     const value = parseNumber(sellerRating);

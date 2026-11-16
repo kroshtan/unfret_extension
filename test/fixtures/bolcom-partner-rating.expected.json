@@ -1,0 +1,80 @@
+{
+ "platform": "bol.com",
+ "url": "https://www.bol.com/nl/nl/p/philips-hue-voordeelverpakking-e27/9300000340569641/",
+ "title": "Philips Hue Voordeelverpakking - E27 - met 6 Standaard lampen",
+ "brand": "Philips Hue",
+ "seller": "Light Gallery NL",
+ "seller_rating": 85.0,
+ "ships_from": "",
+ "price": 90.23,
+ "list_price": null,
+ "currency": "EUR",
+ "date_first_available": null,
+ "rating": null,
+ "rating_count": null,
+ "rating_histogram": {},
+ "reviews": [],
+ "variations": [],
+ "json_ld": [
+  {
+   "@type": "Product",
+   "name": "Philips Hue Voordeelverpakking - E27 - met 6 Standaard lampen",
+   "brand": {
+    "@type": "Brand",
+    "name": "Philips Hue"
+   },
+   "offers": {
+    "@type": "Offer",
+    "price": "90.23",
+    "priceCurrency": "EUR",
+    "seller": {
+     "@type": "Organization",
+     "name": "Light Gallery NL"
+    }
+   }
+  }
+ ],
+ "script_srcs": [],
+ "meta": {},
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [],
+ "fee_mentions": [
+  "mpen Philips Hue Verkoop door Light Gallery NL beoordeeld met een 8,5 Inclusief verzendkosten, verstuurd door Light Gallery NL Verkoop door bol Bedrijfsgegevens"
+ ],
+ "vat_ids": [],
+ "legal_mentions": [],
+ "copyright_lines": [],
+ "policy_links": {
+  "imprint": "https://www.bol.com/nl/nl/m/bedrijfsgegevens/"
+ },
+ "image_urls": [],
+ "product_ids": {},
+ "payment_methods": [],
+ "phones": [],
+ "emails": [],
+ "addresses": [],
+ "founded_claims": [],
+ "business_name": "",
+ "legal_form": "",
+ "kvk_numbers": [],
+ "licences": [],
+ "certifications": [],
+ "cities_served": [],
+ "internal_links": [
+  {
+   "text": "Verkoop door Light Gallery NL beoordeeld met een",
+   "url": "https://www.bol.com/nl/nl/v/light-gallery-nl/1234567/"
+  },
+  {
+   "text": "Bedrijfsgegevens",
+   "url": "https://www.bol.com/nl/nl/m/bedrijfsgegevens/"
+  }
+ ],
+ "pricing_terms": [],
+ "promises": [],
+ "testimonials": [],
+ "organization_ld": [],
+ "seller_profile": null,
+ "listing": null
+}

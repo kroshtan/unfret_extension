@@ -3,6 +3,14 @@
 Releases of the Unfret browser extension. (Earlier releases are described in their commit messages and in the
 backend's changelog, which lists each one published at `/extension`.)
 
+## Unreleased
+
+- **bol.com seller names without their rating label**: the seller block reads "Verkoop door Light Gallery NL
+  beoordeeld met een 8,5", and the seller came out as "Verkoop door Light Gallery NL beoordeeld met een". The label
+  before the name and the rating after it are dropped, and the page text is only a fallback when the offer's JSON-LD
+  names no seller. A "Bedrijfsgegevens" or "Company details" link counts as the shop's imprint page. Both in parity
+  with the backend; new parity fixture `bolcom-partner-rating`
+
 ## 0.11.0 (2026-11-16)
 
 In short, since 0.10.0 (and for Firefox, whose store still has 0.9.1, also everything in 0.10.0):
