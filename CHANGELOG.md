@@ -5,6 +5,10 @@ backend's changelog, which lists each one published at `/extension`.)
 
 ## Unreleased
 
+- **Parity fixture for a Houzz page without the provider** (`service-houzz-frame`): both sides read no profile and
+  no reviews from it, which the backend now answers with "not analysed" (no check used) instead of "a few things to
+  check" about nothing. The walmart expectations already match backend main (no countdown: `timers` is `[]`), so a
+  regeneration changes nothing else
 - **bol.com seller names without their rating label**: the seller block reads "Verkoop door Light Gallery NL
   beoordeeld met een 8,5", and the seller came out as "Verkoop door Light Gallery NL beoordeeld met een". The label
   before the name and the rating after it are dropped, and the page text is only a fallback when the offer's JSON-LD
