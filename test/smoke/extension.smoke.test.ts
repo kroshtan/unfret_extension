@@ -38,6 +38,18 @@ const CONNECT_PAGE = `<!doctype html><title>connect</title><script>
     address: "${ADDRESS}", expires_at: "2999-01-01T00:00:00Z" }, location.origin), 300);
 </script>`;
 
+// The checkout page shows a new key: it offers it to the extension, and asks again with replace once "agreed".
+const NEW_KEY = `ufk_abcdefghij_${"k".repeat(52)}`;
+const CHECKOUT_PAGE = `<!doctype html><title>checkout</title><script>
+  const replace = location.search.includes("replace");
+  addEventListener("message", (e) => {
+    if (e.source === window && e.data && e.data.type === "unfret-key-received") document.title = e.data.status;
+  });
+  setTimeout(() => window.postMessage(
+    replace ? { type: "unfret-key", key: "${NEW_KEY}", replace: true } : { type: "unfret-key", key: "${NEW_KEY}" },
+    location.origin), 300);
+</script>`;
+
 const temp: string[] = [];
 
 async function launch(
@@ -57,6 +69,12 @@ async function launch(
   );
   await context.route("https://unfret.net/connect**", (route) =>
     route.fulfill({ contentType: "text/html", body: CONNECT_PAGE }),
+  );
+  await context.route("https://unfret.net/checkout**", (route) =>
+    route.fulfill({ contentType: "text/html", body: CHECKOUT_PAGE }),
+  );
+  await context.route("https://unfret.net/welcome", (route) =>
+    route.fulfill({ contentType: "text/html", body: "<!doctype html><title>welcome</title>" }),
   );
   const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent("serviceworker"));
   return { context, worker };
@@ -119,6 +137,37 @@ describe("the shipped extension (no host permissions)", () => {
     await page.waitForFunction(() => document.title === "received", undefined, { timeout: 10_000 });
     const stored = await plain.worker.evaluate(() => chrome.storage.local.get("session"));
     expect(stored.session).toMatchObject({ address: ADDRESS });
+    await page.close();
+  });
+
+  it("opened the welcome page once, on install", () => {
+    const welcome = plain.context.pages().filter((p) => p.url() === "https://unfret.net/welcome");
+    expect(welcome).toHaveLength(1);
+  });
+
+  it("takes a new key from the checkout page, asking before it replaces the wallet sign-in", async () => {
+    // Signed in with the wallet from the connect page above: the key waits for the user's yes.
+    const page = await plain.context.newPage();
+    await page.goto("https://unfret.net/checkout?mode=code");
+    await page.waitForFunction(() => document.title !== "checkout", undefined, { timeout: 10_000 });
+    expect(await page.title()).toBe("other-account");
+    let stored = await plain.worker.evaluate(() => chrome.storage.local.get("session"));
+    expect(stored.session).toMatchObject({ address: ADDRESS });
+
+    await page.goto("https://unfret.net/checkout?mode=code&replace");
+    await page.waitForFunction(() => document.title !== "checkout", undefined, { timeout: 10_000 });
+    expect(await page.title()).toBe("signed-in");
+    stored = await plain.worker.evaluate(() => chrome.storage.local.get("session"));
+    expect(stored.session).toEqual({
+      token: NEW_KEY,
+      address: "key:abcdefghij",
+      expiresAt: "9999-12-31T00:00:00.000Z",
+      kind: "key",
+    });
+
+    await page.reload();
+    await page.waitForFunction(() => document.title !== "checkout", undefined, { timeout: 10_000 });
+    expect(await page.title()).toBe("already");
     await page.close();
   });
 

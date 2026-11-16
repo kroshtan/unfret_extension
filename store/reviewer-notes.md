@@ -28,9 +28,9 @@ pack prices) before this works.
 Unfret checks a product page when you click its toolbar button. No account or wallet is needed for this review:
 use the test API key below.
 
-1. Install the extension and pin it to the toolbar.
+1. Install the extension and pin it to the toolbar. A welcome page on unfret.net opens once; it can be closed.
 2. Click the Unfret icon and read the first-run screen, then click "I agree".
-3. In the popup, click "API key", paste this key and click "Use this key":
+3. In the popup, click "Sign in with an API key or wallet", then "API key"; paste this key and click "Use this key":
    ufk_<REPLACE WITH THE TEST KEY>
    The key holds about 20 checks.
 4. Open a product page, for example any product on https://www.amazon.com or https://www.bol.com, click the Unfret

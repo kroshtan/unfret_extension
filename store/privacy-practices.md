@@ -27,9 +27,14 @@ user shared it. No browsing history is stored.
 product pages (Amazon, bol.com), so the user knows a check is possible there. The extension never sees those pages:
 the browser applies the rule, and no page access is granted.
 
-**Host permission (content script on https://unfret.net/connect\*)**: Unfret's own sign-in page. After the
-user signs in with their wallet there, the page hands the session to the extension through this content script. It
-runs on no other site.
+_*Host permission (content scripts on https://unfret.net/connect\* and https://unfret.net/checkout\_)**: two of
+Unfret's own pages. After the user signs in with their wallet on the sign-in page, that page hands the session to the
+extension; when the checkout page shows the user a new Unfret API key (from an intro code, a card payment, a key
+recovery), it hands that key to the extension, so the user doesn't have to copy and paste it. Each content script
+reads nothing from the page but the one message the page posts for it, accepts it only from that page's own window on
+Unfret's origin, and answers the page with a status only ("signed in", "already signed in", "signed in with another
+account": the extension then changes nothing unless the user agrees on the page). The key only goes from the page to
+the extension, never back, and nothing goes to anyone else. They run on no other site.
 
 **Optional host permissions (https://dev.unfret.net/\_, http://localhost/\_, http://127.0.0.1/\*)**:
 Requested only if a developer chooses the test server or a local server in the extension's settings. Never requested

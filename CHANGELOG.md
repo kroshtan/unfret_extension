@@ -31,15 +31,29 @@ In short, since 0.10.0 (and for Firefox, whose store still has 0.9.1, also every
 - **Business addresses kept, yours stripped.** A business's own address (its contact or imprint section) is now sent;
   your own details (account menu, delivery and billing addresses, forms) are still removed in the browser, and an
   account or checkout page sends no text at all.
+- **A key from the website signs Unfret in by itself.** When the checkout page shows you a new key (an intro code,
+  a card payment, a key recovery, "Make a new key"), it hands the key to the extension, which signs in with it: no
+  copying and pasting. Signed in with another key or a wallet, the page asks first and nothing changes unless you
+  agree. A new content script on `unfret.net/checkout*` (Unfret Dev: `dev.unfret.net/checkout*`) does this; it reads
+  nothing else from the page and answers only with a status. Same host as the sign-in relay, so no new install
+  warning. The privacy statement and the store's privacy notes say so.
+- **A welcome page after installing** (`unfret.net/welcome`, once, never after an update): use a code, buy checks, or
+  sign in with a key you have.
+- **One next step in the popup.** Signed out: "Get started" (the welcome page), with the sign-in choices behind "Sign
+  in with an API key or wallet"; after an expired sign-in the choices show at once. Out of checks: "Get more checks"
+  in place of "Check this page". Signed in with an API key, "Buy checks" and "Get more checks" (popup and settings)
+  open that key's own top-up with its ID filled in (`/checkout?mode=topup&key_id=…`, never the key itself); they used
+  to open the page that makes a new key.
 - **"Have a code?"** When you aren't signed in, the popup and the settings page link to the website's one-step code
-  page (Unfret Dev: dev.unfret.net): it makes you an API key with the code's checks, which you then use here. The
+  page (Unfret Dev: dev.unfret.net): it makes you an API key with the code's checks and signs Unfret in with it. The
   in-extension "Have an invite or intro code?" stays for a new key or wallet.
 - **The consent screen says so** (one new line about ads and service providers) and is asked once more
   (`CONSENT_VERSION` 2). Your sign-in stays; nothing is checked until you agree again.
 - **Firefox** gets intro codes and "API key" as the first sign-in option for the first time (both from 0.10.0).
 - **Privacy statement corrected:** product photos are fingerprinted on Unfret's own server, not sent to Google Cloud
   Vision.
-- Needs backend 0.10.6 or later (`minBackendVersion`); production runs 0.11.1. Details of each change below.
+- Needs backend 0.11.2 or later (`minBackendVersion`: the welcome page and the key hand-off; the page data needs
+  0.10.6); production runs 0.11.1, so the backend release goes first. Details of each change below.
 
 - **Addresses written out in a footer or contact block** (a house number, street and ZIP, or a street, number and
   Dutch postcode) are read into `addresses` too, in parity with the backend, so a service company with several branch

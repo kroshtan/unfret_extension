@@ -1,6 +1,6 @@
 # Unfret privacy policy (browser extension)
 
-_Last updated: 15 November 2026 (version 0.9.0; photo lookup corrected, service providers and private sellers' ads added). Draft for the store listings; to be reviewed before publication._
+_Last updated: 16 November 2026 (version 0.11.0; a new key from the checkout page signs the extension in, welcome page after installing; earlier: photo lookup corrected, service providers and private sellers' ads added). Draft for the store listings; to be reviewed before publication._
 
 Unfret is made by Kroshtan (Floris van Beers, the Netherlands).
 
@@ -25,6 +25,16 @@ On a private seller's ad (Marktplaats, 2dehands, Vinted, Craigslist, Facebook Ma
 eBay) it also reads the ad's own text, the item details (price, condition, category, delivery, location) and what the
 platform shows about the seller's account: since when, ratings, badges, other ads, reply time. **The seller's name is
 never read.**
+
+On two of Unfret's own pages, `unfret.net/connect` (signing in with a wallet) and `unfret.net/checkout` (getting
+checks), a small part of the extension runs by itself, to receive what those pages hand it: the wallet sign-in, or a
+new Unfret API key the checkout page has just shown you (after an intro code, a card payment or a key recovery), so
+you don't have to copy it into the extension. It reads nothing else from those pages, takes the message only from
+that page itself, and answers the page only with whether it signed in. If the extension is already signed in with
+another key or wallet, it asks you on the page first and changes nothing unless you agree. Your key is never sent
+back to the page or to anyone else.
+
+After you install it, the extension opens a welcome page on `unfret.net` once. It sends nothing with it.
 
 The extension has no standing access to any website. It can read a page only after you click its toolbar button on
 that page (the browser's `activeTab` grant, for that one tab). On Amazon and bol.com product pages the toolbar icon

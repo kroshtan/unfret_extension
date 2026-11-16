@@ -12,6 +12,7 @@ import { encodeQr, qrSvg } from "../shared/qr.js";
 import { shareRequest } from "../shared/share.js";
 import {
   accountLabel,
+  checkoutPath,
   clearSession,
   expireSession,
   isKeySession,
@@ -63,6 +64,8 @@ let busy = false;
 let port: chrome.runtime.Port | undefined;
 let purchasesOn = false;
 let consented = false;
+/** Not signed in: the sign-in choices are behind "Sign in with an API key or wallet" until asked for. */
+let signInOpen = false;
 
 /** The consent screen: shown until accepted, and from "About & privacy" any time after. */
 function showConsent(visible: boolean): void {
@@ -213,24 +216,30 @@ function renderAccount(): void {
     ? `${usingKey ? "Using API key" : "Signed in as"} ${accountLabel(session)}`
     : expired
       ? SESSION_EXPIRED
-      : "Not signed in. Sign in with your Solana wallet to use your checks.";
+      : "New here? Get your first checks with a code or by card, and Unfret signs in by itself.";
   el("account-until").textContent = session && !usingKey ? untilText(session.expiresAt) : "";
   show("account-until", Boolean(session) && !usingKey);
-  show("sign-in", !session);
-  show("sign-in-phone", !session);
-  show("sign-in-key", !session);
+  // Not signed in: one next step ("Get started"), the sign-in choices one click away. After an expired sign-in,
+  // signing in again is the next step.
+  const choosing = !session && (signInOpen || expired);
+  show("get-started-row", !session && !expired);
+  show("sign-in-more-row", !session && !choosing);
+  show("sign-in", choosing);
+  show("sign-in-phone", choosing);
+  show("sign-in-key", choosing);
   show("have-code-row", !session);
   if (session) show("key", false);
   show("sign-out", Boolean(session));
   show("invite", Boolean(session) && inviteEligible !== false);
-  show("buy", Boolean(session) && purchasesOn);
   el("credits").textContent = checks === undefined ? "" : checksText(checks);
   show("credits", Boolean(session) && checks !== undefined);
 
+  // Out of checks: "Get more checks" in place of "Check this page" is the one next step (a key's own top-up).
   const noChecks = Boolean(session) && checks === 0;
+  show("buy", Boolean(session) && purchasesOn && !noChecks);
   const analyse = button("analyse");
-  analyse.textContent = busy ? "Checking…" : noChecks ? "Buy checks to start" : "Check this page";
-  analyse.disabled = busy || !consented || !session || !analysable || (noChecks && !purchasesOn);
+  analyse.textContent = busy ? "Checking…" : noChecks ? "Get more checks" : "Check this page";
+  analyse.disabled = noChecks ? busy || !purchasesOn : busy || !consented || !session || !analysable;
   el("hint").textContent = !consented
     ? CONSENT_HINT
     : !analysable
@@ -435,9 +444,17 @@ async function init(): Promise<void> {
   }
   for (const id of ["buy", "error-buy"]) {
     el(id).addEventListener("click", () => {
-      openTab(isKeySession(session) ? "/checkout?for=key" : "/checkout");
+      openTab(checkoutPath(session));
     });
   }
+  el("get-started").addEventListener("click", () => {
+    openTab("/welcome");
+  });
+  el("sign-in-more").addEventListener("click", (event) => {
+    event.preventDefault();
+    signInOpen = true;
+    renderAccount();
+  });
   el("sign-out").addEventListener("click", () => {
     void clearSession().then(() => {
       session = undefined;
@@ -547,11 +564,11 @@ async function init(): Promise<void> {
     port?.postMessage({ type: "report", tabId, reason } satisfies PopupRequest);
   });
   el("analyse").addEventListener("click", () => {
-    if (busy || !consented) return; // a second click before the first one's state arrives must not charge twice
     if (session && checks === 0) {
-      if (purchasesOn) openTab(isKeySession(session) ? "/checkout?for=key" : "/checkout");
+      if (purchasesOn && !busy) openTab(checkoutPath(session));
       return;
     }
+    if (busy || !consented) return; // a second click before the first one's state arrives must not charge twice
     if (tabId === undefined) return;
     busy = true; // synchronously: the button is disabled before any message round trip
     renderAccount();

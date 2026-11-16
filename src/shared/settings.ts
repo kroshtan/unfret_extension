@@ -36,6 +36,19 @@ export function isKeySession(session: Session | undefined): boolean {
   return session?.kind === "key";
 }
 
+const KEY_ID_RE = /^[a-z2-7]{10}$/u;
+
+/**
+ * Where to get more checks (a path on the API base): signed in with a key, that key's top-up with its ID filled in
+ * (the ID only: the key itself never goes into an address, which ends up in history and logs); otherwise the checkout,
+ * which offers a wallet's own purchase.
+ */
+export function checkoutPath(session: Session | undefined): string {
+  if (!session || !isKeySession(session)) return "/checkout";
+  const id = session.address.slice("key:".length);
+  return KEY_ID_RE.test(id) ? `/checkout?mode=topup&key_id=${id}` : "/checkout?mode=topup";
+}
+
 /** How to name the account: a shortened wallet address, or the key's public ID. */
 export function accountLabel(session: Session): string {
   return isKeySession(session) ? session.address.slice("key:".length) : shortAddress(session.address);

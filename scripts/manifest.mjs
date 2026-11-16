@@ -43,10 +43,14 @@ export function manifest(browser, { version, description, publicKey }) {
     action: { default_popup: "popup/popup.html", default_title: name, default_icon: ICONS },
     options_ui: { page: "options/options.html", open_in_tab: true },
     permissions: ["activeTab", "storage", "scripting", ...(chromium ? ["declarativeContent"] : [])],
-    // The API is reached through its CORS (it allows extension origins); the only site the extension is ever
-    // injected into on its own is the Unfret sign-in page, for the session relay below.
+    // The API is reached through its CORS (it allows extension origins); the only pages the extension is ever
+    // injected into on its own are two of Unfret's own: the sign-in page (the wallet session relay) and the checkout
+    // page (the relay of a new API key it shows). Both read nothing but the message the page posts for them.
     optional_host_permissions: LOCAL_PERMISSIONS,
-    content_scripts: [{ matches: [`${api}/connect*`], js: ["connect-relay.js"], run_at: "document_start" }],
+    content_scripts: [
+      { matches: [`${api}/connect*`], js: ["connect-relay.js"], run_at: "document_start" },
+      { matches: [`${api}/checkout*`], js: ["key-relay.js"], run_at: "document_start" },
+    ],
     content_security_policy: {
       // Extension pages may only talk to the Unfret API (or a local dev server).
       extension_pages: `script-src 'self'; object-src 'self'; connect-src ${api} http://localhost:* http://127.0.0.1:*`,
