@@ -179,6 +179,23 @@ DEV label) that talks only to the dev deployment (dev.unfret.net, devnet) and up
 next to Unfret to test; the production extension never talks to dev. The version comes from `package.json`. `make release` produces the signed
 self-hosted release in `dist/release/` (see [INSTALL.md](INSTALL.md#for-maintainers-making-a-release)).
 
+### Pull requests and CI
+
+CI (`.forgejo/workflows/ci.yaml`) checks a pull request once it is ready to merge, not every push while it's being
+worked on:
+
+- **Open it as a draft:** start the title with `WIP:` (for example `WIP: Shorter result card`). Forgejo shows it as
+  a work in progress and CI skips it, however often you push.
+- **Ready to merge? Take `WIP:` off the title.** That starts CI on the newest commit. Merge when it's green.
+- A push to a ready pull request runs CI again and cancels the run still going for the commit before. Editing its
+  description or title doesn't check it again: that run reports the result the commit already has (to retry a
+  failure that wasn't the code's, re-run its run under Actions).
+- Back to work on it: put `WIP:` back in front.
+
+On `main`, runs queue one behind the other and are never cancelled, so an Unfret Dev publish is never cut off or
+dropped. A run whose commit is no longer `main`'s newest when it starts checks nothing and doesn't publish: the
+newest commit's run checks and publishes it.
+
 ## Releases (CI/CD)
 
 - **Merge to `main` ⇒ Unfret Dev.** CI (`.forgejo/workflows/ci.yaml`, job `publish-dev`) builds Unfret Dev as
