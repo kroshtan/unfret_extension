@@ -18,6 +18,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Extraction } from "../../src/extract/index.js";
 import type { TabState } from "../../src/shared/messages.js";
 import {
+  FREE_PASS,
+  FREE_PASS_BACKUP,
   INVITE_OK,
   INVITE_USED_CODE,
   type MockApi,
@@ -67,7 +69,14 @@ async function launch(
     ...(phone
       ? { viewport: { width: 360, height: 740 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 }
       : {}),
-    args: [`--disable-extensions-except=${extension}`, `--load-extension=${extension}`, `--lang=${language}`],
+    args: [
+      `--disable-extensions-except=${extension}`,
+      `--load-extension=${extension}`,
+      `--lang=${language}`,
+      // The production build makes its free pass on install, before any route below exists: unfret.net must never
+      // be reached from a test. Pages on it are still served by the routes (they never touch the network).
+      "--host-resolver-rules=MAP unfret.net ~NOTFOUND, MAP *.unfret.net ~NOTFOUND",
+    ],
   });
   await context.route("https://www.amazon.com/**", (route) =>
     route.fulfill({ contentType: "text/html", body: fixture("amazon-com.html") }),
@@ -82,14 +91,35 @@ async function launch(
     route.fulfill({ contentType: "text/html", body: "<!doctype html><title>welcome</title>" }),
   );
   const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent("serviceworker"));
+  // On install the extension tries to make its free pass (unreachable here, except for a copy on the mock API), then
+  // opens the welcome page: wait for that, so later tabs are newer, and forget the retry an offline install leaves
+  // for the popup, which would otherwise make a pass on the mock API the first time a test opens it signed out.
+  const welcomed = (): boolean => context.pages().some((p) => new URL(p.url()).pathname === "/welcome");
+  for (let waited = 0; !welcomed() && waited < 30_000; waited += 100) {
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  await worker.evaluate(() => chrome.storage.local.remove("passPending"));
   return { context, worker };
 }
 
-/** A copy of the build granted the Amazon site: the access a toolbar click (activeTab) gives for that tab. */
-function grantedCopy(): string {
+/**
+ * A copy of the build granted the Amazon site: the access a toolbar click (activeTab) gives for that tab. With
+ * `apiBase`, the copy talks to that API instead of unfret.net from the start (its built-in default replaced), so what it
+ * does on install reaches the mock API.
+ */
+function grantedCopy(apiBase?: string): string {
   const dir = mkdtempSync(join(tmpdir(), "unfret-granted-"));
   temp.push(dir);
   cpSync(shipped, dir, { recursive: true });
+  if (apiBase) {
+    for (const file of ["background.js", "popup/popup.js", "options/options.js"]) {
+      const path = join(dir, file);
+      writeFileSync(
+        path,
+        readFileSync(path, "utf8").replaceAll('"https://unfret.net"', JSON.stringify(apiBase)),
+      );
+    }
+  }
   const manifestPath = join(dir, "manifest.json");
   const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as Record<string, unknown>;
   writeFileSync(
@@ -628,5 +658,141 @@ describe("on a phone, 360×740 (Firefox for Android shows the popup as a full-wi
 
   it("renders the settings page the same way", async () => {
     expect(await fit("options/options.html")).toEqual({ width: 360, overflow: false, small: [] });
+  });
+});
+
+describe("a new install (0.12.0): a free pass, then a check", () => {
+  let fresh: { context: BrowserContext; worker: Worker };
+
+  beforeAll(async () => {
+    api.free.perPass = 5;
+    fresh = await launch(grantedCopy(api.url));
+  }, 180_000);
+
+  afterAll(async () => {
+    await fresh.context.close();
+  });
+
+  async function stored(): Promise<Record<string, unknown>> {
+    return fresh.worker.evaluate(async () => ({
+      ...(await chrome.storage.local.get(null)),
+      sync: await chrome.storage.sync.get(null),
+    }));
+  }
+
+  it("makes a pass with 5 free checks on install, and opens the welcome page saying so", async () => {
+    await expect.poll(async () => (await stored()).session, { timeout: 20_000 }).toBeTruthy();
+    const made = api.requests.filter((r) => r.path === "/v1/keys");
+    expect(made).toHaveLength(1);
+    expect(made[0]?.body).toMatchObject({ challenge: "mock-challenge", free: true });
+    const data = await stored();
+    expect(data.session).toMatchObject({ token: FREE_PASS, address: "key:freepasszz", kind: "key" });
+    expect(data.ownPass).toEqual({ keyId: "freepasszz", recoveryCode: FREE_PASS_BACKUP });
+    expect(data.sync).toEqual({ freeChecksUsed: true });
+    await expect
+      .poll(() => fresh.context.pages().some((p) => p.url() === `${api.url}/welcome?free=5`))
+      .toBe(true);
+  });
+
+  it("shows You have 5 free checks, checks a page with one, then quick checks for free", async () => {
+    await fresh.worker.evaluate(() => chrome.storage.local.set({ consent: { version: 2 } }));
+    const page = await fresh.context.newPage();
+    await page.goto(AMAZON_URL);
+    const tabId = await newestTabId(fresh.worker);
+    const extensionId = new URL(fresh.worker.url()).host;
+    const popup = await fresh.context.newPage();
+    await popup.goto(`chrome-extension://${extensionId}/popup/popup.html?tab=${tabId}`);
+    await popup.waitForFunction(
+      () => document.querySelector("#credits")?.textContent === "You have 5 free checks",
+    );
+    expect(await popup.textContent("#analyse")).toBe("Check this page");
+
+    await popup.click("#analyse");
+    await popup.waitForSelector("#result:not([hidden])");
+    const deep = api.requests.filter((r) => r.path === "/v1/analyze/stream").at(-1);
+    expect(deep?.auth).toBe(`Bearer ${FREE_PASS}`);
+    expect(deep?.body).not.toHaveProperty("tier");
+    await popup.waitForFunction(
+      () => document.querySelector("#credits")?.textContent === "You have 4 free checks",
+    );
+
+    // The free checks used up: the next check is a quick one, free, and says so.
+    api.free.left = 0;
+    await popup.reload();
+    await popup.waitForFunction(
+      () => document.querySelector("#analyse")?.textContent === "Quick check (free)",
+    );
+    await page.reload(); // a navigation clears the tab's result
+    await popup.reload();
+    await popup.waitForFunction(
+      () => document.querySelector("#analyse")?.textContent === "Quick check (free)",
+    );
+    await popup.click("#analyse");
+    await popup.waitForFunction(() =>
+      document.querySelector("#result-body")?.textContent.includes("Quick check"),
+    );
+    const quick = api.requests.filter((r) => r.path === "/v1/analyze/stream").at(-1);
+    expect(quick?.body).toMatchObject({ tier: "quick" });
+    await popup.close();
+    await page.close();
+  });
+
+  it("falls back to a quick check, saying why, when free deep checks are paused for the day", async () => {
+    await fresh.worker.evaluate(
+      (address) =>
+        chrome.storage.local.set({
+          session: { token: "paused", address, expiresAt: "2999-01-01T00:00:00.000Z" },
+        }),
+      ADDRESS,
+    );
+    const page = await fresh.context.newPage();
+    await page.goto(AMAZON_URL);
+    const tabId = await newestTabId(fresh.worker);
+    const extensionId = new URL(fresh.worker.url()).host;
+    const popup = await fresh.context.newPage();
+    await popup.goto(`chrome-extension://${extensionId}/popup/popup.html?tab=${tabId}`);
+    const state = await popup.evaluate(
+      (id) =>
+        new Promise<TabState>((resolve) => {
+          const port = chrome.runtime.connect({ name: "unfret-analysis" });
+          port.onMessage.addListener((update: { tabId: number; state: TabState }) => {
+            if (update.tabId === id && ["done", "error"].includes(update.state.status)) resolve(update.state);
+          });
+          port.postMessage({ type: "analyze", tabId: id });
+        }),
+      tabId,
+    );
+    expect(state.status).toBe("done");
+    if (state.status === "done") {
+      expect(state.result.tier).toBe("quick");
+      expect(state.note).toContain("Free deep checks are back tomorrow");
+    }
+    await popup.waitForSelector("#result-note:not([hidden])");
+    await popup.close();
+    await page.close();
+  });
+
+  it("after a reinstall in the same profile (the sync flag kept): a pass without free checks", async () => {
+    // What a reinstall leaves: no local storage, the sync flag. The popup makes the pass the install couldn't.
+    await fresh.worker.evaluate(async () => {
+      await chrome.storage.local.clear();
+      await chrome.storage.local.set({ passPending: true, consent: { version: 2 } });
+    });
+    const before = api.requests.filter((r) => r.path === "/v1/keys").length;
+    const page = await fresh.context.newPage();
+    await page.goto(AMAZON_URL);
+    const tabId = await newestTabId(fresh.worker);
+    const extensionId = new URL(fresh.worker.url()).host;
+    const popup = await fresh.context.newPage();
+    await popup.goto(`chrome-extension://${extensionId}/popup/popup.html?tab=${tabId}`);
+    await popup.waitForFunction(
+      () => document.querySelector("#analyse")?.textContent === "Quick check (free)",
+    );
+    const made = api.requests.filter((r) => r.path === "/v1/keys").slice(before);
+    expect(made).toHaveLength(1);
+    expect(made[0]?.body).not.toHaveProperty("free");
+    expect((await stored()).session).toMatchObject({ token: FREE_PASS });
+    await popup.close();
+    await page.close();
   });
 });

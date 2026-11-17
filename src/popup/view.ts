@@ -2,7 +2,7 @@
 
 import type { AnalysisResult, Band, Flag, ShareBand, SharePreview } from "../api/client.js";
 import { BAND_SYMBOL, bandOf } from "../shared/bands.js";
-import { NO_CHECK_USED } from "../shared/text.js";
+import { NO_CHECK_USED, QUICK_NOTE } from "../shared/text.js";
 
 export { checksText } from "../shared/text.js";
 
@@ -235,12 +235,21 @@ export function renderResult(root: HTMLElement, result: AnalysisResult, apiOrigi
     },
     apiOrigin,
   );
-  // Right under the headline: no check used is good news, and easy to miss under the reasons.
-  if (result.score < 0 || result.charged === false) {
+  // Right under the headline: no check used is good news, and easy to miss under the reasons; a quick check says
+  // what it is.
+  if (result.tier === "quick" || result.score < 0 || result.charged === false) {
     nodes.splice(
       2,
       0,
-      element("p", "charge-note", result.score < 0 ? NO_CHECK_USED : "Checked recently: no check was used."),
+      element(
+        "p",
+        "charge-note",
+        result.tier === "quick"
+          ? QUICK_NOTE
+          : result.score < 0
+            ? NO_CHECK_USED
+            : "Checked recently: no check was used.",
+      ),
     );
   }
   // Details only with an assessment (an older server's result without one has none to show).

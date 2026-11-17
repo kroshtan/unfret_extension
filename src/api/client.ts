@@ -42,9 +42,32 @@ export interface Pricing {
 export interface Credits {
   address: string;
   balance_lamports: number;
+  /** Checks left: bought ones plus free ones. */
   checks_remaining: number;
   /** Whether an invite can still be redeemed onto this account (it never had credit); absent on older servers. */
   invite_eligible?: boolean;
+  /** Of `checks_remaining`, the free ones (a free pass's); absent on older servers. */
+  free_checks_remaining?: number;
+  /** Today's free deep checks are all used, by everyone: the free ones wait until 00:00 UTC. */
+  free_checks_paused?: boolean;
+}
+
+/** A proof-of-work challenge for a new pass (GET /v1/keys/challenge). */
+export interface KeyChallenge {
+  challenge: string;
+  bits: number;
+  expires_at: number;
+}
+
+/** A new pass and its backup code (POST /v1/keys), shown this once. */
+export interface IssuedKey {
+  key_id: string;
+  key: string;
+  recovery_code: string;
+  account: string;
+  balance_usd_micros: number;
+  /** Free deep checks on it (0 from an older server, or once this network had its share today). */
+  free_checks?: number;
 }
 
 /** A phone sign-in pairing (contract: "phone sign-in by pairing"). */
@@ -107,8 +130,12 @@ export interface AnalysisResult {
   assessment?: { risk_score: number; confidence: number; flags: Flag[]; model_version: string };
   balance_lamports?: number;
   balance_usd_micros?: number;
-  /** False when no check was used (a page that couldn't be analysed, or a recent result from the cache). */
+  /** False when no check was used (a page that couldn't be analysed, a recent result from the cache, a quick check). */
   charged?: boolean;
+  /** "quick": rule-based checks of the page itself only, free; "deep" (or absent): the full check. */
+  tier?: "deep" | "quick";
+  /** True when one of the pass's free checks paid for it. */
+  free_check?: boolean;
   verdict?: Verdict;
   /** Lets this account report the result as wrong (POST /v1/reports) within 7 days. */
   report_token?: string;
@@ -194,6 +221,8 @@ export interface Finding {
 
 export interface AnalyzeBody {
   url: string;
+  /** "quick": the free, rules-only check (the server's default is the full, deep one). */
+  tier?: "quick";
   page_facts?: PageFacts;
   page_content?: string;
   checkout_content?: string;
@@ -341,6 +370,34 @@ export class UnfretApi {
       throw new ApiError(502, "BAD_SHARE", "The server sent an unexpected shared link.");
     }
     return created;
+  }
+
+  /** A proof-of-work challenge for a new pass. */
+  keyChallenge(): Promise<KeyChallenge> {
+    return this.get<KeyChallenge>("/v1/keys/challenge");
+  }
+
+  /** Make a new pass with a solved challenge; `free` asks for the free checks a new pass can come with. */
+  async createKey(challenge: string, solution: string, free: boolean): Promise<IssuedKey> {
+    const response = await this.fetcher(`${this.base}/v1/keys`, {
+      method: "POST",
+      headers: this.headers(true),
+      body: JSON.stringify({ challenge, solution, ...(free ? { free: true } : {}) }),
+    });
+    if (!response.ok) throw await errorFrom(response);
+    return (await response.json()) as IssuedKey;
+  }
+
+  /** Move this pass's free checks (this client's key) to another pass; resolves how many moved. */
+  async moveFreeChecks(toKeyId: string): Promise<number> {
+    const response = await this.fetcher(`${this.base}/v1/keys/move-free-checks`, {
+      method: "POST",
+      headers: this.headers(true),
+      body: JSON.stringify({ to_key_id: toKeyId }),
+    });
+    if (!response.ok) throw await errorFrom(response);
+    const moved = ((await response.json()) as { moved?: unknown }).moved;
+    return typeof moved === "number" ? moved : 0;
   }
 
   /** Start a phone sign-in; the connect URL must be on this API's origin (it goes into a QR code). */

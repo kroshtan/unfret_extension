@@ -26,7 +26,8 @@ import {
 import { CODE_CHECKOUT, inviteAdded, redeemInvite } from "../shared/invites.js";
 import { KEY_FAILURE, signInWithKey } from "../shared/key-sign-in.js";
 import { isAnalysable } from "../shared/sites.js";
-import { CONSENT_HINT, OFFLINE, SESSION_EXPIRED } from "../shared/text.js";
+import { makeFreePass } from "../shared/new-pass.js";
+import { CONSENT_HINT, FREE_PAUSED, OFFLINE, SESSION_EXPIRED } from "../shared/text.js";
 import {
   buildChecklist,
   checklistDone,
@@ -56,6 +57,9 @@ let apiBase = "";
 let session: Session | undefined;
 let expired = false;
 let checks: number | undefined;
+/** Of `checks`, the free ones; and whether today's free deep checks are all used (then only quick checks are free). */
+let freeLeft = 0;
+let freePaused = false;
 /** From the server: false once the account has had credit, when "Have an invite?" can no longer work. */
 let inviteEligible: boolean | undefined;
 let tabId: number | undefined;
@@ -86,6 +90,7 @@ async function sessionRejected(): Promise<void> {
   session = undefined;
   expired = true;
   checks = undefined;
+  freeLeft = 0;
   inviteEligible = undefined;
   renderAccount();
 }
@@ -95,6 +100,8 @@ async function refreshCredits(): Promise<void> {
   try {
     const credits = await new UnfretApi(apiBase, session.token).credits();
     checks = credits.checks_remaining;
+    freeLeft = credits.free_checks_remaining ?? 0;
+    freePaused = credits.free_checks_paused === true;
     inviteEligible = credits.invite_eligible;
     renderAccount();
   } catch (error) {
@@ -226,30 +233,58 @@ function renderAccount(): void {
   show("sign-out", Boolean(session));
   show("account-actions", Boolean(session));
   show("invite", Boolean(session) && inviteEligible !== false);
-  el("credits").textContent = checks === undefined ? "" : checksText(checks);
+  el("credits").textContent = checks === undefined ? "" : checksText(checks, freeLeft);
   show("credits", Boolean(session) && checks !== undefined);
 
-  // Out of checks: "Get more checks" in place of "Check this page" is the one next step (a key's own top-up).
-  const noChecks = Boolean(session) && checks === 0;
-  // Shown at once: whether checks can be bought is the checkout page's to say (card and crypto each switch off on
-  // their own there). It used to wait for /v1/pricing, which held it back for a whole cold round trip (0.12.0).
-  show("buy", Boolean(session) && !noChecks);
+  // Out of checks, or only free ones while they're paused for the day: the button runs a free quick check, and
+  // "Buy checks" is next to it (a pass's own top-up). Shown at once: whether checks can be bought is the checkout
+  // page's to say (card and crypto each switch off on their own there).
+  const quickOnly = quickChecksOnly();
+  show("buy", Boolean(session));
   const analyse = button("analyse");
-  analyse.textContent = busy ? "Checking…" : noChecks ? "Get more checks" : "Check this page";
-  analyse.disabled = noChecks ? busy : busy || !consented || !session || !analysable;
-  // The hint says why the button is what it is. Out of checks, the button is "Get more checks" on any page, so
-  // that is what the hint says too, also on a page that can't be checked (that only matters once there are checks).
+  analyse.textContent = busy ? "Checking…" : quickOnly ? "Quick check (free)" : "Check this page";
+  analyse.disabled = busy || !consented || !session || !analysable;
   el("hint").textContent = !consented
     ? CONSENT_HINT
     : busy
       ? "You can close this popup: the check carries on, and its result waits here."
-      : noChecks
-        ? "You have no checks left."
-        : !analysable
-          ? "This page can't be checked."
-          : !session
-            ? "Sign in to check this page."
-            : "One check per page. Nothing is sent until you click.";
+      : !analysable
+        ? "This page can't be checked."
+        : !session
+          ? gettingPass
+            ? "Getting your free checks…"
+            : "Sign in to check this page."
+          : checks === 0
+            ? "You have no checks left. Quick checks are free: they read this page only."
+            : quickOnly
+              ? FREE_PAUSED
+              : "One check per page. Nothing is sent until you click.";
+}
+
+/** No checks left, or only free ones while today's are all used: only a quick check can run. */
+function quickChecksOnly(): boolean {
+  if (!session || checks === undefined) return false;
+  return checks === 0 || (freePaused && freeLeft === checks);
+}
+
+let gettingPass = false;
+
+/** The free pass the extension makes on install, when that failed (offline): tried again when the popup opens. */
+async function retryFreePass(): Promise<void> {
+  const pending = await chrome.storage.local.get<{ passPending?: boolean }>("passPending");
+  if (session || pending.passPending !== true) return;
+  gettingPass = true;
+  renderAccount();
+  const made = await makeFreePass(apiBase);
+  gettingPass = false;
+  if (made.ok) {
+    session = made.session;
+    expired = false;
+    checks = made.freeChecks;
+    freeLeft = made.freeChecks;
+    void refreshCredits();
+  }
+  renderAccount();
 }
 
 /** The origin of the API in use (thumbnails are only loaded from there). */
@@ -290,6 +325,8 @@ function render(state: TabState): void {
     announce("Checking this page…");
   }
   if (state.status === "done") {
+    el("result-note").textContent = state.note ?? "";
+    show("result-note", state.note !== undefined);
     renderResult(el("result-body"), state.result, apiOrigin());
     announce(`Result: ${el("result-body").querySelector(".verdict .label")?.textContent ?? ""}`);
     renderReport(state);
@@ -458,6 +495,7 @@ async function init(): Promise<void> {
   analysable = tabId !== undefined && isAnalysable(tab?.url, apiBase);
   renderAccount();
   void refreshCredits();
+  void retryFreePass();
 
   el("options").addEventListener("click", (event) => {
     event.preventDefault();
@@ -592,15 +630,14 @@ async function init(): Promise<void> {
     port?.postMessage({ type: "report", tabId, reason } satisfies PopupRequest);
   });
   el("analyse").addEventListener("click", () => {
-    if (session && checks === 0) {
-      if (!busy) openTab(checkoutPath(session));
-      return;
-    }
     if (busy || !consented) return; // a second click before the first one's state arrives must not charge twice
     if (tabId === undefined) return;
+    const quick = quickChecksOnly();
     busy = true; // synchronously: the button is disabled before any message round trip
     renderAccount();
-    port?.postMessage({ type: "analyze", tabId } satisfies PopupRequest);
+    port?.postMessage(
+      (quick ? { type: "analyze", tabId, tier: "quick" } : { type: "analyze", tabId }) satisfies PopupRequest,
+    );
   });
 }
 

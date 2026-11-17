@@ -37,6 +37,8 @@ export type TabState =
       body?: AnalyzeBody;
       report?: ReportState;
       share?: ShareState;
+      /** Why a quick check ran instead of the deep one asked for (no checks left, free deep checks paused). */
+      note?: string;
     }
   | {
       status: "error";
@@ -49,7 +51,7 @@ export type TabState =
 
 export type PopupRequest =
   | { type: "watch"; tabId: number }
-  | { type: "analyze"; tabId: number }
+  | { type: "analyze"; tabId: number; tier?: "quick" }
   | { type: "report"; tabId: number; reason: ReportReason }
   | { type: "share-preview"; tabId: number }
   | { type: "share"; tabId: number }
