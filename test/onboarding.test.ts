@@ -27,6 +27,7 @@ import { checkoutPath, type Session } from "../src/shared/settings.js";
 
 const KEY = `ufk_abcdefghij_${"a".repeat(52)}`;
 const OTHER_KEY = `ufk_zzzzzzzzzz_${"b".repeat(52)}`;
+const FREE = `ufk_ffffffffff_${"f".repeat(52)}`;
 const ORIGIN = "https://unfret.net";
 const keySessionOf = (key: string): Session => ({
   token: key,
@@ -60,11 +61,22 @@ function area(data: Record<string, unknown>): Record<string, unknown> {
   };
 }
 
-/** chrome.storage.local (and .sync) over plain objects. */
-function stubStorage(data: Record<string, unknown>, sync: Record<string, unknown> = {}): void {
+/** chrome.storage.local (and .sync, .session) over plain objects; what tabs are told goes to `told`. */
+function stubStorage(
+  data: Record<string, unknown>,
+  sync: Record<string, unknown> = {},
+  session: Record<string, unknown> = {},
+  told: unknown[] = [],
+): void {
   vi.stubGlobal("chrome", {
     runtime: { id: "ext-id" },
-    storage: { local: area(data), sync: area(sync) },
+    storage: { local: area(data), sync: area(sync), session: area(session) },
+    tabs: {
+      sendMessage: (tabId: number, message: unknown) => {
+        told.push({ tabId, message });
+        return Promise.resolve();
+      },
+    },
   });
 }
 
@@ -146,83 +158,66 @@ describe("the key the checkout page posts (content script)", () => {
 
 describe("storing the handed-off key (background)", () => {
   let data: Record<string, unknown>;
-  const checkout = { id: "ext-id", frameId: 0, url: `${ORIGIN}/checkout?mode=code` };
+  let session: Record<string, unknown>;
+  let told: unknown[];
+  const ask = vi.fn(() => Promise.resolve({ windowId: 42 }));
+  const checkout = {
+    id: "ext-id",
+    frameId: 0,
+    url: `${ORIGIN}/checkout?mode=code`,
+    tab: { id: 7 } as chrome.tabs.Tab,
+  };
 
   beforeEach(() => {
     data = {};
-    stubStorage(data);
+    session = {};
+    told = [];
+    ask.mockClear();
+    stubStorage(data, {}, session, told);
   });
   afterEach(() => vi.unstubAllGlobals());
 
-  it("signs in with the key when signed out (or after an expired sign-in)", async () => {
+  it("signs in with the key when signed out (or after an expired sign-in), after a click on the page", async () => {
     data.sessionExpired = true;
-    expect(await receiveKey({ key: KEY }, checkout, "ext-id")).toEqual({ status: "signed-in" });
+    expect(await receiveKey({ key: KEY, activated: true }, checkout, "ext-id", ask)).toEqual({
+      status: "signed-in",
+    });
     expect(data.session).toEqual(keySessionOf(KEY));
     expect(data).not.toHaveProperty("sessionExpired");
+    expect(ask).not.toHaveBeenCalled();
   });
 
   it("says so when it already uses that key", async () => {
     data.session = keySessionOf(KEY);
-    expect(await receiveKey({ key: KEY }, checkout, "ext-id")).toEqual({ status: "already" });
+    expect(await receiveKey({ key: KEY }, checkout, "ext-id", ask)).toEqual({ status: "already" });
   });
 
   it.each([
     ["another key", keySessionOf(OTHER_KEY)],
     ["a wallet", WALLET],
-  ])("asks before replacing %s, and replaces only once the user agreed", async (_name, current) => {
+  ])("never replaces %s on the page's word alone: it asks in its own window", async (_name, current) => {
     data.session = current;
-    expect(await receiveKey({ key: KEY }, checkout, "ext-id")).toEqual({ status: "other-account" });
-    expect(data.session).toEqual(current); // never swapped silently
-    expect(await receiveKey({ key: KEY, replace: "yes" }, checkout, "ext-id")).toEqual({
+    expect(await receiveKey({ key: KEY, activated: true }, checkout, "ext-id", ask)).toEqual({
       status: "other-account",
     });
-    expect(await receiveKey({ key: KEY, replace: true }, checkout, "ext-id")).toEqual({
-      status: "signed-in",
+    expect(await receiveKey({ key: KEY, replace: "yes", activated: true }, checkout, "ext-id", ask)).toEqual({
+      status: "other-account",
     });
-    expect(data.session).toEqual(keySessionOf(KEY));
+    expect(ask).not.toHaveBeenCalled();
+    expect(await receiveKey({ key: KEY, replace: true, activated: true }, checkout, "ext-id", ask)).toEqual({
+      status: "confirm",
+    });
+    expect(ask).toHaveBeenCalledTimes(1);
+    expect(data.session).toEqual(current); // never swapped by the page
   });
 
-  it("says when it has its own free pass, and takes its free checks along on a switch", async () => {
+  it("says when it has its own free pass", async () => {
     data.session = keySessionOf(OTHER_KEY);
     data.ownPass = { keyId: "zzzzzzzzzz", recoveryCode: `ufr_zzzzzzzzzz_${"c".repeat(52)}` };
-    const calls: { url: string; auth: string; body: string }[] = [];
-    vi.stubGlobal(
-      "fetch",
-      vi.fn((url: string, init: RequestInit) => {
-        const headers = init.headers as Record<string, string>;
-        calls.push({ url, auth: headers.Authorization ?? "", body: init.body as string });
-        return Promise.resolve(new Response(JSON.stringify({ moved: 3 }), { status: 200 }));
-      }),
-    );
-    expect(await receiveKey({ key: KEY }, checkout, "ext-id")).toEqual({
+    expect(await receiveKey({ key: KEY }, checkout, "ext-id", ask)).toEqual({
       status: "other-account",
       freePass: true,
     });
-    expect(calls).toEqual([]);
-    expect(await receiveKey({ key: KEY, replace: true }, checkout, "ext-id")).toEqual({
-      status: "signed-in",
-    });
-    expect(calls).toEqual([
-      {
-        url: "https://unfret.net/v1/keys/move-free-checks",
-        auth: `Bearer ${OTHER_KEY}`, // from the free pass, which the extension holds
-        body: JSON.stringify({ to_key_id: "abcdefghij" }), // to the new pass, by its ID only
-      },
-    ]);
-    expect(data.session).toEqual(keySessionOf(KEY));
-  });
-
-  it("switches even when the free checks can't be moved (offline)", async () => {
-    data.session = keySessionOf(OTHER_KEY);
-    data.ownPass = { keyId: "zzzzzzzzzz", recoveryCode: "x" };
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(() => Promise.reject(new TypeError("offline"))),
-    );
-    expect(await receiveKey({ key: KEY, replace: true }, checkout, "ext-id")).toEqual({
-      status: "signed-in",
-    });
-    expect(data.session).toEqual(keySessionOf(KEY));
   });
 
   it.each([
@@ -234,14 +229,19 @@ describe("storing the handed-off key (background)", () => {
       { ...checkout, url: "https://dev.unfret.net/checkout" },
     ],
     ["another page of the site", { ...checkout, url: `${ORIGIN}/connect` }],
+    ["a longer path that starts the same", { ...checkout, url: `${ORIGIN}/checkout-evil` }],
     ["no address", { id: "ext-id", frameId: 0 }],
   ])("refuses a key from %s", async (_name, sender) => {
-    expect(await receiveKey({ key: KEY }, sender, "ext-id")).toEqual({ status: "invalid" });
+    expect(await receiveKey({ key: KEY, activated: true }, sender, "ext-id", ask)).toEqual({
+      status: "invalid",
+    });
     expect(data).not.toHaveProperty("session");
   });
 
   it.each([[undefined], [42], ["ufk_nope"], [` ${KEY}`]])("refuses a malformed key: %s", async (key) => {
-    expect(await receiveKey({ key }, checkout, "ext-id")).toEqual({ status: "invalid" });
+    expect(await receiveKey({ key, activated: true }, checkout, "ext-id", ask)).toEqual({
+      status: "invalid",
+    });
     expect(data).not.toHaveProperty("session");
   });
 });
@@ -291,7 +291,7 @@ describe("the welcome page", () => {
 });
 
 describe("the content scripts", () => {
-  it("cover the sign-in and checkout pages of this build's own site only", () => {
+  it("cover the sign-in, checkout and welcome pages of this build's own site only", () => {
     const options = { version: "0.11.0", description: "x", publicKey: "KEY" };
     for (const [browser, origin] of [
       ["chrome", ORIGIN],
@@ -336,6 +336,11 @@ describe("the popup's next step", () => {
   let fetched: string[];
   let posted: unknown[];
 
+  let sync: Record<string, unknown>;
+  /** The price list's answer (none: it never answers), and the free checks a new pass gets. */
+  let pricing: unknown;
+  let freeGiven: number;
+
   async function openPopup(
     credits: number | null,
     extra: Record<string, unknown> = {},
@@ -343,7 +348,7 @@ describe("the popup's next step", () => {
   ): Promise<void> {
     const body = /<body>([\s\S]*)<\/body>/u.exec(readFileSync("src/popup/popup.html", "utf8"))?.[1] ?? "";
     document.body.innerHTML = body.replace(/<script[\s\S]*?<\/script>/gu, "");
-    stubStorage(data);
+    stubStorage(data, sync);
     const chromeStub = globalThis.chrome as unknown as Record<string, unknown>;
     chromeStub.storage = {
       ...(chromeStub.storage as object),
@@ -367,6 +372,11 @@ describe("the popup's next step", () => {
         postMessage: (message: unknown) => posted.push(message),
       }),
       openOptionsPage: () => Promise.resolve(),
+      // Unfret pages open through the background (which gives their tab its ticket): the page it would open.
+      sendMessage: (message: { type: string; path: string }) => {
+        if (message.type === "unfret-open") opened.push(`https://unfret.net${message.path}`);
+        return Promise.resolve({ ok: true });
+      },
     };
     vi.stubGlobal(
       "fetch",
@@ -374,11 +384,15 @@ describe("the popup's next step", () => {
         const path = new URL(input).pathname;
         fetched.push(path);
         // A slow price list (a cold server or a fresh browser) must not hold anything up: it never answers here.
-        if (path === "/v1/pricing") return new Promise<Response>(() => undefined);
+        if (path === "/v1/pricing" && pricing === undefined) return new Promise<Response>(() => undefined);
         const json =
           path === "/v1/pricing"
-            ? { hot_wallet: "HOT", packs: [] }
-            : { checks_remaining: credits, invite_eligible: false, ...extra };
+            ? pricing
+            : path === "/v1/keys/challenge"
+              ? { challenge: "c", bits: 0 }
+              : path === "/v1/keys"
+                ? { key: FREE, key_id: "ffffffffff", recovery_code: "ufr_x", free_checks: freeGiven }
+                : { checks_remaining: credits, invite_eligible: false, ...extra };
         return Promise.resolve(new Response(JSON.stringify(json), { status: 200 }));
       }),
     );
@@ -395,6 +409,9 @@ describe("the popup's next step", () => {
 
   beforeEach(() => {
     data = { consent: { version: 2 } };
+    sync = {};
+    pricing = undefined;
+    freeGiven = 5;
     opened = [];
     fetched = [];
     posted = [];
@@ -404,28 +421,83 @@ describe("the popup's next step", () => {
     document.body.innerHTML = "";
   });
 
-  it("signed out: one primary step, Get started, and the sign-in choices behind a link", async () => {
+  it("signed out: one primary step, Get your free checks; the sign-in choices behind a link; gift codes a small link", async () => {
     await openPopup(null);
-    expect(visible("get-started-row")).toBe(true);
+    expect(visible("get-free-row")).toBe(true);
+    expect(document.getElementById("get-free")?.textContent).toBe("Get your free checks");
+    expect(document.getElementById("account-status")?.textContent).toBe(
+      "Get a few free checks to start: no account, no e-mail.",
+    );
+    expect(document.getElementById("account-status")?.textContent).not.toMatch(/with a code or by card/u);
     expect(visible("sign-in-more-row")).toBe(true);
     for (const id of ["sign-in", "sign-in-phone", "sign-in-key"]) expect(visible(id)).toBe(false);
     const enabledPrimary = [...document.querySelectorAll<HTMLButtonElement>("button.primary")].filter(
       (b) => !b.disabled && !b.closest("[hidden]"),
     );
-    expect(enabledPrimary.map((b) => b.id)).toEqual(["get-started"]);
-
-    document.getElementById("get-started")?.click();
-    expect(opened).toEqual(["https://unfret.net/welcome"]);
+    expect(enabledPrimary.map((b) => b.id)).toEqual(["get-free"]);
+    const gift = document.getElementById("have-code");
+    expect(gift?.textContent).toBe("Have a gift code from a friend?");
+    expect(gift?.classList.contains("link")).toBe(true);
+    gift?.click();
+    expect(opened).toEqual(["https://unfret.net/checkout?mode=code"]);
 
     document.getElementById("sign-in-more")?.click();
     for (const id of ["sign-in", "sign-in-phone", "sign-in-key"]) expect(visible(id)).toBe(true);
     expect(visible("sign-in-more-row")).toBe(false);
   });
 
+  it("Get your free checks makes the free pass as installing does, once per browser", async () => {
+    await openPopup(null);
+    document.getElementById("get-free")?.click();
+    await vi.waitFor(() => {
+      expect(data.session).toEqual(keySessionOf(FREE));
+    });
+    const made = (vi.mocked(fetch).mock.calls as unknown as [string, RequestInit?][]).find(
+      ([u]) => new URL(u).pathname === "/v1/keys",
+    );
+    expect(JSON.parse(made?.[1]?.body as string)).toMatchObject({ free: true });
+    expect(sync).toEqual({ freeChecksUsed: true });
+    await vi.waitFor(() => {
+      expect(visible("get-free-row")).toBe(false);
+    });
+    expect(document.getElementById("account-status")?.textContent).toBe("Using Unfret pass FFFFF-FFFFF");
+  });
+
+  it("says how many free checks, from the price list", async () => {
+    pricing = { hot_wallet: null, free: { checks_per_pass: 5 } };
+    await openPopup(null);
+    await vi.waitFor(() => {
+      expect(document.getElementById("get-free")?.textContent).toBe("Get your 5 free checks");
+    });
+  });
+
+  it("this browser had its free checks: it says so, and the button buys checks", async () => {
+    sync.freeChecksUsed = true;
+    await openPopup(null);
+    expect(document.getElementById("account-status")?.textContent).toMatch(/has had its free checks/u);
+    const main = document.getElementById("get-free");
+    expect(main?.textContent).toBe("Buy checks");
+    main?.click();
+    expect(opened).toEqual(["https://unfret.net/checkout"]);
+    expect(fetched).not.toContain("/v1/keys");
+    expect(fetched).not.toContain("/v1/pricing");
+  });
+
+  it("no free checks given (today's all gone): the pass is made, and the popup says why it has none", async () => {
+    freeGiven = 0;
+    await openPopup(null);
+    document.getElementById("get-free")?.click();
+    await vi.waitFor(() => {
+      expect(document.getElementById("free-status")?.textContent).toMatch(/^No free checks this time/u);
+    });
+    expect(data.session).toEqual(keySessionOf(FREE));
+    expect(visible("buy")).toBe(true);
+  });
+
   it("after an expired sign-in: signing in again is the step", async () => {
     data.sessionExpired = true;
     await openPopup(null);
-    expect(visible("get-started-row")).toBe(false);
+    expect(visible("get-free-row")).toBe(false);
     expect(visible("sign-in-key")).toBe(true);
   });
 
@@ -439,7 +511,7 @@ describe("the popup's next step", () => {
     expect(analyse.disabled).toBe(false);
     expect(document.getElementById("hint")?.textContent).toContain("Quick checks are free");
     expect(visible("buy")).toBe(true);
-    expect(visible("get-started-row")).toBe(false);
+    expect(visible("get-free-row")).toBe(false);
     analyse.click();
     expect(posted).toEqual([
       { type: "watch", tabId: 1 },

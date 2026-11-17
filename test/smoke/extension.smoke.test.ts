@@ -12,7 +12,7 @@ import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:f
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { type BrowserContext, chromium, type Worker } from "playwright";
+import { type BrowserContext, chromium, type Page, type Worker } from "playwright";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import type { Extraction } from "../../src/extract/index.js";
@@ -34,23 +34,67 @@ const fixture = (name: string): string => readFileSync(join(root, "test", "fixtu
 const AMAZON_URL = "https://www.amazon.com/dp/B0WATCH123";
 const ADDRESS = "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin";
 
-const CONNECT_PAGE = `<!doctype html><title>connect</title><script>
-  addEventListener("message", (e) => { if (e.data && e.data.type === "veridex-session-received") document.title = "received"; });
-  setTimeout(() => window.postMessage({ type: "veridex-session", token: "good-token-${"x".repeat(20)}",
-    address: "${ADDRESS}", expires_at: "2999-01-01T00:00:00Z" }, location.origin), 300);
+// The connect page signs in with a wallet: it hands the session to the extension by itself once (as a page could
+// without the user), and again on a click of #send. Its title is the extension's last answer.
+const CONNECT_PAGE = `<!doctype html><title>connect</title><button id="send">Send</button><script>
+  const say = (status) => { document.title = status; console.log("unfret-status:" + status); };
+  const session = { type: "veridex-session", token: "good-token-${"x".repeat(20)}",
+    address: "${ADDRESS}", expires_at: "2999-01-01T00:00:00Z" };
+  addEventListener("message", (e) => {
+    if (e.source !== window || !e.data) return;
+    if (e.data.type === "veridex-session-received") say("received");
+    if (e.data.type === "unfret-session-status") say(e.data.status);
+  });
+  const send = () => window.postMessage(session, location.origin);
+  document.getElementById("send").addEventListener("click", send);
+  setTimeout(send, 300);
 </script>`;
 
-// The checkout page shows a new key: it offers it to the extension, and asks again with replace once "agreed".
+// The checkout page shows a new key: it offers it to the extension by itself on loading, again on a click of #send,
+// and with replace on a click of #replace (the user agreed on the page). Its title is the extension's last answer.
 const NEW_KEY = `ufk_abcdefghij_${"k".repeat(52)}`;
-const CHECKOUT_PAGE = `<!doctype html><title>checkout</title><script>
-  const replace = location.search.includes("replace");
+const CHECKOUT_PAGE = `<!doctype html><title>checkout</title>
+<button id="send">Send</button><button id="replace">Replace</button><script>
+  const say = (status) => { document.title = status; console.log("unfret-status:" + status); };
   addEventListener("message", (e) => {
-    if (e.source === window && e.data && e.data.type === "unfret-key-received") document.title = e.data.status;
+    if (e.source === window && e.data && e.data.type === "unfret-key-received") say(e.data.status);
   });
-  setTimeout(() => window.postMessage(
+  const offer = (replace) => window.postMessage(
     replace ? { type: "unfret-key", key: "${NEW_KEY}", replace: true } : { type: "unfret-key", key: "${NEW_KEY}" },
-    location.origin), 300);
+    location.origin);
+  document.getElementById("send").addEventListener("click", () => offer(false));
+  document.getElementById("replace").addEventListener("click", () => offer(true));
+  setTimeout(() => offer(false), 300);
 </script>`;
+
+// Another site, as an attacker would use it: a click there opens an Unfret page in a window of its own.
+const EVIL_PAGE = `<!doctype html><title>evil</title><button id="go">Go</button><script>
+  document.getElementById("go").addEventListener("click", () => window.open(new URLSearchParams(location.search).get("to")));
+</script>`;
+
+/** Open `url` the way another site can: from a click on its own page, with `window.open`. */
+async function openedByAnotherSite(
+  context: BrowserContext,
+  url: string,
+): Promise<{ page: Page; evil: Page }> {
+  const evil = await context.newPage();
+  await evil.goto(`https://evil.example/?to=${encodeURIComponent(url)}`);
+  const opening = context.waitForEvent("page", { predicate: (p) => p.url().startsWith(url) });
+  await evil.click("#go");
+  return { page: await opening, evil };
+}
+
+/** What each test page heard from the extension, in order, from its console (see `answered`). */
+const heard = new WeakMap<Page, string[]>();
+
+/**
+ * Wait until the extension's last answer to `page` is `status`. Read from the page's console, never by evaluating in
+ * the page: Playwright evaluates with a user gesture, which would give the page the very user activation these tests
+ * are about.
+ */
+async function answered(page: Page, status: string): Promise<void> {
+  await expect.poll(() => heard.get(page)?.at(-1), { timeout: 10_000, interval: 100 }).toBe(status);
+}
 
 const temp: string[] = [];
 
@@ -87,9 +131,20 @@ async function launch(
   await context.route("https://unfret.net/checkout**", (route) =>
     route.fulfill({ contentType: "text/html", body: CHECKOUT_PAGE }),
   );
+  await context.route("https://evil.example/**", (route) =>
+    route.fulfill({ contentType: "text/html", body: EVIL_PAGE }),
+  );
   await context.route("https://unfret.net/welcome", (route) =>
     route.fulfill({ contentType: "text/html", body: "<!doctype html><title>welcome</title>" }),
   );
+  context.on("page", (page) => {
+    const statuses: string[] = [];
+    heard.set(page, statuses);
+    page.on("console", (message) => {
+      const text = message.text();
+      if (text.startsWith("unfret-status:")) statuses.push(text.slice("unfret-status:".length));
+    });
+  });
   const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent("serviceworker"));
   // On install the extension tries to make its free pass (unreachable here, except for a copy on the mock API), then
   // opens the welcome page: wait for that, so later tabs are newer, and forget the retry an offline install leaves
@@ -166,13 +221,18 @@ describe("the shipped extension (no host permissions)", () => {
     expect(manifest.permissions).toEqual(["activeTab", "storage", "scripting", "declarativeContent"]);
   });
 
-  it("stores the session the connect page relays", async () => {
-    const page = await plain.context.newPage();
-    await page.goto("https://unfret.net/connect");
-    await page.waitForFunction(() => document.title === "received", undefined, { timeout: 10_000 });
-    const stored = await plain.worker.evaluate(() => chrome.storage.local.get("session"));
+  it("takes no first sign-in a page hands over by itself, only after a click there", async () => {
+    const { page, evil } = await openedByAnotherSite(plain.context, "https://unfret.net/connect");
+    await answered(page, "needs-click");
+    let stored = await plain.worker.evaluate(() => chrome.storage.local.get("session"));
+    expect(stored.session).toBeUndefined();
+
+    await page.click("#send");
+    await answered(page, "received");
+    stored = await plain.worker.evaluate(() => chrome.storage.local.get("session"));
     expect(stored.session).toMatchObject({ address: ADDRESS });
     await page.close();
+    await evil.close();
   });
 
   it("opened the welcome page once, on install", () => {
@@ -180,18 +240,41 @@ describe("the shipped extension (no host permissions)", () => {
     expect(welcome).toHaveLength(1);
   });
 
-  it("takes a new key from the checkout page, asking before it replaces the wallet sign-in", async () => {
-    // Signed in with the wallet from the connect page above: the key waits for the user's yes.
+  it("replaces the wallet with a new pass only on a yes in its own window", async () => {
+    // Signed in with the wallet from the connect page above.
     const page = await plain.context.newPage();
     await page.goto("https://unfret.net/checkout?mode=code");
-    await page.waitForFunction(() => document.title !== "checkout", undefined, { timeout: 10_000 });
-    expect(await page.title()).toBe("other-account");
-    let stored = await plain.worker.evaluate(() => chrome.storage.local.get("session"));
-    expect(stored.session).toMatchObject({ address: ADDRESS });
+    await answered(page, "other-account");
 
-    await page.goto("https://unfret.net/checkout?mode=code&replace");
-    await page.waitForFunction(() => document.title !== "checkout", undefined, { timeout: 10_000 });
-    expect(await page.title()).toBe("signed-in");
+    // The user agrees on the page: the extension asks in a window of its own, naming both accounts.
+    let asking = plain.context.waitForEvent("page", {
+      predicate: (p) => p.url().includes("/confirm/confirm.html"),
+    });
+    await page.click("#replace");
+    let ask = await asking;
+    await answered(page, "confirm");
+    await ask.waitForSelector("#ask:not([hidden])");
+    expect(await ask.textContent("#ask-current")).toBe("wallet 9xQe…VFin");
+    expect(await ask.textContent("#ask-offered")).toBe("pass ABCDE-FGHIJ");
+    let stored = await plain.worker.evaluate(() => chrome.storage.local.get("session"));
+    expect(stored.session).toMatchObject({ address: ADDRESS }); // nothing changed yet
+
+    // No: nothing changes, and the page hears so.
+    await ask.click("#keep");
+    await answered(page, "kept");
+    stored = await plain.worker.evaluate(() => chrome.storage.local.get("session"));
+    expect(stored.session).toMatchObject({ address: ADDRESS });
+    await ask.close().catch(() => undefined);
+
+    // Asked again, yes: the pass is used, and the page hears so.
+    asking = plain.context.waitForEvent("page", {
+      predicate: (p) => p.url().includes("/confirm/confirm.html"),
+    });
+    await page.click("#replace");
+    ask = await asking;
+    await ask.waitForSelector("#ask:not([hidden])");
+    await ask.click("#use");
+    await answered(page, "signed-in");
     stored = await plain.worker.evaluate(() => chrome.storage.local.get("session"));
     expect(stored.session).toEqual({
       token: NEW_KEY,
@@ -201,9 +284,47 @@ describe("the shipped extension (no host permissions)", () => {
     });
 
     await page.reload();
-    await page.waitForFunction(() => document.title !== "checkout", undefined, { timeout: 10_000 });
-    expect(await page.title()).toBe("already");
+    await answered(page, "already");
     await page.close();
+  });
+
+  it("a first pass: refused when the page hands it over by itself, taken after a click (redeeming a code)", async () => {
+    const { session } = await plain.worker.evaluate(() => chrome.storage.local.get("session"));
+    await plain.worker.evaluate(() => chrome.storage.local.remove("session"));
+    const asking = plain.context.pages().filter((p) => p.url().includes("/confirm/")).length;
+    const { page, evil } = await openedByAnotherSite(plain.context, "https://unfret.net/checkout?mode=code");
+    await answered(page, "needs-click");
+    let stored = await plain.worker.evaluate(() => chrome.storage.local.get("session"));
+    expect(stored.session).toBeUndefined();
+    expect(plain.context.pages().filter((p) => p.url().includes("/confirm/"))).toHaveLength(asking); // no window either
+
+    await page.click("#send");
+    await answered(page, "signed-in");
+    stored = await plain.worker.evaluate(() => chrome.storage.local.get("session"));
+    expect(stored.session).toMatchObject({ token: NEW_KEY });
+    await page.close();
+    await evil.close();
+    await plain.worker.evaluate((s) => chrome.storage.local.set({ session: s }), session);
+  });
+
+  it("a first pass from a checkout tab the extension opened needs no click (buying after the popup)", async () => {
+    const extensionId = new URL(plain.worker.url()).host;
+    await plain.worker.evaluate(() => chrome.storage.local.remove("session"));
+    await plain.worker.evaluate(() => chrome.storage.local.set({ consent: { version: 2 } }));
+    const popup = await plain.context.newPage();
+    await popup.goto(`chrome-extension://${extensionId}/popup/popup.html`);
+    await popup.waitForSelector("#have-code", { state: "visible" });
+    // The next new tab: the extension creates it first, then loads the checkout in it.
+    const opening = plain.context.waitForEvent("page");
+    await popup.click("#have-code");
+    const page = await opening;
+    await page.waitForURL("https://unfret.net/checkout?mode=code");
+    // The page hands the pass over on loading (a card payment's return): the tab's ticket lets it in.
+    await answered(page, "signed-in");
+    const stored = await plain.worker.evaluate(() => chrome.storage.local.get("session"));
+    expect(stored.session).toMatchObject({ token: NEW_KEY });
+    await page.close();
+    await popup.close().catch(() => undefined);
   });
 
   it("registers the marketplace icon hint, matching the product page's URL", async () => {
@@ -329,12 +450,12 @@ describe("with the access a click grants (activeTab)", () => {
     expect(await granted.worker.evaluate((id) => chrome.action.getBadgeText({ tabId: id }), tabId)).toBe("✕");
   });
 
-  it('shows one next step: signed in, no "Get started"; signed out, "Get started" alone', async () => {
+  it('shows one next step: signed in, no "Get your free checks"; signed out, that alone', async () => {
     const extensionId = new URL(granted.worker.url()).host;
     const popup = await granted.context.newPage();
     await popup.goto(`chrome-extension://${extensionId}/popup/popup.html`);
     await popup.waitForSelector("#sign-out", { state: "visible" });
-    expect(await popup.isVisible("#get-started")).toBe(false);
+    expect(await popup.isVisible("#get-free")).toBe(false);
     expect(await popup.isVisible("#sign-in-key")).toBe(false);
     await popup.close();
 
@@ -342,7 +463,7 @@ describe("with the access a click grants (activeTab)", () => {
     await granted.worker.evaluate(() => chrome.storage.local.remove("session"));
     const signedOut = await granted.context.newPage();
     await signedOut.goto(`chrome-extension://${extensionId}/popup/popup.html`);
-    await signedOut.waitForSelector("#get-started", { state: "visible" });
+    await signedOut.waitForSelector("#get-free", { state: "visible" });
     expect(await signedOut.isVisible("#sign-out")).toBe(false);
     expect(await signedOut.isVisible("#sign-in-key")).toBe(false);
     await signedOut.close();

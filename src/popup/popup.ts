@@ -25,8 +25,10 @@ import {
 } from "../shared/settings.js";
 import { CODE_CHECKOUT, inviteAdded, redeemInvite } from "../shared/invites.js";
 import { KEY_FAILURE, signInWithKey } from "../shared/key-sign-in.js";
+import { OPEN_MESSAGE } from "../shared/handoff.js";
 import { isAnalysable } from "../shared/sites.js";
-import { makeFreePass } from "../shared/new-pass.js";
+import { freeChecksUsed, makeFreePass } from "../shared/new-pass.js";
+import { withoutSecrets } from "../shared/urls.js";
 import { CONSENT_HINT, FREE_PAUSED, OFFLINE, SESSION_EXPIRED } from "../shared/text.js";
 import {
   buildChecklist,
@@ -80,9 +82,20 @@ function showConsent(visible: boolean): void {
   show("consent-close", consented);
 }
 
+/**
+ * Open a page of the Unfret site. The background opens it, so the tab gets its ticket (a first pass from it needs
+ * no further click) even though this popup closes as the tab takes the focus.
+ */
 function openTab(path: string): void {
-  void chrome.tabs.create({ url: `${apiBase}${path}` });
-  window.close();
+  void chrome.runtime
+    .sendMessage<{ type: string; path: string }, { ok?: boolean } | undefined>({ type: OPEN_MESSAGE, path })
+    .then((reply) => {
+      if (!reply?.ok) throw new Error("not opened");
+    })
+    .catch(() => chrome.tabs.create({ url: withoutSecrets(`${apiBase}${path}`) }))
+    .finally(() => {
+      window.close();
+    });
 }
 
 async function sessionRejected(): Promise<void> {
@@ -215,13 +228,24 @@ function renderAccount(): void {
     ? `${usingKey ? "Using Unfret pass" : "Signed in as"} ${accountLabel(session)}`
     : expired
       ? SESSION_EXPIRED
-      : "New here? Get your first checks with a code or by card, and Unfret signs in by itself.";
+      : freeUsed
+        ? "This browser has had its free checks. Buy checks to start, or sign in with the pass or wallet you have."
+        : "Get a few free checks to start: no account, no e-mail.";
   el("account-until").textContent = session && !usingKey ? untilText(session.expiresAt) : "";
   show("account-until", Boolean(session) && !usingKey);
-  // Not signed in: one next step ("Get started"), the sign-in choices one click away. After an expired sign-in,
-  // signing in again is the next step.
+  // Not signed in: one next step (the free checks, or buying checks once this browser had them), the sign-in choices
+  // one click away. After an expired sign-in, signing in again is the next step.
   const choosing = !session && (signInOpen || expired);
-  show("get-started-row", !session && !expired);
+  show("get-free-row", !session && !expired);
+  const getFree = button("get-free");
+  getFree.textContent = freeUsed
+    ? "Buy checks"
+    : gettingPass
+      ? "Getting your free checks…"
+      : freePerPass
+        ? `Get your ${freePerPass} free checks`
+        : "Get your free checks";
+  getFree.disabled = gettingPass;
   show("sign-in-more-row", !session && !choosing);
   show("sign-in-choices", choosing);
   show("sign-in", choosing);
@@ -253,7 +277,9 @@ function renderAccount(): void {
         : !session
           ? gettingPass
             ? "Getting your free checks…"
-            : "Sign in to check this page."
+            : freeUsed
+              ? "Buy checks or sign in to check this page."
+              : "Get your free checks or sign in to check this page."
           : checks === 0
             ? "You have no checks left. Quick checks are free: they read this page only."
             : quickOnly
@@ -268,6 +294,57 @@ function quickChecksOnly(): boolean {
 }
 
 let gettingPass = false;
+/** Signed out: whether this browser profile already had its free checks, and how many a new pass gets (server's). */
+let freeUsed = false;
+let freePerPass: number | undefined;
+
+/** Signed out, before the free checks: the number for the button, from the price list (it never holds anything up). */
+async function loadFreePerPass(): Promise<void> {
+  try {
+    const n = (await new UnfretApi(apiBase).pricing()).free?.checks_per_pass;
+    freePerPass = typeof n === "number" && n > 0 ? n : undefined;
+    renderAccount();
+  } catch {
+    // offline or an older server: "Get your free checks"
+  }
+}
+
+/**
+ * "Get your free checks", signed out: make the extension's free pass as installing does (free checks only once per
+ * browser profile; the server may have none left today). Once this browser had them, the button buys checks instead.
+ */
+async function getFreeChecks(): Promise<void> {
+  if (freeUsed) {
+    openTab(checkoutPath(undefined));
+    return;
+  }
+  if (gettingPass || session) return;
+  gettingPass = true;
+  el("free-status").textContent = "";
+  renderAccount();
+  const made = await makeFreePass(apiBase);
+  gettingPass = false;
+  if (made.ok) {
+    session = made.session;
+    expired = false;
+    checks = made.freeChecks;
+    freeLeft = made.freeChecks;
+    freeUsed = true;
+    if (made.freeChecks === 0) {
+      el("free-status").textContent =
+        "No free checks this time: this browser has had them, or today's are all given out. Buy checks to start.";
+      el("free-status").dataset.kind = "error";
+    }
+    void refreshCredits();
+  } else {
+    el("free-status").textContent =
+      made.reason === "offline"
+        ? OFFLINE
+        : "Unfret couldn't make your pass just now. Please try again later.";
+    el("free-status").dataset.kind = "error";
+  }
+  renderAccount();
+}
 
 /** The free pass the extension makes on install, when that failed (offline): tried again when the popup opens. */
 async function retryFreePass(): Promise<void> {
@@ -406,8 +483,8 @@ function renderShare(state: Extract<TabState, { status: "done" }>): void {
   show("share-done", share?.status === "shared");
   if (share?.status === "shared") {
     const link = el("share-link") as HTMLAnchorElement;
-    link.href = share.link;
-    link.textContent = share.link;
+    link.href = withoutSecrets(share.link);
+    link.textContent = link.href;
     el("share-code").textContent = share.deleteCode;
   } else {
     el("share-code").textContent = "";
@@ -479,7 +556,7 @@ async function init(): Promise<void> {
       renderAccount();
       // The next step gets the focus: checking this page, or getting started.
       if (!button("analyse").disabled) button("analyse").focus();
-      else if (!el("get-started-row").hidden) button("get-started").focus();
+      else if (!el("get-free-row").hidden) button("get-free").focus();
     });
   });
   el("consent-close").addEventListener("click", () => {
@@ -493,9 +570,11 @@ async function init(): Promise<void> {
       : await chrome.tabs.query({ active: true, currentWindow: true });
   tabId = tab?.id;
   analysable = tabId !== undefined && isAnalysable(tab?.url, apiBase);
+  freeUsed = await freeChecksUsed();
   renderAccount();
   void refreshCredits();
   void retryFreePass();
+  if (!session && !freeUsed) void loadFreePerPass();
 
   el("options").addEventListener("click", (event) => {
     event.preventDefault();
@@ -507,9 +586,7 @@ async function init(): Promise<void> {
   el("buy").addEventListener("click", () => {
     openTab(checkoutPath(session));
   });
-  el("get-started").addEventListener("click", () => {
-    openTab("/welcome");
-  });
+  el("get-free").addEventListener("click", () => void getFreeChecks());
   el("sign-in-more").addEventListener("click", (event) => {
     event.preventDefault();
     signInOpen = true;

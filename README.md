@@ -80,18 +80,32 @@ toolbar click ─► popup ─► background ─► inject extract.js into the t
 - **Sign-in is Sign-In With Solana.** "Sign in" opens `https://unfret.net/connect`; after you sign a
   message in your wallet, that page posts the session to itself and the extension's content script (injected only
   there) relays it. The relay accepts it only from that window on the configured Unfret origin, and the
-  background checks the sender again. Signing grants no spending rights. "Buy checks" opens `/checkout`, which also
+  background checks the sender again (that exact page, top frame). Signing grants no spending rights. "Buy checks" opens `/checkout`, which also
   shows the invite codes a pack comes with, once, after payment; signed in with an API key, it opens that key's
   top-up (`/checkout?mode=topup&key_id=<key id>`: the key's public ID, never the key itself).
-- **New keys sign in by themselves.** When `/checkout` shows a key it just made (an intro code, a card payment, a
+- **New keys sign in by themselves.** When `/checkout` shows a key it just made (a gift code, a card payment, a
   recovery, "Make a new key"), it posts `{type: "unfret-key", key}` to itself; the content script `key-relay.ts`
   (injected only on `/checkout*`) accepts it only from that window on the configured Unfret origin, and the
-  background (`onboarding.ts`) checks the sender again and signs in with it. Signed in with another key or a wallet,
-  it changes nothing and says so (`other-account`) until the page asks again with `replace: true` after the user
-  agreed. The page gets `{type: "unfret-key-received", status}` back: no key, account or balance.
-- **First run.** After a new install (not an update) the background opens `<API base>/welcome` once: a code, buying
-  checks, or a key you have. Signed out, the popup's one primary button is "Get started" (that page), with the
-  sign-in choices behind "Sign in with an Unfret pass or wallet"; out of checks, "Get more checks".
+  background (`onboarding.ts`) checks the sender again. The page gets `{type: "unfret-key-received", status}`
+  back: no key, account or balance.
+- **When a hand-off is taken, and when the extension asks** (`shared/handoff.ts`, the same for a pass and a wallet
+  sign-in). Without an account yet, the extension takes one only when the hand-off follows a click on that page (the
+  content script reads the page's user activation, which a script can't fake), or when the page is in a tab the
+  extension opened itself from its popup, its settings or after installing (a one-time ticket bound to that tab,
+  for an hour: a card payment's return needs no click); otherwise it answers `needs-click`, keeps nothing, and the
+  page offers a button. Signed in with another pass or wallet, it never switches on the page's word: it answers
+  `other-account`, and once the user agrees on the page (`replace: true`, on a click) it asks in **its own window**
+  (`confirm/confirm.html`), naming both accounts; only "Use the new pass" there switches (`confirm`, then
+  `signed-in` or `kept`). A renewed sign-in of the same wallet is taken as it is. The connect page hears
+  `{type: "unfret-session-status", status}` for these, a message pages from before 0.12.0 ignore.
+- **Addresses without secrets.** Every Unfret page the extension opens and every link it shows goes through
+  `withoutSecrets` (`shared/urls.ts`): query parameters and fragments with a pass or backup code are dropped. A pass
+  is only ever named by its public ID (`key_id`).
+- **First run.** After a new install (not an update) the extension makes its own free pass and the background opens
+  `<API base>/welcome` once. Signed out (after signing out, or when the free pass couldn't be made), the popup's one
+  primary button is "Get your free checks" (the free pass, made as on install, once per browser profile; after that
+  it is "Buy checks"), with the sign-in choices behind "Sign in with an Unfret pass or wallet" and a small "Have a
+  gift code from a friend?" link; out of checks, "Get more checks".
 - **"Have an invite?"** (popup and settings, when signed in) redeems a code onto the account in use
   (`POST /v1/invites/redeem`, with its own sign-in); only a new wallet or a never-funded key can. The code isn't kept.
 - **"Share this result"** asks the API for a preview of the public page (`POST /v1/shares/preview`), and only on
@@ -105,13 +119,15 @@ The API contract is in the backend repository (credits door, contract v1).
 
 ```
 src/
-  background/   service worker / event page: session and key relay, welcome page, icon hint, badge, analysis runner
+  background/   service worker / event page: session and key relay, welcome page, the Unfret pages it opens (with
+                their tickets), icon hint, badge, analysis runner
   content/      extract-entry.ts (injected on demand), connect-relay.ts (connect page only), key-relay.ts (checkout
                 page only), relay.ts (checks)
   extract/      PageFacts extraction: parse, dom, generic, business, p2p, amazon, bolcom, walmart (ports); live, clean (browser-only)
   api/          API client and SSE parser
   popup/        popup UI
   options/      options page (API base URL, sign out)
+  confirm/      the extension's own question before it switches to a pass or wallet the website handed over
   shared/       facts types + JSON schema, settings, sites, messages; ui.css (the website's look) and fonts/
                 (Figtree, bundled: no remote fonts)
 scripts/        build (esbuild, per-browser manifests, zips), icons, gen_parity.py

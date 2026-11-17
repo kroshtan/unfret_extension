@@ -1,6 +1,6 @@
 # Unfret privacy policy (browser extension)
 
-_Last updated: 17 November 2026 (version 0.12.0: a free Unfret pass made on install, free quick checks; 0.11.0: a new key from the checkout page signs the extension in, welcome page after installing; earlier: photo lookup corrected, service providers and private sellers' ads added). Draft for the store listings; to be reviewed before publication._
+_Last updated: 17 November 2026 (version 0.12.0: a free Unfret pass made on install, free quick checks, the extension asks in its own window before switching accounts; 0.11.0: a new key from the checkout page signs the extension in, welcome page after installing; earlier: photo lookup corrected, service providers and private sellers' ads added). Draft for the store listings; to be reviewed before publication._
 
 Unfret is made by Kroshtan (Floris van Beers, the Netherlands).
 
@@ -30,9 +30,11 @@ On two of Unfret's own pages, `unfret.net/connect` (signing in with a wallet) an
 checks), a small part of the extension runs by itself, to receive what those pages hand it: the wallet sign-in, or a
 new Unfret API key the checkout page has just shown you (after an intro code, a card payment or a key recovery), so
 you don't have to copy it into the extension. It reads nothing else from those pages, takes the message only from
-that page itself, and answers the page only with whether it signed in. If the extension is already signed in with
-another key or wallet, it asks you on the page first and changes nothing unless you agree. Your key is never sent
-back to the page or to anyone else.
+that page itself, and answers the page only with whether it signed in. Without a pass or wallet yet, it takes one
+only right after you click on that page, or on a page it opened for you itself. If the extension is already signed
+in with another pass or wallet, it never switches by itself: it asks you in a small window of its own, naming both,
+and changes nothing unless you choose the new one there. Your key is never sent back to the page or to anyone else,
+and the extension never puts a pass or backup code in a web address it opens.
 
 After you install it, the extension asks `unfret.net` once for a new **Unfret pass** (an anonymous API key: no
 account, no e-mail) with a few free checks, and opens a welcome page on `unfret.net` that says how many it got. That
@@ -48,8 +50,8 @@ its pass, so the pass counts for that affiliate (you get bonus checks on your fi
 you pay). Only the code goes from the page to the extension, and only on the welcome page; nothing about you or your
 browsing is sent with it.
 
-If the checkout page hands the extension another pass while it uses the free pass it made, the page asks you first;
-when you agree, the free pass's free checks left move to the new pass (the extension sends the new pass's public ID,
+If the checkout page hands the extension another pass while it uses the free pass it made, the page and then the
+extension's own window ask you first; when you agree, the free pass's free checks left move to the new pass (the extension sends the new pass's public ID,
 never the pass itself).
 
 The extension has no standing access to any website. It can read a page only after you click its toolbar button on
