@@ -5,6 +5,28 @@ backend's changelog, which lists each one published at `/extension`.)
 
 ## Unreleased
 
+- **A pass or wallet sign-in from unfret.net is taken only when you meant it.** Without an account yet, the extension
+  takes a pass from the checkout page, or a wallet sign-in from the connect page, only right after a click on that
+  page, or in a tab the extension opened itself (from the popup, the settings or after installing; for an hour, so a
+  card payment's return still signs in by itself). Otherwise the page gets `needs-click` and shows a button. Signed
+  in with another pass or wallet, the extension no longer switches when the page says the user agreed: it asks in a
+  small window of its own, naming both accounts (and, for its free pass, that the free checks left come along), and
+  only "Use the new pass" there switches; the page hears `confirm`, then `signed-in` or `kept`. A wallet sign-in
+  from `/connect` follows the same rules (a renewed sign-in of the same wallet is taken as before); the connect page
+  hears the new statuses as `{type: "unfret-session-status", status}`. The pages only take these from exactly
+  `/checkout` and `/connect`, not from longer paths that start the same. The website's pages show the button and
+  the "confirm in the Unfret window" step from the next backend release on; older pages still work, showing "no extension"
+  where a click or the window is needed.
+- **No pass or backup code in an address the extension opens.** The popup and settings open Unfret pages through
+  the background, and every address the extension opens or links to (a shared result's link too) loses query
+  parameters and fragments that carry a pass (`ufk_…`) or backup code (`ufr_…`).
+- **Signed out, the popup offers your free checks.** Its main button is "Get your free checks" ("Get your 5 free
+  checks" once the price list says how many): it makes the free pass as installing does, with free checks once per
+  browser profile; when this browser had them, it says so and the button is "Buy checks". If the server has none to
+  give today, the popup says so. "Sign in with an Unfret pass or wallet" stays the second choice, and "Have a code?"
+  is a small "Have a gift code from a friend?" link (intro codes are retired; gift codes work for any pass but the
+  buyer's own). The popup no longer says "Get your first checks with a code or by card".
+
 - **The four verdicts in the website's words**: Looks fine, **Worth a look**, **Think twice** and **Serious
   concerns** (they were Looks fine, A few things to check, Some warning signs and Many warning signs). The popup
   shows the server's words as before; these are the words it shows when an older server sends no verdict, and the

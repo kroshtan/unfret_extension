@@ -2,6 +2,7 @@
 
 import { UnfretApi } from "../api/client.js";
 import { checksText } from "../popup/view.js";
+import { OPEN_MESSAGE } from "../shared/handoff.js";
 import { CODE_CHECKOUT, inviteAdded, redeemInvite } from "../shared/invites.js";
 import { KEY_FAILURE, signInWithKey } from "../shared/key-sign-in.js";
 import { isOwnPass, ownPass } from "../shared/new-pass.js";
@@ -19,6 +20,7 @@ import {
   saveApiBase,
   shortAddress,
 } from "../shared/settings.js";
+import { withoutSecrets } from "../shared/urls.js";
 
 function el(id: string): HTMLElement {
   const found = document.getElementById(id);
@@ -146,8 +148,34 @@ function safeOrigin(value: string): string {
   }
 }
 
+/**
+ * The links to the Unfret site's checkout open through the background, as the popup's do, so their tab gets its ticket
+ * (a first pass from it needs no further click). A middle click or a modifier opens the link as a plain link.
+ */
+function openThroughExtension(id: string): void {
+  el(id).addEventListener("click", (event) => {
+    if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    const href = el(id).getAttribute("href") ?? "";
+    let path: string;
+    try {
+      const url = new URL(href);
+      path = `${url.pathname}${url.search}`;
+    } catch {
+      return;
+    }
+    event.preventDefault();
+    void chrome.runtime
+      .sendMessage<{ type: string; path: string }, { ok?: boolean } | undefined>({ type: OPEN_MESSAGE, path })
+      .then((reply) => {
+        if (!reply?.ok) throw new Error("not opened");
+      })
+      .catch(() => chrome.tabs.create({ url: withoutSecrets(href) }));
+  });
+}
+
 async function init(): Promise<void> {
   el("privacy-link").setAttribute("href", PRIVACY_URL);
+  for (const id of ["buy", "key-get", "have-code"]) openThroughExtension(id);
   el("server-help").textContent =
     `The default is ${DEFAULT_API_BASE}. For development, http://localhost or http://127.0.0.1 (any port) can be ` +
     "used; the browser asks you to allow access to it. Testing against the dev deployment is done with the separate " +

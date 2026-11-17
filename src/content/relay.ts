@@ -12,6 +12,33 @@ import { API_KEY_RE, normaliseApiBase, parseSession, type Session } from "../sha
 export const SESSION_MESSAGE = "veridex-session";
 const SESSION_MESSAGES: readonly unknown[] = [SESSION_MESSAGE, "unfret-session"];
 export const SESSION_RECEIVED_MESSAGE = "veridex-session-received";
+/**
+ * From 0.12.0, when the extension doesn't sign in with the session at once: `{type: "unfret-session-status", status}`,
+ * "needs-click" (no click on the page came first: a button on the page hands it over again), "confirm" (the extension
+ * asks in its own window; the received message follows on a yes) or "kept" (the user said no there). A message of its
+ * own, so pages from before it (which take any received message as a sign-in) aren't misled.
+ */
+export const SESSION_STATUS_MESSAGE = "unfret-session-status";
+export const SESSION_STATUSES = ["needs-click", "confirm", "kept"] as const;
+export type SessionHandoffStatus = (typeof SESSION_STATUSES)[number];
+
+export function isSessionHandoffStatus(value: unknown): value is SessionHandoffStatus {
+  return (SESSION_STATUSES as readonly unknown[]).includes(value);
+}
+
+/**
+ * Whether the user has just clicked (or typed) on this page: the browser's transient user activation, a few seconds
+ * after a click. A script can't fake it, so a hand-off a page posts by itself on loading doesn't have it.
+ */
+export function userActivated(
+  nav: unknown = typeof navigator === "undefined" ? undefined : navigator,
+): boolean {
+  const activation = (nav as { userActivation?: { isActive?: unknown } } | undefined)?.userActivation;
+  return activation?.isActive === true;
+}
+
+/** From the extension to the content script of the tab that handed something over: how the user answered. */
+export const ANSWER_MESSAGE = "unfret-handoff-answer";
 
 export interface MessageLike {
   origin: string;
@@ -42,11 +69,21 @@ export function acceptSessionMessage(
 // ── A new API key from the checkout page ────────────────────────────────────────────────────────────────────────
 // /checkout posts `{type: "unfret-key", key}` to itself when it shows a key it just made (an intro code, a card
 // payment, a recovery, "Make a new key"), and `replace: true` once the user agreed to switch accounts. The extension
-// answers `{type: "unfret-key-received", status}`; the answer never carries a key, an account or a balance.
+// answers `{type: "unfret-key-received", status}`; the answer never carries a key, an account or a balance. From
+// 0.12.0 also "needs-click" (no pass yet, and no click on the page came first: nothing kept), "confirm" (the extension
+// asks in its own window before it switches) and, after that window, "signed-in" again or "kept" (the user said no).
 
 export const KEY_MESSAGE = "unfret-key";
 export const KEY_RECEIVED_MESSAGE = "unfret-key-received";
-export const KEY_STATUSES = ["signed-in", "already", "other-account", "invalid"] as const;
+export const KEY_STATUSES = [
+  "signed-in",
+  "already",
+  "other-account",
+  "invalid",
+  "needs-click",
+  "confirm",
+  "kept",
+] as const;
 export type KeyHandoffStatus = (typeof KEY_STATUSES)[number];
 
 export interface KeyOffer {

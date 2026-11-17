@@ -23,9 +23,15 @@ describe("Have a code?", () => {
   });
 
   it("is offered when signed out, next to the in-extension redemption", () => {
+    // 0.12.0: in the popup, a small link for a friend's gift code (intro codes are retired; free checks come first).
+    expect(page("src/popup/popup.html").querySelector("#have-code")?.textContent.trim()).toBe(
+      "Have a gift code from a friend?",
+    );
+    expect(page("src/options/options.html").querySelector("#have-code")?.textContent.trim()).toBe(
+      "Have a code?",
+    );
     for (const path of ["src/popup/popup.html", "src/options/options.html"]) {
       const doc = page(path);
-      expect(doc.querySelector("#have-code")?.textContent.trim()).toBe("Have a code?");
       expect(doc.querySelector("#have-code-row")?.hasAttribute("hidden")).toBe(true); // until the account is known
       expect(doc.querySelector("#invite-input")).not.toBeNull();
     }

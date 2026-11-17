@@ -2,7 +2,9 @@
  * The background (service worker in Chrome, event page in Firefox):
  *
  * - stores the session the connect page relays, and the new API key the checkout page relays, after checking where
- *   they came from (onboarding.ts); opens the website's welcome page once, after installing;
+ *   they came from, and only after a click on that page, from a tab it opened itself, or (to replace an account) the
+ *   user's yes in its own window (onboarding.ts, shared/handoff.ts); opens the website's welcome page once, after
+ *   installing, and the Unfret pages the popup and settings ask for;
  * - registers the marketplace icon hint (declarativeContent: the browser matches URLs, the extension reads nothing);
  * - runs an analysis only when the user asks, for the active tab (activeTab, granted by that click): injects the
  *   extractor, streams the result. It holds no standing access to any shop.
@@ -19,14 +21,23 @@ import {
   type PopupRequest,
   type TabState,
 } from "../shared/messages.js";
-import { consentGiven, isDevBase, loadSettings, parseSession, saveSession } from "../shared/settings.js";
+import { answerOffer, dropTickets, type Offer, OPEN_MESSAGE, pendingOffer } from "../shared/handoff.js";
+import { consentGiven, isDevBase, loadSettings } from "../shared/settings.js";
 import { createShare, previewShare, shareRequest } from "../shared/share.js";
 import { isAnalysable } from "../shared/sites.js";
 import { CONSENT_HINT, FREE_PAUSED, OFFLINE, SESSION_EXPIRED } from "../shared/text.js";
 import { badgeFor } from "./badge.js";
 import { registerMarketplaceHint } from "./icon-hint.js";
 import { extractFromTab } from "./inject.js";
-import { fromUnfretPage, receiveKey, receiveRef, welcomeOnInstall } from "./onboarding.js";
+import {
+  fromExtensionPage,
+  openUnfretTab,
+  receiveKey,
+  receiveRef,
+  receiveSession,
+  unfretPageUrl,
+  welcomeOnInstall,
+} from "./onboarding.js";
 
 // Content scripts registered for a local dev API, by id suffix (releases before the rename used another prefix).
 const DEV_RELAYS = [
@@ -83,7 +94,7 @@ function setState(tabId: number, state: TabState): void {
   }
 }
 
-// ── Session relay ────────────────────────────────────────────────────────────
+// ── Session and key relay; Unfret pages the extension opens ────────────────
 
 chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) => {
   const m = message as {
@@ -91,8 +102,21 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
     session?: unknown;
     key?: unknown;
     replace?: unknown;
+    activated?: unknown;
     code?: unknown;
+    path?: unknown;
   } | null;
+  if (m?.type === OPEN_MESSAGE) {
+    // Only the extension's own pages (popup, settings) open a ticketed tab; a content script can't ask for one.
+    if (!fromExtensionPage(sender, chrome.runtime.id)) return false;
+    void (async () => {
+      const { apiBase } = await loadSettings();
+      const url = unfretPageUrl(apiBase, m.path);
+      if (url) await openUnfretTab(url);
+      sendResponse({ ok: url !== null });
+    })();
+    return true; // async response
+  }
   if (m?.type === REF_MESSAGE) {
     void receiveRef(m, sender, chrome.runtime.id).then(
       (reply) => {
@@ -116,14 +140,26 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
     return true; // async response
   }
   if (m?.type !== SESSION_MESSAGE) return false;
-  void (async () => {
-    const { apiBase } = await loadSettings();
-    const fromConnectPage = fromUnfretPage(sender, chrome.runtime.id, apiBase, "/connect");
-    const session = fromConnectPage ? parseSession(m.session) : null;
-    if (session) await saveSession(session);
-    sendResponse({ ok: session !== null });
-  })();
+  void receiveSession(m, sender, chrome.runtime.id).then(
+    (reply) => {
+      sendResponse(reply);
+    },
+    () => {
+      sendResponse({ ok: false });
+    },
+  );
   return true; // async response
+});
+
+// The extension's question closed without an answer: nothing changes, and the page is told.
+async function askClosed(match: (offer: Offer) => boolean): Promise<void> {
+  const offer = await pendingOffer();
+  if (offer && match(offer)) await answerOffer(offer.id, false);
+}
+
+// Firefox for Android has no windows (the question opens in a tab there: tabs.onRemoved below).
+(chrome.windows as typeof chrome.windows | undefined)?.onRemoved.addListener((windowId) => {
+  void askClosed((offer) => offer.windowId === windowId);
 });
 
 // ── Navigation: a result belongs to the page it was made for ────────────────
@@ -140,6 +176,8 @@ chrome.tabs.onRemoved.addListener((tabId) => {
   states.delete(tabId);
   persist(tabId, undefined);
   watchers.delete(tabId);
+  void dropTickets(tabId);
+  void askClosed((offer) => offer.confirmTabId === tabId);
 });
 
 // ── Analysis ─────────────────────────────────────────────────────────────────

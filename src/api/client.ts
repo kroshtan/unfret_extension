@@ -37,6 +37,8 @@ export interface Pricing {
   hot_wallet: string | null;
   suggested_packs?: { checks: number; lamports: number }[];
   network?: string;
+  /** The free checks a new pass gets (0: none at the moment); absent on older servers. */
+  free?: { checks_per_pass?: number };
 }
 
 export interface Credits {
