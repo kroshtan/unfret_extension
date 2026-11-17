@@ -360,12 +360,11 @@ describe("the tabs the extension opens", () => {
   });
 
   it("the welcome page after installing is one of them", async () => {
-    const makePass = vi.fn(() => Promise.resolve({ ok: false as const, reason: "offline" as const }));
-    await welcomeOnInstall({ reason: "install" }, undefined, makePass);
+    await welcomeOnInstall({ reason: "install" });
     await vi.waitFor(async () => {
       expect(await hasTicket(99)).toBe(true);
     });
-    expect(created).toEqual([`${ORIGIN}/welcome`]);
+    expect(created).toEqual([`${ORIGIN}/welcome?setup=1`]);
   });
 
   it("only a path on the API's own site, asked for by the extension's own pages", () => {

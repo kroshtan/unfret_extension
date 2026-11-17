@@ -6,12 +6,21 @@
  * then `POST /v1/keys` with `free: true`. The server gives the free checks only while this network hasn't had its
  * share today; past that the pass is made empty. To ask only once per browser profile, a flag in `storage.sync`
  * (synced with the browser's account when sync is on, local otherwise) remembers that free checks were given: a
- * reinstall in the same profile gets a pass without them. The pass's backup code is kept with it, so the options page
- * can show it.
+ * reinstall in the same profile gets a pass without them. Removing the extension wipes that flag when the browser
+ * doesn't sync, so a pass with free checks is made only from the welcome page (`/welcome?setup=1`), which first says
+ * whether the website's own note in this browser has them as given (`siteHad`): with either note, no free checks.
+ * The pass's backup code is kept with it, so the options page can show it.
  */
 
 import { type IssuedKey, UnfretApi } from "../api/client.js";
 import { keySession, saveSession, type Session } from "./settings.js";
+
+/**
+ * The website's welcome page while the extension makes its free pass: it says whether this browser had its free
+ * checks (background `receiveFreeAsk`), then moves on to the welcome that fits (`?free=<n>`, `?note=…` or the plain
+ * one). Opened on install and by the popup's "Get your free checks".
+ */
+export const WELCOME_SETUP_PATH = "/welcome?setup=1";
 
 /** In `storage.sync`: this browser profile has had its free checks. */
 export const FREE_FLAG = "freeChecksUsed";
@@ -74,21 +83,27 @@ export async function isOwnPass(session: Session | undefined): Promise<boolean> 
 }
 
 export type FreePass =
-  { ok: true; session: Session; freeChecks: number } | { ok: false; reason: "offline" | "refused" };
+  | { ok: true; session: Session; freeChecks: number; asked: boolean }
+  | { ok: false; reason: "offline" | "refused" };
 
 /**
  * Make the extension's own pass and sign in with it: with free checks unless this profile had them already.
  *
  * @param apiBase - The API.
  * @param api - The client (tests pass one with a fake fetch).
+ * @param siteHad - The website's note in this browser says it had its free checks (the welcome page's answer); then
+ *   none are asked for either, and this profile's own flag is set to match.
+ * @returns The pass, how many free checks it came with and whether they were asked for.
  */
 export async function makeFreePass(
   apiBase: string,
   api: UnfretApi = new UnfretApi(apiBase),
+  siteHad = false,
 ): Promise<FreePass> {
   let issued: IssuedKey;
+  let ask: boolean;
   try {
-    const ask = !(await freeChecksUsed());
+    ask = !siteHad && !(await freeChecksUsed());
     const challenge = await api.keyChallenge();
     issued = await api.createKey(challenge.challenge, await solve(challenge.challenge, challenge.bits), ask);
   } catch (error) {
@@ -101,6 +116,6 @@ export async function makeFreePass(
   await chrome.storage.local.set({ ownPass: { keyId: issued.key_id, recoveryCode: issued.recovery_code } });
   await chrome.storage.local.remove("passPending");
   await saveSession(session);
-  if (freeChecks > 0) await markFreeChecksUsed();
-  return { ok: true, session, freeChecks };
+  if (freeChecks > 0 || siteHad) await markFreeChecksUsed();
+  return { ok: true, session, freeChecks, asked: ask };
 }

@@ -25,17 +25,17 @@ pack prices) before this works.
 ## Test instructions (paste)
 
 ```
-Unfret checks a product page when you click its toolbar button. No account or wallet is needed for this review:
-use the test API key below.
+Unfret checks a product page when you click its toolbar button. No account or wallet is needed for this review.
 
-1. Install the extension and pin it to the toolbar. A welcome page on unfret.net opens once; it can be closed.
+1. Install the extension and pin it to the toolbar. A welcome page on unfret.net opens once: leave it open a few
+   seconds while it gives the extension its free Unfret pass, then it says "You have 5 free checks".
 2. Click the Unfret icon and read the first-run screen, then click "I agree".
-3. In the popup, click "Sign in with an Unfret pass or wallet", then "Unfret pass"; paste this key and click "Use
-   this pass" (up to version 0.11.0 these read "Sign in with an API key or wallet", "API key" and "Use this key"):
+3. Open a product page, for example the Unfret test shop https://unfret.net/test-shop (a made-up shop with the
+   tricks Unfret catches) or a product on https://www.amazon.com, click the Unfret icon, then "Check this page".
+   The result appears in 10–30 seconds: a verdict in plain words with its reasons.
+4. If the popup says there are no free checks (today's are all given out), open the extension's options, paste this
+   test key under "Use an Unfret pass instead" and click "Use this pass"; it holds about 20 checks:
    ufk_<REPLACE WITH THE TEST KEY>
-   The key holds about 20 checks.
-4. Open a product page, for example any product on https://www.amazon.com or https://www.bol.com, click the Unfret
-   icon, then "Check this page". The result appears in 10–30 seconds: a verdict in plain words with its reasons.
 5. Optional: under a result, "This is wrong" lets you report a wrong result (it asks for consent first).
 
 Nothing is read or sent until "Check this page" is clicked. Privacy statement: https://unfret.net/privacy

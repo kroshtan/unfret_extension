@@ -82,7 +82,7 @@ describe("the free pass", () => {
   it("on a first install: asks for free checks, signs in, keeps the backup code, remembers it in sync", async () => {
     const made = await makeFreePass("https://unfret.net", api());
 
-    expect(made).toMatchObject({ ok: true, freeChecks: 5 });
+    expect(made).toMatchObject({ ok: true, freeChecks: 5, asked: true });
     const created = requests.find((r) => r.path === "/v1/keys")?.body as Record<string, unknown>;
     expect(created.free).toBe(true);
     expect(leadingZeroBits(`c.1.abc.8.mac:${String(created.solution)}`)).toBeGreaterThanOrEqual(8);
@@ -100,6 +100,16 @@ describe("the free pass", () => {
     expect(made).toMatchObject({ ok: true, freeChecks: 0 });
     const created = requests.find((r) => r.path === "/v1/keys")?.body as Record<string, unknown>;
     expect(created).not.toHaveProperty("free");
+  });
+
+  it("when the website's note says this browser had them (a reinstall without sync): none, and the flag set", async () => {
+    freeChecks = 0;
+    const made = await makeFreePass("https://unfret.net", api(), true);
+
+    expect(made).toMatchObject({ ok: true, freeChecks: 0, asked: false });
+    const created = requests.find((r) => r.path === "/v1/keys")?.body as Record<string, unknown>;
+    expect(created).not.toHaveProperty("free");
+    expect(sync[FREE_FLAG]).toBe(true);
   });
 
   it("when the network had its share today: an empty pass, and the profile may ask again later", async () => {

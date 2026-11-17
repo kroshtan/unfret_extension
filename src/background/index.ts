@@ -4,7 +4,8 @@
  * - stores the session the connect page relays, and the new API key the checkout page relays, after checking where
  *   they came from, and only after a click on that page, from a tab it opened itself, or (to replace an account) the
  *   user's yes in its own window (onboarding.ts, shared/handoff.ts); opens the website's welcome page once, after
- *   installing, and the Unfret pages the popup and settings ask for;
+ *   installing, and makes the extension's free pass when that page says whether this browser had its free checks;
+ *   opens the Unfret pages the popup and settings ask for;
  * - registers the marketplace icon hint (declarativeContent: the browser matches URLs, the extension reads nothing);
  * - runs an analysis only when the user asks, for the active tab (activeTab, granted by that click): injects the
  *   extractor, streams the result. It holds no standing access to any shop.
@@ -14,7 +15,7 @@
  */
 
 import { type AnalyzeBody, ApiError, type ReportReason, UnfretApi } from "../api/client.js";
-import { KEY_MESSAGE, REF_MESSAGE, SESSION_MESSAGE } from "../content/relay.js";
+import { FREE_ASK_MESSAGE, KEY_MESSAGE, REF_MESSAGE, SESSION_MESSAGE } from "../content/relay.js";
 import {
   ANALYSIS_PORT,
   type BackgroundUpdate,
@@ -26,12 +27,14 @@ import { consentGiven, isDevBase, loadSettings } from "../shared/settings.js";
 import { createShare, previewShare, shareRequest } from "../shared/share.js";
 import { isAnalysable } from "../shared/sites.js";
 import { CONSENT_HINT, FREE_PAUSED, OFFLINE, SESSION_EXPIRED } from "../shared/text.js";
+import { checkedUrl } from "../shared/urls.js";
 import { badgeFor } from "./badge.js";
 import { registerMarketplaceHint } from "./icon-hint.js";
 import { extractFromTab } from "./inject.js";
 import {
   fromExtensionPage,
   openUnfretTab,
+  receiveFreeAsk,
   receiveKey,
   receiveRef,
   receiveSession,
@@ -104,6 +107,7 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
     replace?: unknown;
     activated?: unknown;
     code?: unknown;
+    had?: unknown;
     path?: unknown;
   } | null;
   if (m?.type === OPEN_MESSAGE) {
@@ -115,6 +119,17 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
       if (url) await openUnfretTab(url);
       sendResponse({ ok: url !== null });
     })();
+    return true; // async response
+  }
+  if (m?.type === FREE_ASK_MESSAGE) {
+    void receiveFreeAsk(m, sender, chrome.runtime.id).then(
+      (reply) => {
+        sendResponse(reply);
+      },
+      () => {
+        sendResponse({ status: "error" });
+      },
+    );
     return true; // async response
   }
   if (m?.type === REF_MESSAGE) {
@@ -246,9 +261,11 @@ async function runAnalysis(tabId: number, tier?: "quick"): Promise<void> {
     let state: Extract<TabState, { status: "analysing" }> = { status: "analysing", findings: [], steps: [] };
     setState(tabId, state);
     const upload = text.slice(0, MAX_UPLOAD_TEXT_CHARS);
+    // The address as extract-entry cleaned it; once more here, so nothing about the visitor in it reaches the server.
+    const url = checkedUrl(facts.url);
     const page: AnalyzeBody = {
-      url: facts.url,
-      page_facts: facts,
+      url,
+      page_facts: { ...facts, url },
       ...(upload ? { page_content: upload } : {}),
     };
     // A deep check that needs checks the account doesn't have (none left, or only free ones while they're paused for

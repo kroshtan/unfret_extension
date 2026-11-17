@@ -10,19 +10,25 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { manifest } from "../scripts/manifest.mjs";
 import {
+  receiveFreeAsk,
   receiveKey,
   receiveRef,
+  WELCOME_SETUP_URL,
   WELCOME_URL,
   welcomeOnInstall,
-  welcomeUrl,
 } from "../src/background/onboarding.js";
 import {
+  acceptFreeAsk,
   acceptKeyMessage,
   acceptRefMessage,
+  FREE_ANSWER_MESSAGE,
+  FREE_ASK_MESSAGE,
+  isFreeStatus,
   isKeyHandoffStatus,
   KEY_MESSAGE,
   REF_MESSAGE,
 } from "../src/content/relay.js";
+import { makeFreePass } from "../src/shared/new-pass.js";
 import { checkoutPath, type Session } from "../src/shared/settings.js";
 
 const KEY = `ufk_abcdefghij_${"a".repeat(52)}`;
@@ -254,34 +260,31 @@ describe("the welcome page", () => {
   });
   afterEach(() => vi.unstubAllGlobals());
 
-  it("opens once, after a new install, saying how many free checks the new pass has", async () => {
+  it("opens once, after a new install, to make the free pass there; nothing is made before", async () => {
     const open = vi.fn();
-    const makePass = vi.fn(() =>
-      Promise.resolve({ ok: true as const, session: keySessionOf(KEY), freeChecks: 5 }),
-    );
-    expect(await welcomeOnInstall({ reason: "install" }, open, makePass)).toBe(true);
-    expect(makePass).toHaveBeenCalledWith("https://unfret.net");
-    expect(open).toHaveBeenCalledWith("https://unfret.net/welcome?free=5");
+    expect(await welcomeOnInstall({ reason: "install" }, open)).toBe(true);
+    expect(open).toHaveBeenCalledWith("https://unfret.net/welcome?setup=1");
+    expect(WELCOME_SETUP_URL).toBe("https://unfret.net/welcome?setup=1");
     expect(WELCOME_URL).toBe("https://unfret.net/welcome");
-    expect(welcomeUrl(0)).toBe(WELCOME_URL);
+    expect(data.passPending).toBe(true); // until the page has answered, the popup offers the free checks
+    expect(data).not.toHaveProperty("session");
   });
 
-  it("offline at install: the welcome page anyway, and the popup tries again", async () => {
+  it("already signed in at install (a synced setting): the plain welcome page", async () => {
+    data.session = keySessionOf(KEY);
     const open = vi.fn();
-    const makePass = vi.fn(() => Promise.resolve({ ok: false as const, reason: "offline" as const }));
-    expect(await welcomeOnInstall({ reason: "install" }, open, makePass)).toBe(true);
-    expect(open).toHaveBeenCalledWith("https://unfret.net/welcome");
-    expect(data.passPending).toBe(true);
+    expect(await welcomeOnInstall({ reason: "install" }, open)).toBe(true);
+    expect(open).toHaveBeenCalledWith(WELCOME_URL);
+    expect(data).not.toHaveProperty("passPending");
   });
 
   it.each(["update", "chrome_update", "browser_update", "shared_module_update"])(
     "not after %s",
     async (reason) => {
       const open = vi.fn();
-      const makePass = vi.fn();
-      expect(await welcomeOnInstall({ reason }, open, makePass)).toBe(false);
+      expect(await welcomeOnInstall({ reason }, open)).toBe(false);
       expect(open).not.toHaveBeenCalled();
-      expect(makePass).not.toHaveBeenCalled();
+      expect(data).not.toHaveProperty("passPending");
     },
   );
 
@@ -446,21 +449,34 @@ describe("the popup's next step", () => {
     expect(visible("sign-in-more-row")).toBe(false);
   });
 
-  it("Get your free checks makes the free pass as installing does, once per browser", async () => {
+  it("Get your free checks opens the welcome page, which makes the free pass as installing does", async () => {
     await openPopup(null);
     document.getElementById("get-free")?.click();
+    expect(opened).toEqual(["https://unfret.net/welcome?setup=1"]);
+    expect(fetched).not.toContain("/v1/keys");
+    expect(data).not.toHaveProperty("session");
+  });
+
+  it("an install that made no pass: Get your free checks again, nothing made behind the welcome page's back", async () => {
+    data.passPending = true;
+    await openPopup(null);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(fetched).not.toContain("/v1/keys");
+    expect(visible("get-free-row")).toBe(true);
+  });
+
+  it("an install that made no pass, in a profile that had its free checks: the empty pass at once", async () => {
+    data.passPending = true;
+    sync.freeChecksUsed = true;
+    freeGiven = 0;
+    await openPopup(null);
     await vi.waitFor(() => {
       expect(data.session).toEqual(keySessionOf(FREE));
     });
     const made = (vi.mocked(fetch).mock.calls as unknown as [string, RequestInit?][]).find(
       ([u]) => new URL(u).pathname === "/v1/keys",
     );
-    expect(JSON.parse(made?.[1]?.body as string)).toMatchObject({ free: true });
-    expect(sync).toEqual({ freeChecksUsed: true });
-    await vi.waitFor(() => {
-      expect(visible("get-free-row")).toBe(false);
-    });
-    expect(document.getElementById("account-status")?.textContent).toBe("Using Unfret pass FFFFF-FFFFF");
+    expect(JSON.parse(made?.[1]?.body as string)).not.toHaveProperty("free");
   });
 
   it("says how many free checks, from the price list", async () => {
@@ -481,17 +497,6 @@ describe("the popup's next step", () => {
     expect(opened).toEqual(["https://unfret.net/checkout"]);
     expect(fetched).not.toContain("/v1/keys");
     expect(fetched).not.toContain("/v1/pricing");
-  });
-
-  it("no free checks given (today's all gone): the pass is made, and the popup says why it has none", async () => {
-    freeGiven = 0;
-    await openPopup(null);
-    document.getElementById("get-free")?.click();
-    await vi.waitFor(() => {
-      expect(document.getElementById("free-status")?.textContent).toMatch(/^No free checks this time/u);
-    });
-    expect(data.session).toEqual(keySessionOf(FREE));
-    expect(visible("buy")).toBe(true);
   });
 
   it("after an expired sign-in: signing in again is the step", async () => {
@@ -677,5 +682,141 @@ describe("an affiliate's code from the welcome page", () => {
     expect(await receiveRef({ code: "ANNA" }, welcome, "ext-id")).toEqual({ status: "not_eligible" });
     data.session = keySessionOf(KEY);
     expect(await receiveRef({ code: "ANNA" }, welcome, "ext-id")).toEqual({ status: "error" });
+  });
+});
+
+describe("whether this browser had its free checks, from the welcome page (a reinstall without sync)", () => {
+  const page = {};
+  const event = (data: unknown, over: Partial<{ source: unknown; origin: string }> = {}) => ({
+    source: page,
+    origin: ORIGIN,
+    data,
+    ...over,
+  });
+  const welcome = { id: "ext-id", frameId: 0, url: `${ORIGIN}/welcome?setup=1` };
+  let data: Record<string, unknown>;
+  let sync: Record<string, unknown>;
+  let created: Record<string, unknown>[];
+  let freeGiven: number;
+
+  /** The real free pass over a fake server: it gives `freeGiven` free checks when asked for them. */
+  function serve(): void {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: string, init?: RequestInit) => {
+        const path = new URL(input).pathname;
+        if (path === "/v1/keys") created.push(JSON.parse(init?.body as string) as Record<string, unknown>);
+        const asked = created.at(-1)?.free === true;
+        const json =
+          path === "/v1/keys/challenge"
+            ? { challenge: "c", bits: 0 }
+            : { key: FREE, key_id: "ffffffffff", recovery_code: "ufr_x", free_checks: asked ? freeGiven : 0 };
+        return Promise.resolve(new Response(JSON.stringify(json), { status: 200 }));
+      }),
+    );
+  }
+
+  beforeEach(() => {
+    data = { passPending: true };
+    sync = {};
+    created = [];
+    freeGiven = 5;
+    stubStorage(data, sync);
+    serve();
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("takes a yes or no from the welcome page itself only", () => {
+    expect(acceptFreeAsk(event({ type: FREE_ASK_MESSAGE, had: false }), page, ORIGIN, ORIGIN)).toBe(false);
+    expect(acceptFreeAsk(event({ type: FREE_ASK_MESSAGE, had: true }), page, ORIGIN, ORIGIN)).toBe(true);
+    expect(
+      acceptFreeAsk(event({ type: FREE_ASK_MESSAGE, had: true }, { source: {} }), page, ORIGIN, ORIGIN),
+    ).toBeNull();
+    const evil = "https://evil.example";
+    expect(
+      acceptFreeAsk(event({ type: FREE_ASK_MESSAGE, had: false }, { origin: evil }), page, evil, ORIGIN),
+    ).toBeNull();
+    for (const had of ["false", 0, null, undefined, { id: "x" }]) {
+      expect(acceptFreeAsk(event({ type: FREE_ASK_MESSAGE, had }), page, ORIGIN, ORIGIN)).toBeNull();
+    }
+    expect(acceptFreeAsk(event({ type: REF_MESSAGE, had: false }), page, ORIGIN, ORIGIN)).toBeNull();
+    expect(FREE_ANSWER_MESSAGE).toBe("unfret-free-answer");
+    expect(["free", "had-free", "none-today", "has-pass", "error", "invalid"].every(isFreeStatus)).toBe(true);
+  });
+
+  it("a first install: the pass with its free checks, and the page hears how many", async () => {
+    expect(await receiveFreeAsk({ had: false }, welcome, "ext-id")).toEqual({ status: "free", free: 5 });
+    expect(created).toEqual([expect.objectContaining({ free: true })]);
+    expect(data.session).toEqual(keySessionOf(FREE));
+    expect(data).not.toHaveProperty("passPending");
+    expect(sync).toEqual({ freeChecksUsed: true });
+  });
+
+  it("a reinstall without sync: the website's note says this browser had them, so no free checks", async () => {
+    expect(await receiveFreeAsk({ had: true }, welcome, "ext-id")).toEqual({ status: "had-free" });
+    expect(created).toHaveLength(1);
+    expect(created[0]).not.toHaveProperty("free");
+    expect(data.session).toEqual(keySessionOf(FREE));
+    expect(sync).toEqual({ freeChecksUsed: true }); // the popup says so from now on
+  });
+
+  it("a reinstall with sync (or the website's note cleared): the extension's own note is enough", async () => {
+    sync.freeChecksUsed = true;
+    expect(await receiveFreeAsk({ had: false }, welcome, "ext-id")).toEqual({ status: "had-free" });
+    expect(created[0]).not.toHaveProperty("free");
+  });
+
+  it("asked, but the server had none to give: none-today", async () => {
+    freeGiven = 0;
+    expect(await receiveFreeAsk({ had: false }, welcome, "ext-id")).toEqual({ status: "none-today" });
+    expect(created[0]).toMatchObject({ free: true });
+  });
+
+  it("makes one pass however often and from however many pages it is asked, and none with a pass already", async () => {
+    const answers = await Promise.all([
+      receiveFreeAsk({ had: false }, welcome, "ext-id"),
+      receiveFreeAsk({ had: false }, { ...welcome, tab: { id: 9 } as chrome.tabs.Tab }, "ext-id"),
+    ]);
+    expect(answers).toEqual([
+      { status: "free", free: 5 },
+      { status: "free", free: 5 },
+    ]);
+    expect(await receiveFreeAsk({ had: false }, welcome, "ext-id")).toEqual({ status: "has-pass" });
+    data.session = WALLET;
+    expect(await receiveFreeAsk({ had: false }, welcome, "ext-id")).toEqual({ status: "has-pass" });
+    expect(created).toHaveLength(1);
+  });
+
+  it("only from the welcome page of the configured site, top frame; offline: error, and nothing kept", async () => {
+    for (const sender of [
+      { ...welcome, url: `${ORIGIN}/checkout` },
+      { ...welcome, url: `${ORIGIN}/welcomeX` },
+      { ...welcome, url: "https://evil.example/welcome" },
+      { ...welcome, frameId: 2 },
+      { ...welcome, id: "other-extension" },
+    ]) {
+      expect(await receiveFreeAsk({ had: false }, sender, "ext-id")).toEqual({ status: "invalid" });
+    }
+    expect(await receiveFreeAsk({ had: "no" }, welcome, "ext-id")).toEqual({ status: "invalid" });
+    expect(created).toEqual([]);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.reject(new TypeError("offline"))),
+    );
+    expect(await receiveFreeAsk({ had: false }, welcome, "ext-id")).toEqual({ status: "error" });
+    expect(data).not.toHaveProperty("session");
+    expect(data.passPending).toBe(true);
+  });
+
+  it("is wired to the background, and the welcome page's content script relays it", () => {
+    expect(readFileSync("src/background/index.ts", "utf8")).toContain(
+      "receiveFreeAsk(m, sender, chrome.runtime.id)",
+    );
+    const relay = readFileSync("src/content/ref-relay.ts", "utf8");
+    expect(relay).toContain("acceptFreeAsk(event, window, location.origin, apiBase)");
+    expect(relay).toContain(
+      "window.postMessage({ type: FREE_ANSWER_MESSAGE, status, free }, location.origin);",
+    );
+    expect(makeFreePass.length).toBe(1); // apiBase; the client and the website's answer are optional
   });
 });

@@ -102,9 +102,10 @@ async function launch(
   extension: string,
   language = "en-US",
   phone = false,
-): Promise<{ context: BrowserContext; worker: Worker }> {
-  const userData = mkdtempSync(join(tmpdir(), "unfret-smoke-"));
-  temp.push(userData);
+  profile?: string,
+): Promise<{ context: BrowserContext; worker: Worker; userData: string }> {
+  const userData = profile ?? mkdtempSync(join(tmpdir(), "unfret-smoke-"));
+  if (!profile) temp.push(userData);
   const context = await chromium.launchPersistentContext(userData, {
     channel: "chromium",
     headless: true,
@@ -134,7 +135,7 @@ async function launch(
   await context.route("https://evil.example/**", (route) =>
     route.fulfill({ contentType: "text/html", body: EVIL_PAGE }),
   );
-  await context.route("https://unfret.net/welcome", (route) =>
+  await context.route("https://unfret.net/welcome**", (route) =>
     route.fulfill({ contentType: "text/html", body: "<!doctype html><title>welcome</title>" }),
   );
   context.on("page", (page) => {
@@ -146,15 +147,13 @@ async function launch(
     });
   });
   const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent("serviceworker"));
-  // On install the extension tries to make its free pass (unreachable here, except for a copy on the mock API), then
-  // opens the welcome page: wait for that, so later tabs are newer, and forget the retry an offline install leaves
-  // for the popup, which would otherwise make a pass on the mock API the first time a test opens it signed out.
+  // On install the extension opens the welcome page, which makes its free pass (a page that doesn't answer here, except
+  // for a copy on the mock API): wait for it, so later tabs are newer.
   const welcomed = (): boolean => context.pages().some((p) => new URL(p.url()).pathname === "/welcome");
   for (let waited = 0; !welcomed() && waited < 30_000; waited += 100) {
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
-  await worker.evaluate(() => chrome.storage.local.remove("passPending"));
-  return { context, worker };
+  return { context, worker, userData };
 }
 
 /**
@@ -167,7 +166,7 @@ function grantedCopy(apiBase?: string): string {
   temp.push(dir);
   cpSync(shipped, dir, { recursive: true });
   if (apiBase) {
-    for (const file of ["background.js", "popup/popup.js", "options/options.js"]) {
+    for (const file of ["background.js", "popup/popup.js", "options/options.js", "ref-relay.js"]) {
       const path = join(dir, file);
       writeFileSync(
         path,
@@ -177,9 +176,20 @@ function grantedCopy(apiBase?: string): string {
   }
   const manifestPath = join(dir, "manifest.json");
   const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as Record<string, unknown>;
+  // With `apiBase`, the welcome page's content script runs there too (a match pattern has no port).
+  const scripts = (manifest.content_scripts ?? []) as { matches: string[]; js: string[] }[];
+  const hosted = apiBase ? `${new URL(apiBase).protocol}//${new URL(apiBase).hostname}` : "";
   writeFileSync(
     manifestPath,
-    JSON.stringify({ ...manifest, host_permissions: ["https://www.amazon.com/*"] }),
+    JSON.stringify({
+      ...manifest,
+      host_permissions: ["https://www.amazon.com/*"],
+      content_scripts: scripts.map((script) =>
+        apiBase && script.js.includes("ref-relay.js")
+          ? { ...script, matches: [`${hosted}/welcome*`] }
+          : script,
+      ),
+    }),
   );
   return dir;
 }
@@ -236,7 +246,7 @@ describe("the shipped extension (no host permissions)", () => {
   });
 
   it("opened the welcome page once, on install", () => {
-    const welcome = plain.context.pages().filter((p) => p.url() === "https://unfret.net/welcome");
+    const welcome = plain.context.pages().filter((p) => p.url() === "https://unfret.net/welcome?setup=1");
     expect(welcome).toHaveLength(1);
   });
 
@@ -448,6 +458,38 @@ describe("with the access a click grants (activeTab)", () => {
     expect(body.page_content).not.toMatch(/Jane/u);
     // Score 18: the verdict symbol, not the number (0.7.2).
     expect(await granted.worker.evaluate((id) => chrome.action.getBadgeText({ tabId: id }), tabId)).toBe("✕");
+  });
+
+  it("sends the page's address without its fragment or what is about the visitor (audit L8)", async () => {
+    const page = await granted.context.newPage();
+    await page.goto(
+      `${AMAZON_URL}?th=1&utm_source=newsletter&email=me%40mail.example&ref_=nav#customerReviews`,
+    );
+    const tabId = await newestTabId(granted.worker);
+    const extensionId = new URL(granted.worker.url()).host;
+    const popup = await granted.context.newPage();
+    await popup.goto(`chrome-extension://${extensionId}/popup/popup.html`);
+    const state = await popup.evaluate(
+      (id) =>
+        new Promise<TabState>((resolve) => {
+          const port = chrome.runtime.connect({ name: "unfret-analysis" });
+          port.onMessage.addListener((update: { tabId: number; state: TabState }) => {
+            if (update.tabId === id && ["done", "error"].includes(update.state.status)) resolve(update.state);
+          });
+          port.postMessage({ type: "analyze", tabId: id });
+        }),
+      tabId,
+    );
+    expect(state.status).toBe("done");
+    const body = api.requests.filter((r) => r.path === "/v1/analyze/stream").at(-1)?.body as {
+      url: string;
+      page_facts: { url: string; policy_links: Record<string, string> };
+    };
+    expect(body.url).toBe(`${AMAZON_URL}?th=1`);
+    expect(body.page_facts.url).toBe(`${AMAZON_URL}?th=1`);
+    expect(JSON.stringify(body)).not.toMatch(/newsletter|mail\.example|customerReviews/u);
+    await popup.close();
+    await page.close();
   });
 
   it('shows one next step: signed in, no "Get your free checks"; signed out, that alone', async () => {
@@ -783,11 +825,13 @@ describe("on a phone, 360×740 (Firefox for Android shows the popup as a full-wi
 });
 
 describe("a new install (0.12.0): a free pass, then a check", () => {
-  let fresh: { context: BrowserContext; worker: Worker };
+  let fresh: { context: BrowserContext; worker: Worker; userData: string };
+  let extension: string;
 
   beforeAll(async () => {
     api.free.perPass = 5;
-    fresh = await launch(grantedCopy(api.url));
+    extension = grantedCopy(api.url);
+    fresh = await launch(extension);
   }, 180_000);
 
   afterAll(async () => {
@@ -801,7 +845,7 @@ describe("a new install (0.12.0): a free pass, then a check", () => {
     }));
   }
 
-  it("makes a pass with 5 free checks on install, and opens the welcome page saying so", async () => {
+  it("on install, the welcome page says this browser never had free checks: a pass with 5, and it says so", async () => {
     await expect.poll(async () => (await stored()).session, { timeout: 20_000 }).toBeTruthy();
     const made = api.requests.filter((r) => r.path === "/v1/keys");
     expect(made).toHaveLength(1);
@@ -810,9 +854,13 @@ describe("a new install (0.12.0): a free pass, then a check", () => {
     expect(data.session).toMatchObject({ token: FREE_PASS, address: "key:freepasszz", kind: "key" });
     expect(data.ownPass).toEqual({ keyId: "freepasszz", recoveryCode: FREE_PASS_BACKUP });
     expect(data.sync).toEqual({ freeChecksUsed: true });
+    expect(data).not.toHaveProperty("passPending");
     await expect
       .poll(() => fresh.context.pages().some((p) => p.url() === `${api.url}/welcome?free=5`))
       .toBe(true);
+    // The website's own note is set too: the link checker on unfret.net gives no second round.
+    const welcome = fresh.context.pages().find((p) => p.url() === `${api.url}/welcome?free=5`);
+    expect(await welcome?.evaluate(() => localStorage.getItem("unfret-free-pass"))).toBe("1");
   });
 
   it("shows You have 5 free checks, checks a page with one, then quick checks for free", async () => {
@@ -915,5 +963,27 @@ describe("a new install (0.12.0): a free pass, then a check", () => {
     expect((await stored()).session).toMatchObject({ token: FREE_PASS });
     await popup.close();
     await page.close();
+  });
+
+  it("removed and installed again in the same profile, without browser sync: no new free checks", async () => {
+    // Removing the extension wipes its storage, storage.sync included when the browser doesn't sync (it doesn't
+    // here); the website's note in this profile stays. (`probe` shows the sync area was wiped.)
+    await fresh.worker.evaluate(() => chrome.storage.sync.set({ probe: true }));
+    await fresh.worker.evaluate(() => chrome.management.uninstallSelf()).catch(() => undefined);
+    await fresh.context.close();
+    const before = api.requests.filter((r) => r.path === "/v1/keys").length;
+    fresh = await launch(extension, "en-US", false, fresh.userData);
+    await expect
+      .poll(async () => (await stored()).session, { timeout: 20_000 })
+      .toMatchObject({ token: FREE_PASS });
+    const made = api.requests.filter((r) => r.path === "/v1/keys").slice(before);
+    expect(made).toHaveLength(1);
+    expect(made[0]?.body).not.toHaveProperty("free");
+    const data = await stored();
+    expect(data.sync).toEqual({ freeChecksUsed: true }); // set again from the website's answer, no `probe`
+    expect(data).not.toHaveProperty("consent"); // a new install: the old one's storage is gone
+    await expect
+      .poll(() => fresh.context.pages().some((p) => p.url() === `${api.url}/welcome?note=had-free`))
+      .toBe(true);
   });
 });

@@ -1,6 +1,6 @@
 # Unfret privacy policy (browser extension)
 
-_Last updated: 17 November 2026 (version 0.12.0: a free Unfret pass made on install, free quick checks, the extension asks in its own window before switching accounts, every request and stored item listed; 0.11.0: a new key from the checkout page signs the extension in, welcome page after installing; earlier: photo lookup corrected, service providers and private sellers' ads added). Draft for the store listings; to be reviewed before publication._
+_Last updated: 17 November 2026 (version 0.12.0: a free Unfret pass made on install, free quick checks, the extension asks in its own window before switching accounts, every request and stored item listed, the page address sent without its fragment, tracking parameters, sessions or e-mail addresses, the welcome page says whether this browser had its free checks; 0.11.0: a new key from the checkout page signs the extension in, welcome page after installing; earlier: photo lookup corrected, service providers and private sellers' ads added). Draft for the store listings; to be reviewed before publication._
 
 Unfret is made by Kroshtan (Floris van Beers, the Netherlands).
 
@@ -30,8 +30,9 @@ On three of Unfret's own pages a small part of the extension runs by itself, to 
 on `unfret.net/connect` (signing in with a wallet) the wallet sign-in, on `unfret.net/checkout` (getting checks) a
 new Unfret pass the page has just shown you (after a gift code, a card payment, a recovery with your backup code, or
 "Send it to the extension" on My checks), so you don't have to copy it into the extension, and on
-`unfret.net/welcome` an affiliate's code (below). It reads nothing else from those pages, takes the message only from
-that page itself, and answers the page only with whether it signed in. Without a pass or wallet yet, it takes one
+`unfret.net/welcome` whether this browser already had its free checks (a yes or no) and an affiliate's code (both
+below). It reads nothing else from those pages, takes the message only from that page itself, and answers the page
+only with whether it signed in (on the welcome page: how many free checks the new pass got, or why none). Without a pass or wallet yet, it takes one
 only right after you click on that page, or on a page it opened for you itself (from its popup or settings, or the
 welcome page after installing). If the extension is already signed in with another pass or wallet, it never switches
 by itself: it asks you in a small window of its own, naming both, and changes nothing unless you choose the new one
@@ -39,14 +40,19 @@ there. While that question is open (at most ten minutes), the pass or sign-in it
 memory only. Your pass is never sent back to the page or to anyone else, and the extension never puts a pass or
 backup code in a web address it opens.
 
-After you install it, the extension asks `unfret.net` once for a new **Unfret pass** (an anonymous API key: no
-account, no e-mail) with a few free checks, and opens a welcome page on `unfret.net` that says how many it got. That
-request carries nothing about you or your browsing: it fetches a small computing puzzle and sends back its answer (a
-proof of work, a few seconds of computing in your browser, that keeps out bots) and whether it asks for free checks.
-If that fails (offline), or after you signed out, the popup's **Get your free checks** makes the pass the same way,
-when you click it. To give free checks only once, the extension notes in the browser's `storage.sync` that this browser
-had them; your browser may sync that note between your devices, as it does settings, and a reinstall then gets a
-pass without free checks. The note says nothing else. The pass and its backup code are kept in your browser; the
+After you install it, the extension opens a welcome page on `unfret.net` and asks `unfret.net` once for a new
+**Unfret pass** (an anonymous API key: no account, no e-mail) with a few free checks; the welcome page then says how
+many it got. That request carries nothing about you or your browsing: it fetches a small computing puzzle and sends
+back its answer (a proof of work, a few seconds of computing in your browser, that keeps out bots) and whether it asks
+for free checks. If that fails (offline), or after you signed out, the popup's **Get your free checks** opens the
+welcome page again, which makes the pass the same way. To give free checks only once, the extension notes in the
+browser's `storage.sync` that this browser had them; your browser may sync that note between your devices, as it
+does settings, and a reinstall then gets a pass without free checks. Without sync, removing the extension removes
+that note too, so the welcome page tells the extension, before it asks for free checks, whether the website's own
+note says this browser had them (the note the link checker on `unfret.net` keeps in your browser): a yes or no, from
+the page to the extension in your browser, nothing else and nowhere else. With either note, the pass comes without
+free checks, and the welcome page says why; a pass made with free checks sets the website's note too. The notes say
+nothing else. The pass and its backup code are kept in your browser; the
 backup code is shown in the extension's settings, so you can save it if you add checks to the pass.
 
 If an affiliate's link (`unfret.net/?ref=CODE`) brought you to Unfret, the website keeps the affiliate's code in its
@@ -68,7 +74,12 @@ see the page or its address.
 
 Only to the Unfret API (`unfret.net`, hosted in the EU), when you click "Check this page":
 
-- the page address and the product facts and text described above;
+- the page address, without what in it is about you rather than the product: the part after `#`, a user name or
+  password, tracking and referral parameters (`utm_…`, `gclid`, `fbclid`, `msclkid`, `mc_eid`, `igshid`, `ref`,
+  affiliate tags and the like), sessions and tokens (`sid`, `PHPSESSID`, `token`, …) and anything that is an e-mail
+  address. What picks the product or its variant (an ID, a size or colour) stays. The same address is used for the
+  product facts, and is what a shared result links to;
+- the product facts and text described above;
 - your Unfret pass, or the session token of the Solana wallet you signed in with, to pay for the check;
 - for a **quick check** (free; offered when you have no checks left, or while today's free checks are used up),
   the same page data, marked as a quick check: Unfret then reads only the page itself, by its rules.
@@ -93,14 +104,14 @@ When you open the popup or the settings, they ask the API for your balance (with
 you have; signed out, the popup asks for the price list (without any sign-in) to say how many free checks a new pass
 gets. The pictures in a result (matching photos on other shops) are loaded from Unfret's own server only. The
 extension makes no other network requests: no analytics, no trackers, no third parties. Besides opening the popup or
-settings, the requests it makes without a click are the new pass on install and, if an affiliate's link brought you,
-that one note to `unfret.net`, both above.
+settings, the requests it makes without a click are the new pass when the welcome page opens after installing and,
+if an affiliate's link brought you, that one note to `unfret.net`, both above.
 
 ## What is stored
 
 In your browser (`storage.local`): your sign-in (your Unfret pass; or a wallet's session token, address and expiry),
 whether your last sign-in expired, your consent, your settings, for the pass the extension made itself its public ID
-and backup code (shown in the settings, so you can save it), and, if making that pass failed, a note to try again. In
+and backup code (shown in the settings, so you can save it), and, until that pass is made, a note to offer it again. In
 `storage.sync`: only whether this browser had its free checks (your browser may sync it, as it does settings).
 
 Only in memory (the browser's session storage, cleared when you close the browser, never written to disk): the

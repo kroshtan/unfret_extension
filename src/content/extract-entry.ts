@@ -5,6 +5,7 @@
  */
 
 import { extractPage } from "../extract/index.js";
+import { checkedUrl } from "../shared/urls.js";
 
 declare global {
   interface Window {
@@ -12,4 +13,6 @@ declare global {
   }
 }
 
-window.__unfretExtract = () => extractPage(document, location.href, { live: true });
+// The page's address without its fragment and what is about the visitor (tracking, sessions, e-mail addresses): what
+// the check sends, and what relative links on the page are resolved against.
+window.__unfretExtract = () => extractPage(document, checkedUrl(location.href), { live: true });
