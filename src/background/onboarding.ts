@@ -6,7 +6,7 @@
  */
 
 import { UnfretApi } from "../api/client.js";
-import { type KeyHandoffStatus } from "../content/relay.js";
+import { isRefStatus, type KeyHandoffStatus, type RefStatus } from "../content/relay.js";
 import { isOwnPass, makeFreePass } from "../shared/new-pass.js";
 import { DEFAULT_API_BASE, keySession, loadSettings, saveSession } from "../shared/settings.js";
 
@@ -98,4 +98,30 @@ export async function receiveKey(
   }
   await saveSession(offered);
   return { status: "signed-in" };
+}
+
+/**
+ * Tell the server which affiliate brought this user, with the extension's own pass: the welcome page relays the code
+ * the site kept from an affiliate's link (`unfret.net/?ref=CODE`). Only from the welcome page, only for a pass (a
+ * wallet is never attributed), and the server decides the rest: a pass counts for one affiliate, the first, and only
+ * if it never bought checks. "no-pass" (none yet: the page keeps the code) and "error" (offline) let the page try again
+ * later.
+ */
+export async function receiveRef(
+  message: { code?: unknown },
+  sender: chrome.runtime.MessageSender,
+  extensionId: string,
+): Promise<{ status: RefStatus }> {
+  const { apiBase, session } = await loadSettings();
+  if (!fromUnfretPage(sender, extensionId, apiBase, "/welcome")) return { status: "invalid" };
+  if (typeof message.code !== "string" || !/^[A-Za-z0-9]{3,24}$/.test(message.code))
+    return { status: "invalid" };
+  if (!session) return { status: "no-pass" };
+  if (session.kind !== "key") return { status: "not_eligible" };
+  try {
+    const status = await new UnfretApi(apiBase, session.token).attributeAffiliate(message.code);
+    return { status: isRefStatus(status) ? status : "invalid" };
+  } catch {
+    return { status: "error" };
+  }
 }

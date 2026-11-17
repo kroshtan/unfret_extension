@@ -75,3 +75,35 @@ export function acceptKeyMessage(
   if (type !== KEY_MESSAGE || typeof key !== "string" || !API_KEY_RE.test(key)) return null;
   return { key, replace: replace === true };
 }
+
+// ── An affiliate's code from the welcome page ───────────────────────────────────────────────────────────────────
+// /welcome posts `{type: "unfret-ref", code}` to itself while the site keeps the code of an affiliate's link
+// (unfret.net/?ref=CODE). The extension made its own pass on install without it; the background tells the server once,
+// with that pass, and the page gets `{type: "unfret-ref-received", status}` back. Nothing else goes either way.
+
+export const REF_MESSAGE = "unfret-ref";
+export const REF_RECEIVED_MESSAGE = "unfret-ref-received";
+export const REF_STATUSES = ["attributed", "already", "not_eligible", "invalid", "no-pass", "error"] as const;
+export type RefStatus = (typeof REF_STATUSES)[number];
+const REF_CODE_RE = /^[A-Za-z0-9]{3,24}$/;
+
+export function isRefStatus(value: unknown): value is RefStatus {
+  return (REF_STATUSES as readonly unknown[]).includes(value);
+}
+
+/** The affiliate code the welcome page offers, or null for anything else. */
+export function acceptRefMessage(
+  event: MessageLike,
+  pageWindow: unknown,
+  pageOrigin: string,
+  apiBase: string,
+): string | null {
+  if (event.source !== pageWindow) return null;
+  if (event.origin !== pageOrigin) return null;
+  if (pageOrigin !== new URL(normaliseApiBase(apiBase)).origin) return null;
+  const data = event.data;
+  if (typeof data !== "object" || data === null) return null;
+  const { type, code } = data as { type?: unknown; code?: unknown };
+  if (type !== REF_MESSAGE || typeof code !== "string" || !REF_CODE_RE.test(code)) return null;
+  return code.toUpperCase();
+}

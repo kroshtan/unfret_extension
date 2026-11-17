@@ -400,6 +400,21 @@ export class UnfretApi {
     return typeof moved === "number" ? moved : 0;
   }
 
+  /**
+   * Count this pass (this client's key) for the affiliate whose link brought its user; resolves the server's status
+   * (attributed, already, not_eligible or invalid).
+   */
+  async attributeAffiliate(code: string): Promise<string> {
+    const response = await this.fetcher(`${this.base}/v1/affiliates/attribute`, {
+      method: "POST",
+      headers: this.headers(true),
+      body: JSON.stringify({ code }),
+    });
+    if (!response.ok) throw await errorFrom(response);
+    const status = ((await response.json()) as { status?: unknown }).status;
+    return typeof status === "string" ? status : "invalid";
+  }
+
   /** Start a phone sign-in; the connect URL must be on this API's origin (it goes into a QR code). */
   async startPairing(): Promise<Pairing> {
     const response = await this.fetcher(`${this.base}/v1/auth/pair`, {

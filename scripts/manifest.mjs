@@ -50,6 +50,7 @@ export function manifest(browser, { version, description, publicKey }) {
     content_scripts: [
       { matches: [`${api}/connect*`], js: ["connect-relay.js"], run_at: "document_start" },
       { matches: [`${api}/checkout*`], js: ["key-relay.js"], run_at: "document_start" },
+      { matches: [`${api}/welcome*`], js: ["ref-relay.js"], run_at: "document_start" },
     ],
     content_security_policy: {
       // Extension pages may only talk to the Unfret API (or a local dev server).

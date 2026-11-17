@@ -42,6 +42,12 @@ had them; your browser may sync that note between your devices, as it does setti
 pass without free checks. The note says nothing else. The pass and its backup code are kept in your browser; the
 backup code is shown in the extension's settings, so you can save it if you add checks to the pass.
 
+If an affiliate's link (`unfret.net/?ref=CODE`) brought you to Unfret, the website keeps the affiliate's code in its
+own storage, and the welcome page hands that code to the extension; the extension then tells `unfret.net` once, with
+its pass, so the pass counts for that affiliate (you get bonus checks on your first pack, the affiliate a share of what
+you pay). Only the code goes from the page to the extension, and only on the welcome page; nothing about you or your
+browsing is sent with it.
+
 If the checkout page hands the extension another pass while it uses the free pass it made, the page asks you first;
 when you agree, the free pass's free checks left move to the new pass (the extension sends the new pass's public ID,
 never the pass itself).

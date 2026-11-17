@@ -33,6 +33,11 @@ describe("manifest permissions", () => {
         js: ["key-relay.js"],
         run_at: "document_start",
       },
+      {
+        matches: ["https://unfret.net/welcome*"],
+        js: ["ref-relay.js"],
+        run_at: "document_start",
+      },
     ]);
   });
 

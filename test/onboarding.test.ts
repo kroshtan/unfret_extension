@@ -9,8 +9,20 @@ import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { manifest } from "../scripts/manifest.mjs";
-import { receiveKey, WELCOME_URL, welcomeOnInstall, welcomeUrl } from "../src/background/onboarding.js";
-import { acceptKeyMessage, isKeyHandoffStatus, KEY_MESSAGE } from "../src/content/relay.js";
+import {
+  receiveKey,
+  receiveRef,
+  WELCOME_URL,
+  welcomeOnInstall,
+  welcomeUrl,
+} from "../src/background/onboarding.js";
+import {
+  acceptKeyMessage,
+  acceptRefMessage,
+  isKeyHandoffStatus,
+  KEY_MESSAGE,
+  REF_MESSAGE,
+} from "../src/content/relay.js";
 import { checkoutPath, type Session } from "../src/shared/settings.js";
 
 const KEY = `ufk_abcdefghij_${"a".repeat(52)}`;
@@ -290,6 +302,7 @@ describe("the content scripts", () => {
       expect(m.content_scripts).toEqual([
         { matches: [`${origin}/connect*`], js: ["connect-relay.js"], run_at: "document_start" },
         { matches: [`${origin}/checkout*`], js: ["key-relay.js"], run_at: "document_start" },
+        { matches: [`${origin}/welcome*`], js: ["ref-relay.js"], run_at: "document_start" },
       ]);
       expect(m).not.toHaveProperty("host_permissions");
     }
@@ -518,5 +531,79 @@ describe("the popup's next step", () => {
     });
     document.getElementById("buy")?.click();
     expect(opened).toEqual(["https://unfret.net/checkout"]);
+  });
+});
+
+describe("an affiliate's code from the welcome page", () => {
+  const page = {};
+  const event = (data: unknown, over: Partial<{ source: unknown; origin: string }> = {}) => ({
+    source: page,
+    origin: ORIGIN,
+    data,
+    ...over,
+  });
+  let data: Record<string, unknown>;
+  const welcome = { id: "ext-id", frameId: 0, url: `${ORIGIN}/welcome?free=5` };
+
+  beforeEach(() => {
+    data = {};
+    stubStorage(data);
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("takes a well-formed code from the welcome page itself only", () => {
+    expect(acceptRefMessage(event({ type: REF_MESSAGE, code: "anna" }), page, ORIGIN, ORIGIN)).toBe("ANNA");
+    expect(
+      acceptRefMessage(event({ type: REF_MESSAGE, code: "anna" }, { source: {} }), page, ORIGIN, ORIGIN),
+    ).toBeNull();
+    const evil = "https://evil.example";
+    expect(
+      acceptRefMessage(event({ type: REF_MESSAGE, code: "ANNA" }, { origin: evil }), page, evil, ORIGIN),
+    ).toBeNull();
+    for (const code of ["x", "a b c", 42, "A".repeat(25), null]) {
+      expect(acceptRefMessage(event({ type: REF_MESSAGE, code }), page, ORIGIN, ORIGIN)).toBeNull();
+    }
+  });
+
+  it("tells the server with the extension's own pass, from the welcome page only", async () => {
+    data.session = keySessionOf(KEY);
+    const calls: { url: string; auth: string; body: string }[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string, init: RequestInit) => {
+        const headers = init.headers as Record<string, string>;
+        calls.push({ url, auth: headers.Authorization ?? "", body: init.body as string });
+        return Promise.resolve(new Response(JSON.stringify({ status: "attributed" }), { status: 200 }));
+      }),
+    );
+
+    expect(await receiveRef({ code: "ANNA" }, welcome, "ext-id")).toEqual({ status: "attributed" });
+    expect(calls).toEqual([
+      {
+        url: `${ORIGIN}/v1/affiliates/attribute`,
+        auth: `Bearer ${KEY}`,
+        body: JSON.stringify({ code: "ANNA" }),
+      },
+    ]);
+
+    const checkout = { ...welcome, url: `${ORIGIN}/checkout` };
+    expect(await receiveRef({ code: "ANNA" }, checkout, "ext-id")).toEqual({ status: "invalid" });
+    expect(await receiveRef({ code: "ANNA" }, { ...welcome, frameId: 3 }, "ext-id")).toEqual({
+      status: "invalid",
+    });
+    expect(await receiveRef({ code: "<script>" }, welcome, "ext-id")).toEqual({ status: "invalid" });
+    expect(calls).toHaveLength(1);
+  });
+
+  it("never for a wallet; without a pass or offline the page keeps the code", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.reject(new Error("offline"))),
+    );
+    expect(await receiveRef({ code: "ANNA" }, welcome, "ext-id")).toEqual({ status: "no-pass" });
+    data.session = WALLET;
+    expect(await receiveRef({ code: "ANNA" }, welcome, "ext-id")).toEqual({ status: "not_eligible" });
+    data.session = keySessionOf(KEY);
+    expect(await receiveRef({ code: "ANNA" }, welcome, "ext-id")).toEqual({ status: "error" });
   });
 });
