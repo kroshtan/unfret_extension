@@ -36,7 +36,7 @@ Unfret checks a product page when you click its toolbar button. No account or wa
 4. If the popup says there are no free checks (today's are all given out), open the extension's options, paste this
    test key under "Use an Unfret pass instead" and click "Use this pass"; it holds about 20 checks:
    ufk_<REPLACE WITH THE TEST KEY>
-5. Optional: under a result, "This is wrong" lets you report a wrong result (it asks for consent first).
+5. Optional: under a result, "Wrong result?" lets you report a wrong result (it asks for consent first).
 
 Nothing is read or sent until "Check this page" is clicked. Privacy statement: https://unfret.net/privacy
 ```

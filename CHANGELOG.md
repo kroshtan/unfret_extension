@@ -5,6 +5,13 @@ backend's changelog, which lists each one published at `/extension`.)
 
 ## 0.12.0 (unreleased)
 
+- **The result card**, as on the website and the Android app (backend: the result card): the same product sold
+  elsewhere first, with both photos ("Looks like the same product, sold elsewhere for $X", from Unfret's image
+  index, photos only through the API's own thumbnail proxy); each finding with its source ("Source: Domain registry
+  (RDAP)"); "What you can do", one suggested next step; "What we checked", area by area, ticked, marked or not
+  checked and why; a clean result says "Nothing worrying in 14 checks." Results without these fields (an older
+  server, a cached result) look as before. "This is wrong" is now "Wrong result?", and a "Your shop? Object to this
+  result" link opens the site's `/objection`. The share preview shows the card too.
 - **One gift code a month.** A pass or wallet that already redeemed a gift code this calendar month is refused with
   429 `INVITE_MONTHLY_LIMIT` (backend B5); the popup and settings now say "You've already used a gift code this
   month; this one still works from December, or give it to someone else." (the month from `metadata.next_month`;

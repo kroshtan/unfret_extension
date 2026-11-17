@@ -394,7 +394,7 @@ function render(state: TabState): void {
   }
 }
 
-// ── "This is wrong" ──────────────────────────────────────────────────────────
+// ── "Wrong result?" ─────────────────────────────────────────────────────────
 
 const REPORT_OUTCOME = {
   queued: "Thanks! We'll review this page. If we got it badly wrong, you get free checks.",
@@ -645,6 +645,13 @@ async function init(): Promise<void> {
     if (update.tabId === tabId) render(update.state);
   });
   port.postMessage({ type: "watch", tabId } satisfies PopupRequest);
+  el("objection-open").addEventListener("click", () => {
+    // The shop owner's page on the Unfret site: nothing to sign in to, so a plain tab (no hand-off ticket).
+    if (!apiBase) return;
+    void chrome.tabs.create({ url: `${apiBase}/objection` }).then(() => {
+      window.close();
+    });
+  });
   el("report-open").addEventListener("click", (event) => {
     event.preventDefault();
     show("report-open-row", false);

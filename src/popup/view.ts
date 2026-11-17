@@ -1,6 +1,6 @@
 /** Presentation for the popup: the result view and the progress checklist (pure DOM, tested in jsdom). */
 
-import type { AnalysisResult, Band, Flag, ShareBand, SharePreview } from "../api/client.js";
+import type { AnalysisResult, Band, Flag, ResultCard, ShareBand, SharePreview } from "../api/client.js";
 import { BAND_SYMBOL, bandOf } from "../shared/bands.js";
 import { NO_CHECK_USED, QUICK_NOTE } from "../shared/text.js";
 
@@ -112,13 +112,77 @@ function thumbnails(urls: readonly string[]): HTMLElement {
 
 function list(
   className: string,
-  items: readonly { title: string; detail: string; cls?: string; thumbs?: readonly string[] }[],
+  items: readonly {
+    title: string;
+    detail: string;
+    cls?: string;
+    thumbs?: readonly string[];
+    source?: string | null | undefined;
+  }[],
 ): HTMLElement {
   const ul = element("ul", className);
   for (const item of items) {
     const li = element("li", item.cls);
     li.append(element("strong", undefined, item.title), element("span", "detail", item.detail));
+    if (item.source) li.append(element("span", "source", `Source: ${item.source}`));
     if (item.thumbs?.length) li.append(thumbnails(item.thumbs));
+    ul.append(li);
+  }
+  return ul;
+}
+
+// ── The result card: the same product elsewhere, the next step, what was checked (as on the website) ─────────
+
+/** The checklist's marks as words for screen readers (the marks themselves are drawn by the stylesheet). */
+const CHECK_WORD = { checked: "checked", concern: "something to note", not_checked: "not checked" } as const;
+
+function sameProductNode(
+  same: NonNullable<ResultCard["same_product"]>,
+  apiOrigin: string | undefined,
+): HTMLElement | null {
+  const [image] = shownThumbnails([same.image], apiOrigin);
+  if (!image) return null;
+  const [own] = shownThumbnails(same.own_image ? [same.own_image] : [], apiOrigin);
+  const box = element("section", "same-product");
+  box.setAttribute("aria-label", same.title);
+  box.append(element("strong", undefined, same.title));
+  const pair = element("div", "pair");
+  for (const [src, caption] of [
+    [own, "This page"],
+    [image, same.where],
+  ] as const) {
+    if (!src) continue;
+    const figure = element("figure");
+    const img = document.createElement("img");
+    img.src = src;
+    img.alt = src === own ? "This page's product photo" : `The same photo on ${caption}`;
+    img.width = 96;
+    img.height = 96;
+    img.referrerPolicy = "no-referrer";
+    img.addEventListener("error", () => {
+      figure.remove();
+    });
+    figure.append(img, element("figcaption", undefined, caption));
+    pair.append(figure);
+  }
+  box.append(pair, element("span", "detail", same.detail));
+  return box;
+}
+
+function checklistNode(items: NonNullable<ResultCard["checklist"]>): HTMLElement {
+  const ul = element("ul", "checked-list");
+  for (const item of items) {
+    const status = item.status in CHECK_WORD ? item.status : "checked";
+    const li = element("li", status);
+    const mark = element("span", "mark");
+    mark.setAttribute("aria-hidden", "true");
+    const what = element("span", "what");
+    what.append(
+      element("span", "area", item.label),
+      element("span", "visually-hidden", `: ${CHECK_WORD[status]}`),
+    );
+    if (item.note) what.append(element("span", "why", item.note));
+    li.append(mark, what);
     ul.append(li);
   }
   return ul;
@@ -149,8 +213,16 @@ interface VerdictView {
   symbol: string;
   label: string;
   headline: string;
-  reasons: readonly { title: string; detail: string; severity: string; thumbnails?: readonly string[] }[];
-  positives: readonly { title: string; detail: string }[];
+  reasons: readonly {
+    type?: string;
+    title: string;
+    detail: string;
+    severity: string;
+    thumbnails?: readonly string[];
+    source?: string | null;
+  }[];
+  positives: readonly { title: string; detail: string; source?: string | null }[];
+  card?: ResultCard | undefined;
   flags: readonly Pick<Flag, "label" | "evidence" | "kind" | "severity">[];
   confidence?: number | undefined;
   modelVersion?: string | undefined;
@@ -168,6 +240,13 @@ function verdictNodes(view: VerdictView, apiOrigin: string | undefined): { nodes
   label.setAttribute("aria-level", "2");
   head.append(symbol, label);
   const nodes: Node[] = [head, element("p", "headline", view.headline)];
+  const card = view.card ?? {};
+  const same = card.same_product ? sameProductNode(card.same_product, apiOrigin) : null;
+  if (same) nodes.push(same);
+  const checks = typeof card.checks_run === "number" ? card.checks_run : null;
+  if (view.band === "reliable" && view.reasons.length === 0 && checks) {
+    nodes.push(element("p", "clean", `Nothing worrying in ${String(checks)} checks.`));
+  }
 
   const shownReasons: VerdictView["reasons"] =
     view.reasons.length > 0 || view.band === null || view.band === "reliable"
@@ -182,7 +261,9 @@ function verdictNodes(view: VerdictView, apiOrigin: string | undefined): { nodes
             title: r.title,
             detail: r.detail,
             cls: r.severity,
-            thumbs: shownThumbnails(r.thumbnails, apiOrigin),
+            // The photo of the same product is shown once, up top.
+            thumbs: same && r.type === "photo_reused" ? [] : shownThumbnails(r.thumbnails, apiOrigin),
+            source: "source" in r ? r.source : undefined,
           })),
         ),
       ]
@@ -192,6 +273,16 @@ function verdictNodes(view: VerdictView, apiOrigin: string | undefined): { nodes
     : [];
   // Reliable: what looks good first; otherwise what we noticed first.
   nodes.push(...(view.band === "reliable" ? [...positives, ...reasons] : [...reasons, ...positives]));
+  if (card.next_step?.text) {
+    const step = element("section", "next-step");
+    step.append(element("h2", undefined, "What you can do"), element("p", undefined, card.next_step.text));
+    nodes.push(step);
+  }
+  if (card.checklist?.length) {
+    const heading = element("h2", undefined, "What we checked");
+    if (checks) heading.append(element("span", "count", ` · ${String(checks)} checks`));
+    nodes.push(heading, checklistNode(card.checklist));
+  }
 
   if (view.confidence === undefined && view.flags.length === 0) return { nodes };
   const details = element("details", "details");
@@ -229,6 +320,7 @@ export function renderResult(root: HTMLElement, result: AnalysisResult, apiOrigi
       headline: verdict?.headline ?? result.explanation,
       reasons: verdict?.reasons ?? [],
       positives: verdict?.positives ?? [],
+      card: verdict,
       flags: assessment?.flags ?? [],
       confidence: assessment?.confidence,
       modelVersion: assessment?.model_version,
@@ -280,6 +372,7 @@ export function renderSharePreview(root: HTMLElement, preview: SharePreview, api
       headline: preview.headline,
       reasons: verdict?.reasons ?? [],
       positives: verdict?.positives ?? [],
+      card: verdict,
       flags: assessment?.flags ?? [],
       confidence: assessment?.confidence,
       modelVersion: assessment?.model_version,
