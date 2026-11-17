@@ -47,8 +47,8 @@ Private by design
 How you pay
 • Free to start: 5 free deep checks when you install Unfret. No code, no account, no e-mail.
 • After that, quick checks stay free: they read the page itself, by Unfret's rules.
-• Deep checks, which also look the shop and the product up elsewhere, come in packs of 25, 50 or 100 that you buy on unfret.net, by card or with crypto (USDC or SOL): about 20 cents a check, a little more by card, plus VAT where it applies. No subscription, and checks never expire.
-• Every pack comes with gift codes to share, one per 25 checks bought (4 with a pack of 100), 5 checks each. A gift code from a friend works for any Unfret pass, new or old, except the one that bought the pack (one gift code a month per pass).
+• Deep checks, which also look the shop and the product up elsewhere, come in packs you buy on unfret.net, by card or with crypto (USDC or SOL): 25 checks for $6 ($5 with crypto) or 100 checks for $20, plus sales tax or VAT where it applies. No subscription, and checks never expire.
+• Every pack comes with gift codes to share, one per 25 checks bought (1 with 25 checks, 4 with 100), 5 checks each. A gift code from a friend works for any Unfret pass, new or old, except the one that bought the pack (one gift code a month per pass).
 Your checks are held by your Unfret pass, an anonymous key the extension makes for you; no wallet or account needed. Paid with a Solana wallet? Sign in with it instead: signing in is a free message, not a transaction, and Unfret never gets access to your funds.
 
 Works on big marketplaces (third-party sellers included), private-seller ad sites and most web shops. The code is open source (MIT).
