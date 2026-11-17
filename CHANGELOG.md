@@ -29,8 +29,8 @@ backend's changelog, which lists each one published at `/extension`.)
   (an install that couldn't reach the server). A smoke test removes the extension and installs it again in the same
   profile.
 - **Store texts for 0.12.0**: the listing's "How you pay" (5 free deep checks on install, then free quick checks;
-  packs bought on unfret.net by card or crypto; gift codes of 5 checks, one per 25 checks bought, for any pass but
-  the buyer's own), the accuracy page, "no
+  packs of 25 ($6, $5 with crypto) or 100 ($20) bought on unfret.net by card or crypto; gift codes of 5 checks, one
+  per 25 checks bought, for any pass but the buyer's own, one a month), the accuracy page, "no
   affiliate links to shops", and the reviewer notes (the free checks on install; the test key only as a fallback, in
   the settings). The privacy statement and the store's privacy texts say what the address loses and what the welcome
   page tells the extension.
