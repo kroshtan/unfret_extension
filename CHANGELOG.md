@@ -5,6 +5,13 @@ backend's changelog, which lists each one published at `/extension`.)
 
 ## Unreleased
 
+- **The privacy statement (`PRIVACY.md`) and the store's privacy texts match 0.12.0**: the free pass made on install
+  (its proof-of-work request), the Unfret pass and its backup code in the settings, the free-checks note in
+  `storage.sync`, every request the extension makes and when (the balance when the popup opens, reports, phone
+  sign-in, the affiliate note), what stays in memory only, the hand-off rules with the extension's own confirmation
+  window, and gift codes as the server now keeps them. The button is "Check this page", and questions go to
+  hello@unfret.net.
+
 - **A pass or wallet sign-in from unfret.net is taken only when you meant it.** Without an account yet, the extension
   takes a pass from the checkout page, or a wallet sign-in from the connect page, only right after a click on that
   page, or in a tab the extension opened itself (from the popup, the settings or after installing; for an hour, so a

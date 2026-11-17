@@ -51,7 +51,7 @@ Website: https://unfret.net
 ## URLs
 
 - Homepage: https://unfret.net
-- Support: https://kroshtan.com (contact details)
+- Support: hello@unfret.net
 - Privacy policy: https://unfret.net/privacy
 
 ## Images
