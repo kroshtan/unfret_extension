@@ -17,8 +17,10 @@ described in [INSTALL.md](INSTALL.md), but no longer offered.
 - The service behind it (API, website, scoring):
   [git.kroshtan.com/kroshtan/unfret_backend](https://git.kroshtan.com/kroshtan/unfret_backend) ·
   [GitHub mirror](https://github.com/kroshtan/unfret_backend)
-- Android app: [git.kroshtan.com/kroshtan/unfret_android](https://git.kroshtan.com/kroshtan/unfret_android)
-- This extension: [git.kroshtan.com/kroshtan/unfret_extension](https://git.kroshtan.com/kroshtan/unfret_extension)
+- Android app: [git.kroshtan.com/kroshtan/unfret_android](https://git.kroshtan.com/kroshtan/unfret_android) ·
+  [GitHub mirror](https://github.com/kroshtan/unfret_android)
+- This extension: [git.kroshtan.com/kroshtan/unfret_extension](https://git.kroshtan.com/kroshtan/unfret_extension) ·
+  [GitHub mirror](https://github.com/kroshtan/unfret_extension)
 
 ## How accurate it is
 
