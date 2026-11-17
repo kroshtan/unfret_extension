@@ -182,7 +182,7 @@ describe("settings", () => {
     const session = keySession(` ${key} `);
     expect(session).toMatchObject({ token: key, address: "key:abcdefghij", kind: "key" });
     expect(session && isKeySession(session)).toBe(true);
-    expect(session && accountLabel(session)).toBe("abcdefghij");
+    expect(session && accountLabel(session)).toBe("ABCDE-FGHIJ"); // shown as the website shows a pass ID
     expect(Date.parse(session?.expiresAt ?? "")).toBeGreaterThan(Date.parse("2100-01-01"));
     for (const bad of [
       "ufr_abcdefghij_" + "a".repeat(52),

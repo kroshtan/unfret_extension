@@ -64,7 +64,7 @@ let busy = false;
 let port: chrome.runtime.Port | undefined;
 let purchasesOn = false;
 let consented = false;
-/** Not signed in: the sign-in choices are behind "Sign in with an API key or wallet" until asked for. */
+/** Not signed in: the sign-in choices are behind "Sign in with an Unfret pass or wallet" until asked for. */
 let signInOpen = false;
 
 /** The consent screen: shown until accepted, and from "About & privacy" any time after. */
@@ -213,7 +213,7 @@ function untilText(expiresAt: string): string {
 function renderAccount(): void {
   const usingKey = isKeySession(session);
   el("account-status").textContent = session
-    ? `${usingKey ? "Using API key" : "Signed in as"} ${accountLabel(session)}`
+    ? `${usingKey ? "Using Unfret pass" : "Signed in as"} ${accountLabel(session)}`
     : expired
       ? SESSION_EXPIRED
       : "New here? Get your first checks with a code or by card, and Unfret signs in by itself.";

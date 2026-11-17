@@ -3,6 +3,20 @@
 Releases of the Unfret browser extension. (Earlier releases are described in their commit messages and in the
 backend's changelog, which lists each one published at `/extension`.)
 
+## Unreleased
+
+- **The four verdicts in the website's words**: Looks fine, **Worth a look**, **Think twice** and **Serious
+  concerns** (they were Looks fine, A few things to check, Some warning signs and Many warning signs). The popup
+  shows the server's words as before; these are the words it shows when an older server sends no verdict, and the
+  store listing's. The badge's symbols and colours are unchanged.
+- **A verdict below "Looks fine" always names a reason.** The server always sends one; a result without any (from
+  an older server) shows "Several small signals" instead of a verdict on its own.
+- **"Unfret pass" and "backup code"**, as on the website: the popup and the settings page say "Unfret pass" where
+  they said "API key" ("Sign in with an Unfret pass or wallet", "Paste your pass", "Use this pass"), and a pass's
+  "backup code" where they said "recovery code". A pass is named by its ID as the site shows it: "Using Unfret pass
+  ABCDE-FGHIJ". Only the words change: the key, how it is stored and what is sent stay the same.
+- Version 0.12.0.
+
 ## 0.11.0 (2026-11-16)
 
 In short, since 0.10.0 (and for Firefox, whose store still has 0.9.1, also everything in 0.10.0):

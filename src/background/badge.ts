@@ -1,6 +1,6 @@
 /**
  * The toolbar badge for a tab's analysis state: once known, a symbol for the verdict in a traffic-light colour. The
- * popup speaks in words ("Looks fine", "Many warning signs"), so the badge shows the same verdict, never the score.
+ * popup speaks in words ("Looks fine", "Serious concerns"), so the badge shows the same verdict, never the score.
  */
 
 import type { AnalysisResult } from "../api/client.js";

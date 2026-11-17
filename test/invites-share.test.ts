@@ -33,7 +33,7 @@ const RESULT: AnalysisResult = {
   score: 18,
   explanation: "Generic product, inflated discount.",
   assessment: { risk_score: 0.82, confidence: 0.64, model_version: "v1-test", flags: [] },
-  verdict: { band: "junk_or_scam", label: "Many warning signs", headline: "x", reasons: [], positives: [] },
+  verdict: { band: "junk_or_scam", label: "Serious concerns", headline: "x", reasons: [], positives: [] },
   balance_lamports: 6_000_000,
   charged: true,
   report_token: "report-token.mac",

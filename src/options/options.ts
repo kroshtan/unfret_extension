@@ -1,4 +1,4 @@
-/** Options: the API base URL (production by default, a local origin for development), an API key, signing out. */
+/** Options: the API base URL (production by default, a local origin for development), an Unfret pass, signing out. */
 
 import { UnfretApi } from "../api/client.js";
 import { checksText } from "../popup/view.js";
@@ -36,13 +36,13 @@ async function renderAccount(): Promise<void> {
   el("account-status").textContent = !session
     ? "Not signed in."
     : isKeySession(session)
-      ? `Using API key ${accountLabel(session)}.`
+      ? `Using Unfret pass ${accountLabel(session)}.`
       : `Signed in as ${shortAddress(session.address)} until ${new Date(session.expiresAt).toLocaleDateString("en")}.`;
   el("sign-out").hidden = !session;
   // Signed in with a key: its own top-up, the key's ID filled in.
   el("buy").hidden = !session;
   el("buy").setAttribute("href", `${apiBase}${checkoutPath(session)}`);
-  el("buy").textContent = isKeySession(session) ? "Buy checks for this key" : "Buy checks";
+  el("buy").textContent = isKeySession(session) ? "Buy checks for this pass" : "Buy checks";
   el("invite").hidden = !session;
   el("have-code-row").hidden = Boolean(session);
   if (session) {
@@ -68,7 +68,7 @@ async function useKey(value: string): Promise<void> {
   const result = await signInWithKey(apiBase, value);
   if (result.ok) {
     input("api-key").value = "";
-    status.textContent = `Saved. Using API key ${accountLabel(result.session)}: ${checksText(result.checks)}.`;
+    status.textContent = `Saved. Using Unfret pass ${accountLabel(result.session)}: ${checksText(result.checks)}.`;
   } else {
     status.textContent = KEY_FAILURE[result.reason];
   }

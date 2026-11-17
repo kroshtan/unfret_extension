@@ -127,10 +127,21 @@ function list(
 /** The band in words when the server sent none (an older server). */
 const BAND_LABEL: Record<Band, string> = {
   reliable: "Looks fine",
-  concerns: "A few things to check",
-  careful: "Some warning signs",
-  junk_or_scam: "Many warning signs",
+  concerns: "Worth a look",
+  careful: "Think twice",
+  junk_or_scam: "Serious concerns",
 };
+
+/**
+ * Every verdict below "Looks fine" names at least one reason. The server always sends one (its catalogue's "Several
+ * small signals" when nothing else fired); a result without any (an older server's, sent without a verdict) gets the
+ * same words here, so "Worth a look" or "Think twice" is never shown on its own.
+ */
+const OVERALL_REASON = {
+  title: "Several small signals",
+  detail: "No single big problem, but several smaller signals together lowered the score.",
+  severity: "low",
+} as const;
 
 interface VerdictView {
   /** The CSS band (null: not assessed). */
@@ -153,12 +164,16 @@ function verdictNodes(view: VerdictView, apiOrigin: string | undefined): { nodes
   head.append(symbol, element("p", "label", view.label));
   const nodes: Node[] = [head, element("p", "headline", view.headline)];
 
-  const reasons: Node[] = view.reasons.length
+  const shownReasons: VerdictView["reasons"] =
+    view.reasons.length > 0 || view.band === null || view.band === "reliable"
+      ? view.reasons
+      : [OVERALL_REASON];
+  const reasons: Node[] = shownReasons.length
     ? [
         element("h2", undefined, "What we noticed"),
         list(
           "reasons",
-          view.reasons.map((r) => ({
+          shownReasons.map((r) => ({
             title: r.title,
             detail: r.detail,
             cls: r.severity,

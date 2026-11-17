@@ -325,7 +325,7 @@ describe("with the access a click grants (activeTab)", () => {
     expect(api.requests.find((r) => r.path === "/v1/analyze/stream")?.language).toBe("en");
 
     const view = await renderedPopup(granted, tabId);
-    expect(view.label).toBe("Many warning signs");
+    expect(view.label).toBe("Serious concerns");
     expect(view.headings).toEqual(["What we noticed"]);
     expect(view.reasons).toEqual(["Suspicious number of reviews"]);
     expect(view.text).not.toMatch(/listing\.|=\s*\d/u);
@@ -369,13 +369,13 @@ describe("reports and API keys", () => {
     await page.fill("#api-key", "not a key");
     await page.click("#key-use");
     await page.waitForFunction(() => document.querySelector("#key-status")?.textContent !== "");
-    expect(await page.textContent("#key-status")).toMatch(/isn't an API key/u);
+    expect(await page.textContent("#key-status")).toMatch(/doesn't look like an Unfret pass/u);
 
     const key = `ufk_abcdefghij_${"a".repeat(52)}`;
     await page.fill("#api-key", key);
     await page.click("#key-use");
     await page.waitForFunction(() => document.querySelector("#key-status")?.textContent.startsWith("Saved"));
-    expect(await page.textContent("#account-status")).toBe("Using API key abcdefghij.");
+    expect(await page.textContent("#account-status")).toBe("Using Unfret pass ABCDE-FGHIJ.");
     expect(await page.inputValue("#api-key")).toBe(""); // not left on screen
     expect(api.requests.at(-1)).toMatchObject({ path: "/v1/credits", auth: `Bearer ${key}` });
     const stored = await granted.worker.evaluate(
