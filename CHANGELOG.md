@@ -15,6 +15,38 @@ backend's changelog, which lists each one published at `/extension`.)
   they said "API key" ("Sign in with an Unfret pass or wallet", "Paste your pass", "Use this pass"), and a pass's
   "backup code" where they said "recovery code". A pass is named by its ID as the site shows it: "Using Unfret pass
   ABCDE-FGHIJ". Only the words change: the key, how it is stored and what is sent stay the same.
+- **The popup and the settings page look like unfret.net**: its green, its calm verdict colours (each verdict with
+  its own: "Think twice" is no longer the same red as "Serious concerns"), its typeface (Figtree, bundled with the
+  extension under the SIL Open Font License: no fonts or anything else are loaded from elsewhere), drawn signs instead
+  of typed ones (Android showed ⚠ as a colour emoji) and the site's light and dark themes.
+- **What matters now comes first.** A running check, its result or what went wrong is at the top, then the button,
+  then the account; signed out, getting started comes first. After a result, checking the page again is a plain
+  button under it rather than the biggest thing on screen. Before the first check is agreed to, the consent screen
+  is the whole popup. Reasons are small cards with their tone on the edge, as on the site; "No check was used" sits
+  under the headline. Signed out or out of checks, the account and the main button say so once, instead of a red card
+  repeating them. The settings page's server field (for development) is folded away.
+- **On a phone** (Firefox for Android shows the popup as a page): the popup takes the phone's width instead of a fixed
+  360 px, every button, link and choice is at least 44×44 px, fields use 16 px text (no zooming in on focus), and
+  nothing scrolls sideways at 360 px. A smoke test renders the popup and the settings page at 360×740.
+- **Keyboard and screen readers**: buttons that were links are buttons; the verdict is a heading; a result, a running
+  check or a problem is announced once instead of the whole result being read again on every change; opening the
+  consent screen, the report form, a share preview or the sign-in choices moves the focus there, and agreeing to the
+  consent moves it to the next step; "About & privacy" says whether it is open; a refused pass or code marks its
+  field. Colours meet WCAG AA (the main button's white text is on a darker green than the site's, 6:1), fields have a
+  visible 3:1 edge, and the one animation (the checklist's waiting dot) is off with reduced motion.
+- **The Unfret test shop can be checked** (`/test-shop` on the site the extension uses: unfret.net, or dev.unfret.net
+  for Unfret Dev), its product page and its checkout: it is a made-up store with every trick Unfret catches, for
+  demos and trying Unfret out. Unfret's other pages (checkout, sign-in, welcome, …) still can't be checked.
+- **Fixed: "Buy checks" appeared seconds after the popup opened** in a fresh browser. It waited for the price list
+  (`/v1/pricing`), which the popup asked for only after reading its settings and the tab, and which on a cold
+  connection costs a DNS lookup, a TLS handshake and the server's live SOL price; it was also the wrong question (it
+  says whether crypto purchases are on, while cards work without them). The popup no longer asks for it: "Buy checks"
+  and "Get more checks" show at once, and the checkout page says if buying is off. The same wait could leave "Buy
+  checks" out of the "no checks left" message for good.
+- **Fixed: out of checks on a page that can't be checked**, the hint said "This page can't be checked." under a "Get
+  more checks" button. Out of checks, the button gets more checks on any page, so the hint now says "You have no
+  checks left."; once there are checks again, it says the page can't be checked. While a check runs, the hint says
+  the popup can be closed.
 - Version 0.12.0.
 
 ## 0.11.0 (2026-11-16)

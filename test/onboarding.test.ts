@@ -242,8 +242,9 @@ describe("getting more checks", () => {
 describe("the popup's next step", () => {
   let data: Record<string, unknown>;
   let opened: string[];
+  let fetched: string[];
 
-  async function openPopup(credits: number | null): Promise<void> {
+  async function openPopup(credits: number | null, url = "https://shop.example/p/1"): Promise<void> {
     const body = /<body>([\s\S]*)<\/body>/u.exec(readFileSync("src/popup/popup.html", "utf8"))?.[1] ?? "";
     document.body.innerHTML = body.replace(/<script[\s\S]*?<\/script>/gu, "");
     stubStorage(data);
@@ -257,7 +258,7 @@ describe("the popup's next step", () => {
       },
     };
     chromeStub.tabs = {
-      query: () => Promise.resolve([{ id: 1, url: "https://shop.example/p/1" }]),
+      query: () => Promise.resolve([{ id: 1, url }]),
       create: (props: { url: string }) => {
         opened.push(props.url);
         return Promise.resolve({});
@@ -272,6 +273,9 @@ describe("the popup's next step", () => {
       "fetch",
       vi.fn((input: string) => {
         const path = new URL(input).pathname;
+        fetched.push(path);
+        // A slow price list (a cold server or a fresh browser) must not hold anything up: it never answers here.
+        if (path === "/v1/pricing") return new Promise<Response>(() => undefined);
         const json =
           path === "/v1/pricing"
             ? { hot_wallet: "HOT", packs: [] }
@@ -293,6 +297,7 @@ describe("the popup's next step", () => {
   beforeEach(() => {
     data = { consent: { version: 2 } };
     opened = [];
+    fetched = [];
   });
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -347,6 +352,36 @@ describe("the popup's next step", () => {
     expect(document.getElementById("analyse")?.textContent).toBe("Check this page");
     document.getElementById("buy")?.click();
     expect(opened).toEqual(["https://unfret.net/checkout?mode=topup&key_id=abcdefghij"]);
+  });
+
+  it('shows "Buy checks" at once, without waiting for the price list (0.12.0: it came seconds late)', async () => {
+    data.session = keySessionOf(KEY);
+    await openPopup(5);
+    await vi.waitFor(() => {
+      expect(document.getElementById("credits")?.textContent).toBe("5 checks left");
+    });
+    expect(visible("buy")).toBe(true);
+    expect(fetched).not.toContain("/v1/pricing"); // the popup doesn't ask for it at all
+  });
+
+  it("out of checks on a page that can't be checked: the hint says what the button does", async () => {
+    data.session = keySessionOf(KEY);
+    await openPopup(0, "chrome://newtab/");
+    await vi.waitFor(() => {
+      expect(document.getElementById("analyse")?.textContent).toBe("Get more checks");
+    });
+    expect(document.getElementById("hint")?.textContent).toBe("You have no checks left.");
+    expect((document.getElementById("analyse") as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it("with checks on a page that can't be checked: the hint says so", async () => {
+    data.session = keySessionOf(KEY);
+    await openPopup(5, "chrome://newtab/");
+    await vi.waitFor(() => {
+      expect(document.getElementById("credits")?.textContent).toBe("5 checks left");
+    });
+    expect(document.getElementById("hint")?.textContent).toBe("This page can't be checked.");
+    expect((document.getElementById("analyse") as HTMLButtonElement).disabled).toBe(true);
   });
 
   it("signed in with a wallet and no checks: the checkout as before", async () => {

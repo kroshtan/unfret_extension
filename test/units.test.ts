@@ -258,6 +258,29 @@ describe("sites", () => {
     expect(isAnalysable("https://unfret.net/checkout", DEFAULT_API_BASE)).toBe(false);
     expect(isAnalysable(undefined, DEFAULT_API_BASE)).toBe(false);
   });
+
+  it("checks Unfret's own test shop, and none of Unfret's other pages", () => {
+    for (const base of [DEFAULT_API_BASE, "https://dev.unfret.net"]) {
+      for (const path of ["/test-shop", "/test-shop/", "/test-shop/checkout", "/test-shop?x=1#returns"]) {
+        expect(isAnalysable(`${base}${path}`, base), `${base}${path}`).toBe(true);
+      }
+      for (const path of [
+        "/",
+        "/checkout",
+        "/connect",
+        "/welcome",
+        "/my-checks",
+        "/check",
+        "/test-shopping",
+        "/x/test-shop",
+      ]) {
+        expect(isAnalysable(`${base}${path}`, base), `${base}${path}`).toBe(false);
+      }
+    }
+    // Another site's "test shop" is just another page; Unfret Dev's test shop is on its own API base only.
+    expect(isAnalysable("https://shop.example/test-shop", DEFAULT_API_BASE)).toBe(true);
+    expect(isAnalysable("https://unfret.net/test-shop", "https://dev.unfret.net")).toBe(true);
+  });
 });
 
 describe("presentation", () => {

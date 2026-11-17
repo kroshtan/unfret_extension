@@ -161,7 +161,12 @@ function verdictNodes(view: VerdictView, apiOrigin: string | undefined): { nodes
   const head = element("div", `verdict ${view.band ?? "none"}`);
   const symbol = element("span", "symbol", view.symbol);
   symbol.setAttribute("aria-hidden", "true");
-  head.append(symbol, element("p", "label", view.label));
+  // The verdict is the result's heading for screen readers (its sub-headings are h2, so it is one level up from
+  // them in meaning, without changing the h2s that the page's other headings follow).
+  const label = element("p", "label", view.label);
+  label.setAttribute("role", "heading");
+  label.setAttribute("aria-level", "2");
+  head.append(symbol, label);
   const nodes: Node[] = [head, element("p", "headline", view.headline)];
 
   const shownReasons: VerdictView["reasons"] =
@@ -230,9 +235,12 @@ export function renderResult(root: HTMLElement, result: AnalysisResult, apiOrigi
     },
     apiOrigin,
   );
+  // Right under the headline: no check used is good news, and easy to miss under the reasons.
   if (result.score < 0 || result.charged === false) {
-    nodes.push(
-      element("p", "muted small", result.score < 0 ? NO_CHECK_USED : "Checked recently: no check was used."),
+    nodes.splice(
+      2,
+      0,
+      element("p", "charge-note", result.score < 0 ? NO_CHECK_USED : "Checked recently: no check was used."),
     );
   }
   // Details only with an assessment (an older server's result without one has none to show).

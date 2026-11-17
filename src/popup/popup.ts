@@ -62,7 +62,6 @@ let tabId: number | undefined;
 let analysable = false;
 let busy = false;
 let port: chrome.runtime.Port | undefined;
-let purchasesOn = false;
 let consented = false;
 /** Not signed in: the sign-in choices are behind "Sign in with an Unfret pass or wallet" until asked for. */
 let signInOpen = false;
@@ -70,6 +69,8 @@ let signInOpen = false;
 /** The consent screen: shown until accepted, and from "About & privacy" any time after. */
 function showConsent(visible: boolean): void {
   show("consent", visible);
+  document.body.dataset.consent = consented ? "given" : "needed";
+  el("about").setAttribute("aria-expanded", String(visible));
   show("consent-agree", !consented);
   show("consent-agreed", consented);
   show("consent-close", consented);
@@ -99,15 +100,6 @@ async function refreshCredits(): Promise<void> {
   } catch (error) {
     if (error instanceof ApiError && error.needsSignIn) await sessionRejected();
   }
-}
-
-async function refreshPricing(): Promise<void> {
-  try {
-    purchasesOn = (await new UnfretApi(apiBase).pricing()).hot_wallet !== null;
-  } catch {
-    purchasesOn = false;
-  }
-  renderAccount();
 }
 
 // ── Sign in with phone ─────────────────────────────────────────────────────────
@@ -224,31 +216,40 @@ function renderAccount(): void {
   const choosing = !session && (signInOpen || expired);
   show("get-started-row", !session && !expired);
   show("sign-in-more-row", !session && !choosing);
+  show("sign-in-choices", choosing);
   show("sign-in", choosing);
   show("sign-in-phone", choosing);
   show("sign-in-key", choosing);
+  document.body.dataset.auth = session ? "in" : expired ? "expired" : "out";
   show("have-code-row", !session);
   if (session) show("key", false);
   show("sign-out", Boolean(session));
+  show("account-actions", Boolean(session));
   show("invite", Boolean(session) && inviteEligible !== false);
   el("credits").textContent = checks === undefined ? "" : checksText(checks);
   show("credits", Boolean(session) && checks !== undefined);
 
   // Out of checks: "Get more checks" in place of "Check this page" is the one next step (a key's own top-up).
   const noChecks = Boolean(session) && checks === 0;
-  show("buy", Boolean(session) && purchasesOn && !noChecks);
+  // Shown at once: whether checks can be bought is the checkout page's to say (card and crypto each switch off on
+  // their own there). It used to wait for /v1/pricing, which held it back for a whole cold round trip (0.12.0).
+  show("buy", Boolean(session) && !noChecks);
   const analyse = button("analyse");
   analyse.textContent = busy ? "Checking…" : noChecks ? "Get more checks" : "Check this page";
-  analyse.disabled = noChecks ? busy || !purchasesOn : busy || !consented || !session || !analysable;
+  analyse.disabled = noChecks ? busy : busy || !consented || !session || !analysable;
+  // The hint says why the button is what it is. Out of checks, the button is "Get more checks" on any page, so
+  // that is what the hint says too, also on a page that can't be checked (that only matters once there are checks).
   el("hint").textContent = !consented
     ? CONSENT_HINT
-    : !analysable
-      ? "This page can't be checked."
-      : !session
-        ? "Sign in to check this page."
-        : noChecks
-          ? "You have no checks left."
-          : "One check per page. Nothing is sent until you click.";
+    : busy
+      ? "You can close this popup: the check carries on, and its result waits here."
+      : noChecks
+        ? "You have no checks left."
+        : !analysable
+          ? "This page can't be checked."
+          : !session
+            ? "Sign in to check this page."
+            : "One check per page. Nothing is sent until you click.";
 }
 
 /** The origin of the API in use (thumbnails are only loaded from there). */
@@ -260,11 +261,25 @@ function apiOrigin(): string | undefined {
   }
 }
 
+/** What screen readers last heard about this check (said once per change, not on every update). */
+let announced = "";
+
+function announce(text: string): void {
+  if (text === announced) return;
+  announced = text;
+  el("announce").textContent = text;
+}
+
 function render(state: TabState): void {
   busy = state.status === "extracting" || state.status === "analysing";
+  document.body.dataset.phase = busy ? "busy" : state.status;
   show("progress", busy);
   show("result", state.status === "done");
-  show("error", state.status === "error");
+  // Signed out or out of checks, the account and the main button already offer the way on (and say why): no second
+  // card repeats it; screen readers hear the message.
+  const ownCard = state.status === "error" && !state.needsSignIn && !state.needsCredits;
+  show("error", ownCard);
+  if (state.status === "error" && state.needsCredits) checks = 0;
   renderAccount();
   if (busy) {
     el("progress-status").textContent =
@@ -272,17 +287,18 @@ function render(state: TabState): void {
     const steps = el("steps");
     buildChecklist(steps);
     updateChecklist(steps, checklistDone(state.status === "analysing" ? (state.steps ?? []) : [], false));
+    announce("Checking this page…");
   }
   if (state.status === "done") {
     renderResult(el("result-body"), state.result, apiOrigin());
+    announce(`Result: ${el("result-body").querySelector(".verdict .label")?.textContent ?? ""}`);
     renderReport(state);
     renderShare(state);
     if (state.result.balance_lamports !== undefined) void refreshCredits();
   } else if (state.status === "error") {
     el("error-message").textContent = state.message;
     show("error-refunded", state.refunded === true);
-    show("error-sign-in", state.needsSignIn);
-    show("error-buy", state.needsCredits && purchasesOn);
+    if (!ownCard) announce(state.message);
     if (state.needsSignIn) void sessionRejected();
   }
 }
@@ -302,6 +318,7 @@ function renderReport(state: Extract<TabState, { status: "done" }>): void {
   if (report !== undefined) show("report", false);
   const status = el("report-status");
   status.hidden = report === undefined;
+  status.dataset.kind = report?.status === "sent" ? "ok" : report?.status === "error" ? "error" : "";
   if (report?.status === "sending") status.textContent = "Sending…";
   else if (report?.status === "sent") status.textContent = REPORT_OUTCOME[report.outcome];
   else if (report?.status === "error") status.textContent = report.message;
@@ -326,14 +343,16 @@ function shareStatus(text: string): void {
 
 function renderShare(state: Extract<TabState, { status: "done" }>): void {
   const share = state.share;
-  show("share-area", shareRequest(state.body, state.result) !== null);
+  const shareable = shareRequest(state.body, state.result) !== null;
+  show("share-area", shareable);
   const preview =
     share?.status === "preview" || share?.status === "sharing" || share?.status === "error"
       ? share.preview
       : undefined;
   show(
     "share-open-row",
-    share === undefined || (share.status === "error" && !share.preview) || share.status === "loading",
+    shareable &&
+      (share === undefined || (share.status === "error" && !share.preview) || share.status === "loading"),
   );
   button("share-open").disabled = share?.status === "loading";
   show("share-preview", preview !== undefined);
@@ -343,6 +362,7 @@ function renderShare(state: Extract<TabState, { status: "done" }>): void {
     const notice = document.createElement("strong");
     notice.textContent = preview.notice;
     el("share-notice").replaceChildren(notice);
+    if (!shownPreview) el("share-preview-heading").focus();
   }
   shownPreview = previewKey;
   button("share-confirm").disabled = share?.status === "sharing";
@@ -388,10 +408,12 @@ async function useInvite(): Promise<void> {
     if (outcome.ok) {
       field.value = "";
       status.textContent = inviteAdded(outcome.checksAdded);
+      status.dataset.kind = "ok";
       checks = outcome.checks;
       renderAccount();
     } else {
       status.textContent = outcome.message;
+      status.dataset.kind = "error";
       if (outcome.signedOut) await sessionRejected();
     }
   } finally {
@@ -405,7 +427,9 @@ async function init(): Promise<void> {
   showConsent(!consented);
   el("about").addEventListener("click", (event) => {
     event.preventDefault();
-    showConsent(el("consent").hidden === true);
+    // Before agreeing, the consent screen is all there is: the link only brings it into view.
+    if (consented) showConsent(el("consent").hidden === true);
+    if (!el("consent").hidden) el("consent").focus();
   });
   el("privacy").addEventListener("click", (event) => {
     event.preventDefault();
@@ -416,6 +440,9 @@ async function init(): Promise<void> {
       consented = true;
       showConsent(false);
       renderAccount();
+      // The next step gets the focus: checking this page, or getting started.
+      if (!button("analyse").disabled) button("analyse").focus();
+      else if (!el("get-started-row").hidden) button("get-started").focus();
     });
   });
   el("consent-close").addEventListener("click", () => {
@@ -430,23 +457,18 @@ async function init(): Promise<void> {
   tabId = tab?.id;
   analysable = tabId !== undefined && isAnalysable(tab?.url, apiBase);
   renderAccount();
-  void refreshPricing();
   void refreshCredits();
 
   el("options").addEventListener("click", (event) => {
     event.preventDefault();
     void chrome.runtime.openOptionsPage();
   });
-  for (const id of ["sign-in", "error-sign-in"]) {
-    el(id).addEventListener("click", () => {
-      openTab("/connect");
-    });
-  }
-  for (const id of ["buy", "error-buy"]) {
-    el(id).addEventListener("click", () => {
-      openTab(checkoutPath(session));
-    });
-  }
+  el("sign-in").addEventListener("click", () => {
+    openTab("/connect");
+  });
+  el("buy").addEventListener("click", () => {
+    openTab(checkoutPath(session));
+  });
   el("get-started").addEventListener("click", () => {
     openTab("/welcome");
   });
@@ -454,6 +476,7 @@ async function init(): Promise<void> {
     event.preventDefault();
     signInOpen = true;
     renderAccount();
+    button("sign-in-key").focus();
   });
   el("sign-out").addEventListener("click", () => {
     void clearSession().then(() => {
@@ -470,6 +493,7 @@ async function init(): Promise<void> {
   el("sign-in-key").addEventListener("click", () => {
     show("key", true);
     el("key-status").textContent = "";
+    el("key-input").removeAttribute("aria-invalid");
     el("key-input").focus();
   });
   el("key-cancel").addEventListener("click", () => {
@@ -491,6 +515,8 @@ async function init(): Promise<void> {
     const result = await signInWithKey(apiBase, field.value);
     if (!result.ok) {
       el("key-status").textContent = KEY_FAILURE[result.reason];
+      el("key-status").dataset.kind = "error";
+      field.setAttribute("aria-invalid", "true");
       return;
     }
     field.value = "";
@@ -531,10 +557,12 @@ async function init(): Promise<void> {
     event.preventDefault();
     show("report-open-row", false);
     show("report", true);
+    el("report-legend").focus();
   });
   el("report-cancel").addEventListener("click", () => {
     show("report", false);
     show("report-open-row", true);
+    button("report-open").focus();
   });
   el("report").addEventListener("change", () => {
     button("report-send").disabled = reportReason() === undefined;
@@ -565,7 +593,7 @@ async function init(): Promise<void> {
   });
   el("analyse").addEventListener("click", () => {
     if (session && checks === 0) {
-      if (purchasesOn && !busy) openTab(checkoutPath(session));
+      if (!busy) openTab(checkoutPath(session));
       return;
     }
     if (busy || !consented) return; // a second click before the first one's state arrives must not charge twice

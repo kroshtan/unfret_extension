@@ -55,6 +55,7 @@ const temp: string[] = [];
 async function launch(
   extension: string,
   language = "en-US",
+  phone = false,
 ): Promise<{ context: BrowserContext; worker: Worker }> {
   const userData = mkdtempSync(join(tmpdir(), "unfret-smoke-"));
   temp.push(userData);
@@ -62,6 +63,10 @@ async function launch(
     channel: "chromium",
     headless: true,
     locale: language,
+    // Firefox for Android shows the popup as a page as wide as the phone: a small one, with touch.
+    ...(phone
+      ? { viewport: { width: 360, height: 740 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 }
+      : {}),
     args: [`--disable-extensions-except=${extension}`, `--load-extension=${extension}`, `--lang=${language}`],
   });
   await context.route("https://www.amazon.com/**", (route) =>
@@ -525,5 +530,103 @@ describe("in a Dutch browser", () => {
     expect(view.lang).toBe("en");
     expect(view.headings).toEqual(["What we noticed"]);
     expect(view.analyse).toBe("Check this page");
+  });
+});
+
+describe("on a phone, 360×740 (Firefox for Android shows the popup as a full-width page)", () => {
+  let phone: { context: BrowserContext; worker: Worker };
+
+  beforeAll(async () => {
+    phone = await launch(grantedCopy(), "en-US", true);
+  }, 180_000);
+
+  afterAll(async () => {
+    await phone.context.close();
+  });
+
+  /** What doesn't fit a phone: sideways scrolling, and controls smaller than a fingertip (44×44 px). */
+  async function fit(
+    path: string,
+    ready = "#account-status",
+  ): Promise<{ width: number; overflow: boolean; small: string[] }> {
+    const extensionId = new URL(phone.worker.url()).host;
+    const page = await phone.context.newPage();
+    await page.goto(`chrome-extension://${extensionId}/${path}`);
+    await page.waitForSelector(ready, { state: "visible" });
+    await page.waitForTimeout(300);
+    const facts = await page.evaluate(() => {
+      const controls = [...document.querySelectorAll("button, a[href], input, summary, label")].filter(
+        (e) => {
+          const r = e.getBoundingClientRect();
+          return r.width > 0 && r.height > 0 && !e.closest("[hidden]");
+        },
+      );
+      return {
+        width: document.body.getBoundingClientRect().width,
+        overflow: document.documentElement.scrollWidth > window.innerWidth,
+        small: controls
+          // A radio or checkbox is tapped through its label (the label is the target); a field's label isn't one.
+          .filter((e) => !(e instanceof HTMLInputElement && e.closest("label")))
+          .filter((e) => !(e instanceof HTMLLabelElement && !e.querySelector("input")))
+          .filter((e) => {
+            const r = e.getBoundingClientRect();
+            return r.height < 44 || r.width < 44;
+          })
+          .map((e) => `${e.tagName.toLowerCase()}#${e.id} "${(e.textContent || "").trim().slice(0, 30)}"`),
+      };
+    });
+    await page.close();
+    return facts;
+  }
+
+  it("renders the popup signed out, without sideways scrolling or small targets", async () => {
+    await phone.worker.evaluate(() => chrome.storage.local.set({ consent: { version: 2 } }));
+    expect(await fit("popup/popup.html")).toEqual({ width: 360, overflow: false, small: [] });
+  });
+
+  it("renders a result with its actions the same way", async () => {
+    const shop = await phone.context.newPage();
+    await shop.goto(AMAZON_URL);
+    const tabId = await newestTabId(phone.worker);
+    await phone.worker.evaluate(
+      async ({ tabId, address }) => {
+        await chrome.storage.local.set({
+          session: { token: `good-token-${"x".repeat(20)}`, address, expiresAt: "2999-01-01T00:00:00.000Z" },
+        });
+        await chrome.storage.session.set({
+          [`tab:${tabId}`]: {
+            status: "done",
+            findings: [],
+            steps: [],
+            body: { url: "https://www.amazon.com/dp/B0WATCH123" },
+            result: {
+              score: 14,
+              explanation: "",
+              charged: true,
+              report_token: "report-token.mac",
+              share_token: "share-token.mac",
+              verdict: {
+                band: "junk_or_scam",
+                label: "Serious concerns",
+                headline: "A countdown that resets and a brand-new web shop.",
+                reasons: [
+                  { type: "timer_resets", title: "Fake countdown", detail: "It restarts.", severity: "high" },
+                ],
+                positives: [],
+              },
+              assessment: { risk_score: 0.86, confidence: 0.7, model_version: "v1-test", flags: [] },
+            },
+          },
+        });
+      },
+      { tabId, address: ADDRESS },
+    );
+    const facts = await fit(`popup/popup.html?tab=${tabId}`, "#share-open");
+    expect(facts).toEqual({ width: 360, overflow: false, small: [] });
+    await shop.close();
+  });
+
+  it("renders the settings page the same way", async () => {
+    expect(await fit("options/options.html")).toEqual({ width: 360, overflow: false, small: [] });
   });
 });

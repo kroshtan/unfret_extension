@@ -25,7 +25,17 @@ export function isMarketplaceProduct(url: string): boolean {
   return marketplaceUrlPatterns().some((pattern) => new RegExp(pattern, "u").test(url));
 }
 
-/** Pages a browser never lets extensions script (and the Unfret site itself). */
+/**
+ * The Unfret test shop: a made-up store on Unfret's own site with every trick Unfret catches, for demos, the store
+ * screenshots and trying the extension out. Its product page and its checkout are the only Unfret pages to check.
+ */
+export const TEST_SHOP_PATH = "/test-shop";
+
+function isTestShop(pathname: string): boolean {
+  return pathname === TEST_SHOP_PATH || pathname.startsWith(`${TEST_SHOP_PATH}/`);
+}
+
+/** Pages a browser never lets extensions script, and the Unfret site itself (except its test shop). */
 export function isAnalysable(url: string | undefined, apiBase: string): boolean {
   if (!url) return false;
   let parsed: URL;
@@ -38,5 +48,5 @@ export function isAnalysable(url: string | undefined, apiBase: string): boolean 
   const host = parsed.hostname;
   if (host === "chromewebstore.google.com" || host === "addons.mozilla.org") return false;
   if (host === "chrome.google.com" && parsed.pathname.startsWith("/webstore")) return false;
-  return parsed.origin !== new URL(apiBase).origin;
+  return parsed.origin !== new URL(apiBase).origin || isTestShop(parsed.pathname);
 }
