@@ -24,6 +24,8 @@ toolbar click ─► popup ─► background ─► inject extract.js into the t
   click the toolbar button. On supported marketplace product pages (Amazon, all countries; bol.com) the toolbar icon
   gets a small amber marker; in Chromium the browser sets it itself from the page address (`declarativeContent`),
   without the extension seeing the page.
+- **Unfret's own site isn't checked**, nor browser and store pages, except the **test shop** (`/test-shop` on the
+  API base: a made-up store with every trick Unfret catches, for demos and trying the extension out).
 - **Extraction happens in the browser.** `src/extract/` is a TypeScript port of the backend's PageFacts
   extractors (`facts/*.py`). It also adds what only the rendered page shows: text hidden by stylesheet CSS,
   the current state of checkboxes, and countdowns read twice a few seconds apart.
@@ -69,7 +71,8 @@ src/
   api/          API client and SSE parser
   popup/        popup UI
   options/      options page (API base URL, sign out)
-  shared/       facts types + JSON schema, settings, sites, messages, CSS
+  shared/       facts types + JSON schema, settings, sites, messages; ui.css (the website's look) and fonts/
+                (Figtree, bundled: no remote fonts)
 scripts/        build (esbuild, per-browser manifests, zips), icons, gen_parity.py
 test/           unit, parity (jsdom vs the Python extractors), mock API; smoke/ (headless Chromium)
 ```
@@ -145,4 +148,5 @@ retrained on extension-sourced facts.
 
 ## License
 
-MIT. See [PRIVACY.md](PRIVACY.md) for what is sent and stored.
+MIT. The Figtree typeface in `src/shared/fonts/` is under the SIL Open Font License 1.1
+([OFL-Figtree.txt](src/shared/fonts/OFL-Figtree.txt)). See [PRIVACY.md](PRIVACY.md) for what is sent and stored.

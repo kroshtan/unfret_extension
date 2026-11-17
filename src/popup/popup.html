@@ -2,21 +2,23 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Unfret</title>
     <link rel="stylesheet" href="../shared/ui.css" />
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
     <header class="bar">
-      <h1 class="brand"><img src="../icons/icon-32.png" width="20" height="20" alt="" />Unfret</h1>
-      <nav class="row">
-        <a id="about" href="#" class="link">About &amp; privacy</a>
-        <a id="options" href="#" class="link">Settings</a>
+      <h1 class="wordmark"><img src="../icons/icon-32.png" width="24" height="24" alt="" />Unfret</h1>
+      <nav aria-label="Unfret">
+        <button id="about" type="button" class="quiet" aria-expanded="false" aria-controls="consent">
+          About &amp; privacy
+        </button>
+        <button id="options" type="button" class="quiet">Settings</button>
       </nav>
     </header>
 
-    <section id="consent" class="card" aria-labelledby="consent-heading" hidden>
+    <section id="consent" class="card" aria-labelledby="consent-heading" tabindex="-1" hidden>
       <h2 id="consent-heading">Before your first check</h2>
       <h3>What Unfret does</h3>
       <p class="small">
@@ -37,39 +39,127 @@
       <h3>Paying for checks</h3>
       <p class="small">Sign in with a Solana wallet, or use an Unfret pass, and use prepaid checks.</p>
       <p class="small">
-        <a id="privacy" href="#" class="link">Read the privacy statement</a>
+        <button id="privacy" type="button" class="link">Read the privacy statement</button>
       </p>
       <p id="consent-agreed" class="muted small" hidden>You agreed to this.</p>
-      <div class="row">
-        <button id="consent-agree" type="button" class="primary">I agree</button>
-        <button id="consent-close" type="button" class="secondary" hidden>Close</button>
+      <div class="buttons">
+        <button id="consent-agree" type="button" class="primary wide">I agree</button>
+        <button id="consent-close" type="button" hidden>Close</button>
       </div>
     </section>
 
-    <section id="account" class="card" aria-label="Account">
-      <p id="account-status">Not signed in.</p>
-      <p id="account-until" class="muted small" hidden></p>
-      <p id="credits" class="muted" hidden></p>
-      <div id="get-started-row" class="row" hidden>
-        <button id="get-started" type="button" class="primary">Get started</button>
+    <section id="error" class="card error" role="alert" hidden>
+      <p id="error-message"></p>
+      <p id="error-refunded" class="small" hidden>No check was used.</p>
+    </section>
+
+    <section id="progress" class="card" aria-labelledby="progress-status" hidden>
+      <p id="progress-status"></p>
+      <ul id="steps" class="checklist"></ul>
+    </section>
+
+    <section id="result" class="card" aria-label="Result" hidden>
+      <div id="result-body"></div>
+
+      <div class="result-actions">
+        <p id="share-open-row">
+          <button id="share-open" type="button">Share this result</button>
+        </p>
+        <p id="report-open-row" hidden>
+          <button id="report-open" type="button" class="link" aria-controls="report">This is wrong</button>
+        </p>
       </div>
-      <p id="sign-in-more-row" class="small" hidden>
-        <a id="sign-in-more" class="link" href="#">Sign in with an Unfret pass or wallet</a>
+
+      <form id="report" hidden>
+        <fieldset>
+          <legend id="report-legend" tabindex="-1">What is this page really?</legend>
+          <label><input type="radio" name="reason" value="real_brand" /> A real brand or shop</label>
+          <label><input type="radio" name="reason" value="scam" /> A scam</label>
+          <label><input type="radio" name="reason" value="junk" /> Junk or dropshipping</label>
+          <label><input type="radio" name="reason" value="other" /> Something else</label>
+        </fieldset>
+        <p class="muted small">
+          Sending this shares this one check's product facts, page text and result with Unfret for review.
+          Personal details are removed first; once reviewed, it is kept without any link to you. If the score
+          was far off, you get 3 free checks.
+        </p>
+        <div class="buttons">
+          <button id="report-send" type="submit" class="primary" disabled>Send report</button>
+          <button id="report-cancel" type="button" class="quiet">Cancel</button>
+        </div>
+      </form>
+      <p id="report-status" class="status" role="status" aria-live="polite" hidden></p>
+
+      <div id="share-area" hidden>
+        <div id="share-preview" class="share-preview" hidden>
+          <h2 id="share-preview-heading" tabindex="-1">This is what will be public</h2>
+          <div id="share-preview-body"></div>
+          <p id="share-notice" class="small"></p>
+          <p class="muted small">
+            No score and no quotes from the page. It stays up for 90 days, and you can delete it sooner with a
+            code you get next.
+          </p>
+          <div class="buttons">
+            <button id="share-confirm" type="button" class="primary">Share</button>
+            <button id="share-cancel" type="button" class="quiet">Cancel</button>
+          </div>
+        </div>
+        <div id="share-done" hidden>
+          <p class="small">
+            Shared: <a id="share-link" class="share-link" target="_blank" rel="noopener"></a>
+          </p>
+          <div class="buttons">
+            <button id="share-copy" type="button">Copy link</button>
+          </div>
+          <p class="small">Delete code: <code id="share-code" class="share-code"></code></p>
+          <p class="notice small">
+            Save it now: Unfret keeps only a fingerprint of it, so once this tab moves on it can't be shown
+            again. You need it to delete the shared page before its 90 days are up, under “Shared this? Delete
+            it” on the page itself.
+          </p>
+          <div class="buttons">
+            <button id="share-code-copy" type="button">Copy delete code</button>
+          </div>
+        </div>
+        <p id="share-status" class="status" role="status" aria-live="polite" hidden></p>
+      </div>
+    </section>
+
+    <section id="check" class="card" aria-label="This page">
+      <button id="analyse" type="button" class="primary" disabled>Check this page</button>
+      <p id="hint"></p>
+    </section>
+
+    <section id="account" class="card" aria-label="Account">
+      <div class="account-head">
+        <p id="account-status">Not signed in.</p>
+        <p id="credits" class="checks" hidden></p>
+      </div>
+      <p id="account-until" class="muted small" hidden></p>
+      <div id="get-started-row" hidden>
+        <button id="get-started" type="button" class="primary wide">Get started</button>
+      </div>
+      <p id="sign-in-more-row" hidden>
+        <button id="sign-in-more" type="button" class="link" aria-controls="sign-in-choices">
+          Sign in with an Unfret pass or wallet
+        </button>
       </p>
-      <div class="row">
-        <button id="sign-in-key" type="button" class="secondary" hidden>Unfret pass</button>
-        <button id="sign-in" type="button" class="secondary" hidden>Wallet in this browser</button>
-        <button id="sign-in-phone" type="button" class="secondary" hidden>Wallet on your phone</button>
-        <button id="buy" type="button" class="secondary" hidden>Buy checks</button>
-        <button id="sign-out" type="button" class="secondary" hidden>Sign out</button>
+      <div id="sign-in-choices" class="choices" role="group" aria-label="Sign in with" hidden>
+        <button id="sign-in-key" type="button" hidden>Unfret pass</button>
+        <button id="sign-in" type="button" hidden>Wallet in this browser</button>
+        <button id="sign-in-phone" type="button" hidden>Wallet on your phone</button>
+      </div>
+      <div id="account-actions" class="buttons" hidden>
+        <button id="buy" type="button" hidden>Buy checks</button>
+        <button id="sign-out" type="button" class="quiet" hidden>Sign out</button>
       </div>
       <p id="have-code-row" class="small" hidden>
-        <a id="have-code" class="link" href="#">Have a code?</a>
+        <button id="have-code" type="button" class="link">Have a code?</button>
         <span class="muted">The website gives you a pass with its checks and signs Unfret in with it.</span>
       </p>
-      <details id="invite" class="invite small" hidden>
+      <details id="invite" class="invite" hidden>
         <summary>Have an invite or intro code?</summary>
-        <p class="muted">
+        <p class="muted small">
           An invite adds 3 checks, an intro code a few, to a new wallet or a new Unfret pass, one that never
           had checks.
         </p>
@@ -80,34 +170,41 @@
           spellcheck="false"
           autocomplete="off"
           placeholder="ufi_… or a code like FRIENDS"
+          aria-describedby="invite-status"
         />
-        <div class="row">
-          <button id="invite-use" type="button" class="secondary">Use code</button>
+        <div class="buttons">
+          <button id="invite-use" type="button">Use code</button>
         </div>
-        <p id="invite-status" class="muted small" role="status" aria-live="polite"></p>
+        <p id="invite-status" class="status" role="status" aria-live="polite"></p>
       </details>
     </section>
 
     <section id="key" class="card" aria-labelledby="key-heading" hidden>
       <h2 id="key-heading">Sign in with an Unfret pass</h2>
-      <label for="key-input" class="small">Your pass</label>
+      <label for="key-input">Your pass</label>
       <input
         id="key-input"
         type="password"
         spellcheck="false"
         autocomplete="off"
         placeholder="Paste your pass"
+        aria-describedby="key-status"
       />
-      <p id="key-status" class="muted small" role="status" aria-live="polite"></p>
-      <div class="row">
+      <p id="key-status" class="status" role="status" aria-live="polite"></p>
+      <div class="buttons">
         <button id="key-use" type="button" class="primary">Use this pass</button>
-        <button id="key-cancel" type="button" class="secondary">Cancel</button>
+        <button id="key-cancel" type="button" class="quiet">Cancel</button>
       </div>
-      <p class="small"><a id="key-get" class="link" href="#">No pass yet? Get one on the checkout page</a></p>
-      <p class="muted small">
+      <p class="small">
+        <button id="key-get" type="button" class="link">No pass yet? Get one on the checkout page</button>
+      </p>
+      <p class="small key-code">
         Have an invite or intro code and no pass yet?
-        <a id="key-code" class="link" href="#">Use it on the website</a>: you get a new pass with its checks
-        in one step. With a new pass or wallet you can also enter it under “Have an invite or intro code?”.
+        <button id="key-code" type="button" class="link">Use it on the website</button>
+        <span class="muted">
+          You get a new pass with its checks in one step. With a new pass or wallet you can also enter it
+          under “Have an invite or intro code?”.
+        </span>
       </p>
     </section>
 
@@ -120,95 +217,14 @@
       <div id="phone-qr" class="qr"></div>
       <p class="small">Check that your phone shows the same code:</p>
       <p id="phone-code" class="code" aria-live="polite"></p>
-      <p id="phone-status" class="muted small" role="status" aria-live="polite"></p>
-      <div class="row">
-        <button id="phone-retry" type="button" class="secondary" hidden>Try again</button>
-        <button id="phone-cancel" type="button" class="secondary">Cancel</button>
+      <p id="phone-status" class="status" role="status" aria-live="polite"></p>
+      <div class="buttons">
+        <button id="phone-retry" type="button" hidden>Try again</button>
+        <button id="phone-cancel" type="button" class="quiet">Cancel</button>
       </div>
     </section>
 
-    <section class="card" aria-label="This page">
-      <button id="analyse" type="button" class="primary" disabled>Check this page</button>
-      <p id="hint" class="muted"></p>
-    </section>
-
-    <section id="progress" class="card" aria-label="Progress" hidden>
-      <p id="progress-status" role="status" aria-live="polite"></p>
-      <ul id="steps" class="checklist"></ul>
-    </section>
-
-    <section id="result" class="card" aria-label="Result" aria-live="polite" hidden>
-      <div id="result-body"></div>
-      <p id="report-open-row" class="small" hidden>
-        <a id="report-open" href="#" class="link">This is wrong</a>
-      </p>
-      <form id="report" hidden>
-        <fieldset>
-          <legend>What is this page really?</legend>
-          <label><input type="radio" name="reason" value="real_brand" /> A real brand or shop</label>
-          <label><input type="radio" name="reason" value="scam" /> A scam</label>
-          <label><input type="radio" name="reason" value="junk" /> Junk or dropshipping</label>
-          <label><input type="radio" name="reason" value="other" /> Something else</label>
-        </fieldset>
-        <p class="muted small">
-          Sending this shares this one check's product facts, page text and result with Unfret for review.
-          Personal details are removed first; once reviewed, it is kept without any link to you. If the score
-          was far off, you get 3 free checks.
-        </p>
-        <div class="row">
-          <button id="report-send" type="submit" class="secondary" disabled>Send report</button>
-          <button id="report-cancel" type="button" class="secondary">Cancel</button>
-        </div>
-      </form>
-      <p id="report-status" class="muted small" role="status" aria-live="polite" hidden></p>
-
-      <div id="share-area" aria-label="Share this result" hidden>
-        <p id="share-open-row">
-          <button id="share-open" type="button" class="secondary">Share this result</button>
-        </p>
-        <div id="share-preview" class="share-preview" hidden>
-          <h2>This is what will be public</h2>
-          <div id="share-preview-body"></div>
-          <p id="share-notice" class="small"></p>
-          <p class="muted small">
-            No score and no quotes from the page. It stays up for 90 days, and you can delete it sooner with a
-            code you get next.
-          </p>
-          <div class="row">
-            <button id="share-confirm" type="button" class="secondary">Share</button>
-            <button id="share-cancel" type="button" class="secondary">Cancel</button>
-          </div>
-        </div>
-        <div id="share-done" hidden>
-          <p class="small">
-            Shared: <a id="share-link" class="link share-link" target="_blank" rel="noopener"></a>
-          </p>
-          <div class="row">
-            <button id="share-copy" type="button" class="secondary">Copy link</button>
-          </div>
-          <p class="small">Delete code: <code id="share-code" class="share-code"></code></p>
-          <p class="muted small">
-            Save it now: Unfret keeps only a fingerprint of it, so once this tab moves on it can't be shown
-            again. You need it to delete the shared page before its 90 days are up, under “Shared this? Delete
-            it” on the page itself.
-          </p>
-          <div class="row">
-            <button id="share-code-copy" type="button" class="secondary">Copy delete code</button>
-          </div>
-        </div>
-        <p id="share-status" class="muted small" role="status" aria-live="polite" hidden></p>
-      </div>
-    </section>
-
-    <section id="error" class="card error" role="alert" hidden>
-      <p id="error-message"></p>
-      <p id="error-refunded" class="muted small" hidden>No check was used.</p>
-      <div class="row">
-        <button id="error-sign-in" type="button" class="secondary" hidden>Sign in again</button>
-        <button id="error-buy" type="button" class="secondary" hidden>Buy checks</button>
-      </div>
-    </section>
-
+    <p id="announce" class="visually-hidden" role="status" aria-live="polite"></p>
     <script src="popup.js"></script>
   </body>
 </html>

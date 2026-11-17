@@ -35,7 +35,14 @@ const entries = {
   "popup/popup": "src/popup/popup.ts",
   "options/options": "src/options/options.ts",
 };
-const statics = ["popup/popup.html", "popup/popup.css", "options/options.html", "shared/ui.css"];
+const statics = [
+  "popup/popup.html",
+  "popup/popup.css",
+  "options/options.html",
+  "options/options.css",
+  "shared/ui.css",
+  "shared/fonts",
+];
 
 function manifest(browser) {
   const keyFile = PUBLIC_KEY_FILE[browser];
@@ -63,7 +70,7 @@ async function buildFor(browser) {
     define: { __UNFRET_API__: JSON.stringify(apiOrigin(browser)) },
     logLevel: "warning",
   });
-  for (const file of statics) cpSync(join(root, "src", file), join(out, file));
+  for (const file of statics) cpSync(join(root, "src", file), join(out, file), { recursive: true });
   cpSync(join(root, browser === "chrome-dev" ? "icons-dev" : "icons"), join(out, "icons"), {
     recursive: true,
   });

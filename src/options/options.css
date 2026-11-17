@@ -1,0 +1,69 @@
+/* The settings page: the popup's look, in a column a phone or a browser tab can read. */
+
+.bar {
+  max-width: 38rem;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 0.5rem;
+}
+
+.bar h1 {
+  font-size: 1.4rem;
+  gap: 0.65rem;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  max-width: 38rem;
+  margin: 0 auto;
+  padding: 0.5rem 1rem 2rem;
+}
+
+.card h2 {
+  font-size: 1.15rem;
+}
+
+.card label {
+  display: block;
+  margin: 0.5rem 0 0.3rem;
+}
+
+.card .buttons {
+  margin: 0.6rem 0;
+}
+
+/* A text link among buttons is a full-size target too. */
+.buttons > a:not(.button) {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--target);
+  padding: 0 0.25rem;
+}
+
+#have-code-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+.invite {
+  margin-top: 0.75rem;
+  padding-top: 0.25rem;
+  border-top: 1px solid var(--line);
+}
+
+.server summary {
+  color: var(--ink-2);
+}
+
+.server[open] summary {
+  margin-bottom: 0.25rem;
+}
+
+#privacy-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--target);
+}

@@ -1,140 +1,420 @@
+/*
+ * The popup. A desktop browser sizes it to the body (360 px wide, at most 600 px high, then it scrolls). Firefox for
+ * Android shows it as a page as wide as the phone: on a touch-only screen it takes the phone's width instead.
+ */
+
 body {
   width: 360px;
-  padding-bottom: 8px;
 }
 
-#report fieldset {
-  border: 0;
-  margin: 8px 0 0;
-  padding: 0;
+@media (hover: none) and (pointer: coarse) {
+  body {
+    width: auto;
+    min-width: 300px;
+    max-width: 34rem;
+    margin: 0 auto;
+  }
 }
 
-#report legend {
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-
-#report label {
-  display: block;
-  padding: 2px 0;
-}
+/* ── Header ──────────────────────────────────────────────────────────────────────────────────────────────────── */
 
 .bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 12px 2px;
+  gap: 0.5rem;
+  margin-right: -0.4rem;
+  padding: 0.35rem 0 0.1rem 0.1rem;
 }
 
-/* Progress: a fixed checklist that ticks off. */
+.bar nav {
+  display: flex;
+  gap: 0.15rem;
+}
+
+.bar nav button {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* Once agreed, the consent screen is "About & privacy", and the button shows it is open. */
+body[data-consent="given"] .bar nav button[aria-expanded="true"] {
+  background: var(--brand-soft);
+  color: var(--brand-ink);
+}
+
+/* ── The screens, in the order that matters now ─────────────────────────────────────────────────────────────── */
+
+body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0 0.75rem 0.85rem;
+}
+
+.bar {
+  order: -1;
+}
+
+/* Whatever is happening on this page first (a running check, its result or what went wrong), then the button, then
+   the account. Signed out, getting started is the step, so the account comes before the (unusable) button. */
+#consent {
+  order: 0;
+}
+#error {
+  order: 1;
+}
+#progress {
+  order: 2;
+}
+#result {
+  order: 3;
+}
+#check {
+  order: 4;
+}
+#account {
+  order: 5;
+}
+#key,
+#phone {
+  order: 6;
+}
+body:not([data-auth="in"]) #account {
+  order: 2;
+}
+body:not([data-auth="in"]) #key,
+body:not([data-auth="in"]) #phone {
+  order: 3;
+}
+
+/* Before the first check is agreed to, the consent screen is the whole popup. */
+body[data-consent="needed"] > section:not(#consent) {
+  display: none !important;
+}
+
+/* With a result on screen the verdict is the main thing; checking the page again is a plain button under it. */
+body[data-phase="done"] #analyse:not(:disabled) {
+  border-color: var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+/* ── Consent ─────────────────────────────────────────────────────────────────────────────────────────────────── */
+
+#consent h2 {
+  font-size: 1.2rem;
+}
+
+#consent h3 {
+  margin-top: 0.75rem;
+}
+
+#consent p {
+  color: var(--ink-2);
+}
+
+#consent .buttons {
+  margin-top: 0.75rem;
+}
+
+/* ── Account ─────────────────────────────────────────────────────────────────────────────────────────────────── */
+
+#account {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+#account p {
+  margin: 0;
+}
+
+.account-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.15rem 0.75rem;
+}
+
+#account-status {
+  color: var(--ink-2);
+}
+
+.checks {
+  font-weight: 700;
+  color: var(--brand-ink);
+  white-space: nowrap;
+}
+
+/* After an expired sign-in: a notice, with the ways back in right under it. */
+body[data-auth="expired"] #account-status {
+  padding: 0.55rem 0.75rem;
+  border-left: 4px solid var(--note);
+  border-radius: var(--radius-sm);
+  background: var(--note-soft);
+  color: var(--ink);
+}
+
+.choices {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.choices button {
+  justify-content: flex-start;
+  width: 100%;
+  text-align: left;
+}
+
+.choices-label {
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+#have-code-row .muted {
+  display: block;
+}
+
+/* "Have an invite?" under the account. */
+.invite {
+  border-top: 1px solid var(--line);
+}
+
+.invite summary {
+  color: var(--accent);
+}
+
+.invite label {
+  display: block;
+  margin: 0.35rem 0 0.25rem;
+}
+
+.invite .buttons {
+  margin-top: 0.5rem;
+}
+
+/* ── Sign-in panels (a pass, a wallet on the phone) ──────────────────────────────────────────────────────────── */
+
+#key label {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+/* A text action on its own line, so it can be a full-size target. */
+.key-code button,
+.key-code span {
+  display: flex;
+}
+
+#key .buttons,
+#phone .buttons {
+  margin: 0.5rem 0;
+}
+
+/* The QR code stays black on white in both themes so phones can read it. */
+.qr {
+  width: 200px;
+  margin: 0.5rem auto;
+  padding: 6px;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.qr:empty {
+  display: none;
+}
+
+.qr svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.code {
+  margin: 0.25rem 0 0.5rem;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 1.85rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+/* ── This page: the main button ─────────────────────────────────────────────────────────────────────────────── */
+
+#analyse {
+  width: 100%;
+  min-height: 3rem;
+  font-size: 1.05rem;
+}
+
+#hint {
+  margin: 0.45rem 0 0;
+  font-size: 0.9rem;
+  color: var(--ink-2);
+}
+
+#hint:empty {
+  display: none;
+}
+
+/* ── Progress: a fixed checklist that ticks off ─────────────────────────────────────────────────────────────── */
+
+#progress-status {
+  font-weight: 600;
+}
+
 .checklist {
   list-style: none;
-  margin: 4px 0 0;
+  margin: 0.4rem 0 0;
   padding: 0;
-  font-size: 13px;
 }
 
 .checklist li {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 3px 0;
+  gap: 0.6rem;
+  padding: 0.2rem 0;
   color: var(--muted);
+}
+
+.checklist li.done {
+  color: var(--ink);
 }
 
 .checklist .tick {
   display: inline-flex;
+  flex: none;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 16px;
-  border: 1px solid var(--muted);
+  width: 1.35rem;
+  height: 1.35rem;
+  border: 1px solid var(--field);
   border-radius: 50%;
-  font-size: 11px;
-}
-
-.checklist li.done {
-  color: var(--fg);
+  font-size: 0; /* the typed tick stays for text-only readers; the drawn one is shown */
 }
 
 .checklist li.done .tick {
-  border-color: #1e7d32;
-  background: #1e7d32;
-  color: #ffffff;
+  border-color: var(--good);
+  background: var(--good-soft);
+  color: var(--good);
 }
 
-/* Result: the verdict in words, with a symbol and a colour (never colour alone). */
+.checklist li.done .tick::before {
+  content: "";
+  width: 0.8rem;
+  height: 0.8rem;
+  background: currentColor;
+  -webkit-mask: var(--i-check) center / contain no-repeat;
+  mask: var(--i-check) center / contain no-repeat;
+}
+
+/* The next step to finish: a soft pulse, only for those who don't mind motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .checklist li:not(.done) .tick {
+    animation: waiting 1.6s ease-in-out infinite;
+  }
+
+  @keyframes waiting {
+    50% {
+      border-color: var(--brand);
+    }
+  }
+}
+
+/* ── The result: a word and a drawn sign, never colour alone ────────────────────────────────────────────────── */
+
 .verdict {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  border-left: 6px solid var(--grey);
-  background: color-mix(in srgb, var(--grey) 10%, transparent);
+  gap: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 12px;
+  background: var(--surface-2);
 }
 
 .verdict .symbol {
-  flex: none;
   display: inline-flex;
+  flex: none;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 2.3rem;
+  height: 2.3rem;
   border-radius: 50%;
-  color: #ffffff;
-  font-weight: 700;
-  background: var(--grey);
+  background: var(--muted);
+  color: var(--surface);
+  font-size: 0 !important; /* the typed sign stays for text-only readers; the drawn one is shown */
+}
+
+.verdict .symbol::before {
+  content: "";
+  width: 58%;
+  height: 58%;
+  background: currentColor;
+  -webkit-mask: var(--sym, var(--i-dash)) center / contain no-repeat;
+  mask: var(--sym, var(--i-dash)) center / contain no-repeat;
 }
 
 .verdict .label {
   margin: 0;
-  font-size: 17px;
+  font-size: 1.25rem;
   font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
 }
 
 .verdict.reliable {
-  border-color: #1e7d32;
-  background: color-mix(in srgb, #1e7d32 10%, transparent);
+  background: var(--good-soft);
 }
-
 .verdict.reliable .symbol {
-  background: #1e7d32;
+  --sym: var(--i-check);
+  background: var(--good);
 }
-
 .verdict.concerns {
-  border-color: #8a5300;
-  background: color-mix(in srgb, #8a5300 10%, transparent);
+  background: var(--note-soft);
 }
-
 .verdict.concerns .symbol {
-  background: #8a5300;
+  --sym: var(--i-bang);
+  background: var(--note);
 }
-
-.verdict.careful,
+.verdict.careful {
+  background: var(--care-soft);
+}
+.verdict.careful .symbol {
+  --sym: var(--i-warn);
+  background: var(--care);
+}
 .verdict.junk_or_scam {
-  border-color: #c62828;
-  background: color-mix(in srgb, #c62828 10%, transparent);
+  background: var(--stop-soft);
 }
-
-.verdict.careful .symbol,
 .verdict.junk_or_scam .symbol {
-  background: #c62828;
+  --sym: var(--i-cross);
+  background: var(--stop);
 }
 
 .headline {
-  margin: 10px 0 4px;
-  font-size: 14px;
-  line-height: 1.4;
+  margin: 0.65rem 0 0.25rem;
+  font-size: 1.02rem;
+  color: var(--ink-2);
 }
 
-#result-body h2 {
-  margin: 12px 0 4px;
-  font-size: 13px;
+#result-body h2,
+#share-preview-body h2 {
+  margin: 0.85rem 0 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
+/* Reasons as small cards, the edge in the reason's tone (the site's result cards). */
 .reasons,
 .positives {
+  display: grid;
+  gap: 0.45rem;
   list-style: none;
   margin: 0;
   padding: 0;
@@ -142,72 +422,84 @@ body {
 
 .reasons li,
 .positives li {
-  position: relative;
-  padding: 4px 0 4px 22px;
-  font-size: 13px;
-  line-height: 1.35;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--note);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  line-height: 1.4;
 }
 
-.reasons li::before,
-.positives li::before {
-  position: absolute;
-  left: 0;
-  top: 4px;
-  font-weight: 700;
+.reasons li.high {
+  border-left-color: var(--stop);
 }
-
-.reasons li::before {
-  content: "!";
-  color: #8a5300;
+.reasons li.medium {
+  border-left-color: var(--care);
 }
-
-.reasons li.high::before {
-  content: "⚠";
-  color: #c62828;
+.reasons li.low {
+  border-left-color: var(--note);
 }
-
-.reasons li.low::before {
-  content: "·";
-  color: var(--muted);
-}
-
-.positives li::before {
-  content: "✓";
-  color: #1e7d32;
+.positives li {
+  border-left-color: var(--good);
 }
 
 .reasons strong,
 .positives strong {
   display: block;
+  font-weight: 650;
 }
 
 .reasons .detail,
 .positives .detail {
-  color: var(--muted);
+  display: block;
+  margin-top: 0.1rem;
+  font-size: 0.93rem;
+  color: var(--ink-2);
+}
+
+/* Thumbnails of matching photos under a photo-reuse reason. */
+.thumbs {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.45rem;
+}
+
+.thumbs img {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.charge-note {
+  margin: 0.6rem 0 0;
+  font-weight: 600;
+  color: var(--good);
 }
 
 .details {
-  margin-top: 10px;
-  font-size: 12px;
+  margin-top: 0.4rem;
+  font-size: 0.9rem;
 }
 
 .details summary {
-  cursor: pointer;
-  color: var(--muted);
+  color: var(--ink-2);
 }
 
 .details h3 {
-  margin: 8px 0 2px;
-  font-size: 12px;
+  margin: 0.5rem 0 0.2rem;
+  font-size: 0.9rem;
 }
 
 .flags {
   margin: 0;
-  padding-left: 18px;
+  padding-left: 1.1rem;
 }
 
 .flags li {
-  margin-bottom: 4px;
+  margin-bottom: 0.2rem;
 }
 
 .flags li.context {
@@ -218,96 +510,156 @@ body {
   font-weight: 600;
 }
 
-/* Phone sign-in: the QR code stays black on white in both themes so phones can read it. */
-.qr {
-  width: 200px;
-  margin: 8px auto;
-  background: #ffffff;
-  border-radius: 8px;
+/* What to do with the result: share it, or say it's wrong (nothing, once both are done). */
+.result-actions:not(:has(> :not([hidden]))) {
+  display: none;
 }
 
-.qr svg {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
-.code {
-  margin: 4px 0;
-  text-align: center;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 28px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-}
-
-/* Thumbnails of matching photos under a photo-reuse reason. */
-.thumbs {
+.result-actions {
   display: flex;
-  gap: 6px;
-  margin-top: 6px;
-}
-.thumbs img {
-  width: 64px;
-  height: 64px;
-  object-fit: cover;
-  border-radius: 6px;
-  border: 1px solid var(--line, #d9d6cf);
-  background: #fff;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem 0.75rem;
+  margin-top: 0.75rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--line);
 }
 
-.brand {
+.result-actions p {
+  margin: 0;
+}
+
+/* ── "This is wrong" ────────────────────────────────────────────────────────────────────────────────────────── */
+
+#report {
+  margin-top: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--line);
+}
+
+#report fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+#report legend {
+  margin-bottom: 0.25rem;
+  padding: 0;
+  font-weight: 700;
+}
+
+/* Each choice is a whole-row target. */
+#report label {
   display: flex;
   align-items: center;
-  gap: 6px;
-}
-.brand img {
-  border-radius: 5px;
-}
-
-/* "Have an invite?" under the account. */
-.invite {
-  margin-top: 8px;
-}
-.invite summary {
+  gap: 0.65rem;
+  min-height: var(--target);
+  padding: 0 0.6rem;
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  font-weight: 500;
   cursor: pointer;
-  color: var(--accent);
-}
-.invite label {
-  display: block;
-  font-weight: 600;
-  margin: 4px 0 2px;
-}
-.invite input {
-  width: 100%;
-  margin-bottom: 6px;
 }
 
-/* "Share this result": the preview is boxed apart from the result itself, as the page others will see. */
-#share-area {
-  margin-top: 8px;
+#report label:has(input:checked) {
+  background: var(--brand-soft);
 }
+
+#report .buttons {
+  margin-top: 0.5rem;
+}
+
+#report-status {
+  margin: 0.75rem 0 0;
+}
+
+#report-status[data-kind="ok"] {
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--radius-sm);
+  background: var(--good-soft);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* ── "Share this result" ─────────────────────────────────────────────────────────────────────────────────────── */
+
+/* The preview is boxed apart from the result itself, as the page others will see. */
 .share-preview {
-  margin-top: 8px;
-  padding: 8px 10px;
-  border: 1px dashed var(--border);
-  border-radius: 8px;
-  background: var(--bg);
+  margin-top: 0.75rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px dashed var(--field);
+  border-radius: var(--radius);
+  background: var(--surface-2);
 }
+
 .share-preview > h2 {
   margin-top: 0;
 }
+
 .share-title {
   margin: 0;
-  font-weight: 600;
+  font-weight: 650;
 }
+
 .share-meta,
 .share-link,
 .share-code {
   overflow-wrap: anywhere;
 }
+
+/* The shared link: a full-size target although it wraps. */
+.share-link {
+  display: inline-block;
+  padding: 0.6rem 0;
+}
+
+#share-done {
+  margin-top: 0.75rem;
+}
+
 .share-code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 13px;
+  display: block;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  font-family: var(--mono);
+  font-size: 0.95rem;
   user-select: all;
+}
+
+#share-done .notice {
+  margin: 0.5rem 0;
+}
+
+#share-done .buttons {
+  margin: 0.4rem 0;
+}
+
+/* ── Something went wrong ───────────────────────────────────────────────────────────────────────────────────── */
+
+#error-message {
+  display: flex;
+  gap: 0.55rem;
+  align-items: flex-start;
+  margin: 0;
+  font-weight: 600;
+}
+
+#error-message::before {
+  content: "";
+  flex: none;
+  width: 1.2rem;
+  height: 1.2rem;
+  margin-top: 0.1rem;
+  background: var(--stop);
+  -webkit-mask: var(--i-info) center / contain no-repeat;
+  mask: var(--i-info) center / contain no-repeat;
+}
+
+#error-refunded {
+  margin: 0.3rem 0 0 1.75rem;
+  color: var(--ink-2);
 }

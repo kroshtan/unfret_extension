@@ -25,6 +25,13 @@ function el(id: string): HTMLElement {
   return found;
 }
 
+/** A field's message, marked as good news or a problem so it reads as one (colour and weight, not colour alone). */
+function say(id: string, text: string, kind: "ok" | "error" | "" = ""): void {
+  const status = el(id);
+  status.textContent = text;
+  status.dataset.kind = kind;
+}
+
 function input(id: string): HTMLInputElement {
   const found = el(id);
   if (!(found instanceof HTMLInputElement)) throw new Error(`#${id} is not an input`);
@@ -63,30 +70,34 @@ async function renderAccount(): Promise<void> {
 
 /** Check a pasted API key with the server (its balance), then use it in place of a wallet sign-in. */
 async function useKey(value: string): Promise<void> {
-  const status = el("key-status");
   const { apiBase } = await loadSettings();
   const result = await signInWithKey(apiBase, value);
   if (result.ok) {
     input("api-key").value = "";
-    status.textContent = `Saved. Using Unfret pass ${accountLabel(result.session)}: ${checksText(result.checks)}.`;
+    input("api-key").removeAttribute("aria-invalid");
+    say(
+      "key-status",
+      `Saved. Using Unfret pass ${accountLabel(result.session)}: ${checksText(result.checks)}.`,
+      "ok",
+    );
   } else {
-    status.textContent = KEY_FAILURE[result.reason];
+    input("api-key").setAttribute("aria-invalid", "true");
+    say("key-status", KEY_FAILURE[result.reason], "error");
   }
   await renderAccount();
 }
 
 /** "Have an invite?": redeem a code for the account in use (only a new one, that never had checks). */
 async function useInvite(): Promise<void> {
-  const status = el("invite-status");
   const { apiBase, session } = await loadSettings();
   if (!session) return;
   const outcome = await redeemInvite(apiBase, session.token, input("invite-input").value);
   if (outcome.ok) {
     input("invite-input").value = "";
-    status.textContent = `${inviteAdded(outcome.checksAdded)} ${checksText(outcome.checks)}.`;
+    say("invite-status", `${inviteAdded(outcome.checksAdded)} ${checksText(outcome.checks)}.`, "ok");
     return;
   }
-  status.textContent = outcome.message;
+  say("invite-status", outcome.message, "error");
   if (outcome.signedOut) {
     await expireSession();
     await renderAccount();
@@ -94,12 +105,14 @@ async function useInvite(): Promise<void> {
 }
 
 async function save(value: string): Promise<void> {
-  const status = el("server-status");
   const wanted = value.trim();
   const normalised = normaliseApiBase(wanted);
   if (wanted && normalised === DEFAULT_API_BASE && new URL(DEFAULT_API_BASE).origin !== safeOrigin(wanted)) {
-    status.textContent =
-      "Only the default, or a local server on http://localhost / http://127.0.0.1, can be used.";
+    say(
+      "server-status",
+      "Only the default, or a local server on http://localhost / http://127.0.0.1, can be used.",
+      "error",
+    );
     return;
   }
   if (isDevBase(normalised)) {
@@ -107,7 +120,7 @@ async function save(value: string): Promise<void> {
     const { protocol, hostname } = new URL(normalised);
     const granted = await chrome.permissions.request({ origins: [`${protocol}//${hostname}/*`] });
     if (!granted) {
-      status.textContent = "Access to that address was not allowed; keeping the previous server.";
+      say("server-status", "Access to that address was not allowed; keeping the previous server.", "error");
       return;
     }
   }
@@ -117,7 +130,7 @@ async function save(value: string): Promise<void> {
   // A different server means a different account: sign out.
   if (stored !== previous) await clearSession();
   await renderAccount();
-  status.textContent = `Saved. Using ${stored}.`;
+  say("server-status", `Saved. Using ${stored}.`, "ok");
 }
 
 function safeOrigin(value: string): string {
