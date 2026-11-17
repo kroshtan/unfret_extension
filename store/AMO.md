@@ -67,10 +67,10 @@ The listing (texts, images, categories, privacy policy) isn't touched. Review th
 
 **Add-on URL**: `unfret`
 
-**Summary** (≤ 250 characters; 191):
+**Summary** (≤ 250 characters; 236):
 
 ```
-Check a product page before you buy: fake discounts, made-up brands, dropshipped goods and pushy tricks, in plain words. Nothing is read until you click "Check this page". Checks are prepaid.
+Is this shop legit? Check a product page before you buy: fake discounts, dropshipping, made-up brands and pushy tricks, in plain words. 5 free checks on install, then free quick checks. Nothing is read until you click "Check this page".
 ```
 
 **Description**: the Chrome description in [listing.en.md](listing.en.md), unchanged (AMO accepts plain text with
@@ -80,7 +80,8 @@ blank lines between paragraphs and "•" bullets).
 
 **Tags**: shopping, scam, dropshipping, reviews, fake discounts.
 
-**This add-on requires payment, non-free services or software**: **tick it** (checks are prepaid packs).
+**This add-on requires payment, non-free services or software**: **tick it** (after the 5 free checks on install,
+deep checks are prepaid packs; quick checks stay free).
 
 **Support email**: the public contact address. **Support website**: https://unfret.net
 
@@ -105,22 +106,26 @@ Build: the add-on is bundled and minified with esbuild. To reproduce it from the
   Output: dist/unfret-firefox-<version>.zip, byte-identical to the uploaded add-on (dist/firefox is the unzipped
   add-on). The build script is scripts/build.mjs; the manifest comes from scripts/manifest.mjs.
 
-Testing: no account or wallet is needed; use the test API key below.
-1. Install the add-on and pin it to the toolbar. A welcome page on unfret.net opens once; it can be closed.
+Testing: no account or wallet is needed.
+1. Install the add-on and pin it to the toolbar. A welcome page on unfret.net opens once: leave it open a few
+   seconds while it gives the add-on its free Unfret pass, then it says "You have 5 free checks".
 2. Click the Unfret toolbar button and read the first-run screen, then click "I agree".
-3. In the popup, click "Sign in with an Unfret pass or wallet", then "Unfret pass"; paste this key and click "Use
-   this pass" (up to version 0.11.0 these read "Sign in with an API key or wallet", "API key" and "Use this key"):
+3. Open a product page, for example the Unfret test shop https://unfret.net/test-shop (a made-up shop with the
+   tricks Unfret catches) or a product on https://www.amazon.com, click the Unfret button, then "Check this page".
+   The result appears in 10-30 seconds: a verdict in plain words with its reasons.
+4. If the popup says there are no free checks (today's are all given out), open the add-on's settings, paste this
+   test key under "Use an Unfret pass instead" and click "Use this pass"; it holds about 20 checks:
    ufk_<REPLACE WITH THE TEST KEY>
-   The key holds about 20 checks.
-4. Open a product page, for example any product on https://www.amazon.com or https://www.bol.com, click the Unfret
-   button, then "Check this page". The result appears in 10-30 seconds: a verdict in plain words with its reasons.
 5. Optional: under a result, "This is wrong" lets you report a wrong result (it asks for consent first).
 Nothing is read or sent until "Check this page" is clicked.
 
-Data: on "Check this page" the page address, product facts and cleaned visible text of that one page go to the Unfret
-API (https://unfret.net), which is the add-on's only network destination. Two content scripts run only on Unfret's
-own pages: https://unfret.net/connect* (the wallet sign-in page) to receive the session, and
-https://unfret.net/checkout* to receive a new API key the checkout page shows; they read nothing else from the page.
+Data: on "Check this page" the page address (without its fragment, tracking parameters, sessions or e-mail
+addresses), product facts and cleaned visible text of that one page go to the Unfret API (https://unfret.net), which
+is the add-on's only network destination. On install it asks the API for a free Unfret pass (an anonymous key; a
+proof of work, nothing about the user). Three content scripts run only on Unfret's own pages:
+https://unfret.net/connect* (the wallet sign-in page) to receive the session, https://unfret.net/checkout* to receive
+a new Unfret pass the checkout page shows, and https://unfret.net/welcome* to receive whether this browser already had
+its free checks (a yes or no) and an affiliate's code; they read nothing else from the page.
 Privacy policy: https://unfret.net/privacy
 ```
 

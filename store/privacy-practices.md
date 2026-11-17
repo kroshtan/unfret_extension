@@ -34,7 +34,9 @@ the browser applies the rule, and no page access is granted.
 `https://unfret.net/welcome*`)**: three of Unfret's own pages. After the user signs in with their wallet on the
 sign-in page, that page hands the session to the extension; when the checkout page shows the user a new Unfret pass
 (from a gift code, a card payment, a recovery), it hands that pass to the extension, so the user doesn't have to copy
-and paste it; the welcome page hands over an affiliate's code if an affiliate's link brought the user. Each content
+and paste it; the welcome page hands over whether this browser already had its free checks (a yes or no, from the
+website's own note, so a reinstall gets no second round) and an affiliate's code if an affiliate's link brought the
+user. Each content
 script reads nothing from the page but the one message the page posts for it, accepts it only from that page's own
 window on Unfret's origin, and answers the page with a status only. Without an account yet, the extension takes a
 pass or sign-in only right after the user clicked on that page, or in a tab the extension opened itself; signed in
@@ -53,8 +55,9 @@ What the extension collects (tick these):
 
 - **Website content**: the product facts and cleaned visible text of a page, only when the user clicks "Check this
   page", sent to the Unfret API to produce the result.
-- **Web history**: the address of the page the user chose to check, sent with that check (not stored by the server,
-  never linked to the user). If the user shares a result (after a preview of the public page, and only on their
+- **Web history**: the address of the page the user chose to check, sent with that check without its fragment,
+  tracking and referral parameters, sessions, tokens or e-mail addresses (not stored by the server, never linked to
+  the user). If the user shares a result (after a preview of the public page, and only on their
   click), that address and the result go to the Unfret API without any sign-in, and become a public page with no
   account attached, for 90 days.
 - **Authentication information**: the user's Unfret pass (an anonymous API key, made on install or got on

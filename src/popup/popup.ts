@@ -27,7 +27,7 @@ import { CODE_CHECKOUT, inviteAdded, redeemInvite } from "../shared/invites.js";
 import { KEY_FAILURE, signInWithKey } from "../shared/key-sign-in.js";
 import { OPEN_MESSAGE } from "../shared/handoff.js";
 import { isAnalysable } from "../shared/sites.js";
-import { freeChecksUsed, makeFreePass } from "../shared/new-pass.js";
+import { freeChecksUsed, makeFreePass, WELCOME_SETUP_PATH } from "../shared/new-pass.js";
 import { withoutSecrets } from "../shared/urls.js";
 import { CONSENT_HINT, FREE_PAUSED, OFFLINE, SESSION_EXPIRED } from "../shared/text.js";
 import {
@@ -310,46 +310,23 @@ async function loadFreePerPass(): Promise<void> {
 }
 
 /**
- * "Get your free checks", signed out: make the extension's free pass as installing does (free checks only once per
- * browser profile; the server may have none left today). Once this browser had them, the button buys checks instead.
+ * "Get your free checks", signed out: the welcome page makes the extension's free pass, as after installing (it says
+ * whether this browser had its free checks, which the extension's own note can't after a reinstall without sync).
+ * Once this browser had them, the button buys checks instead.
  */
-async function getFreeChecks(): Promise<void> {
-  if (freeUsed) {
-    openTab(checkoutPath(undefined));
-    return;
-  }
-  if (gettingPass || session) return;
-  gettingPass = true;
-  el("free-status").textContent = "";
-  renderAccount();
-  const made = await makeFreePass(apiBase);
-  gettingPass = false;
-  if (made.ok) {
-    session = made.session;
-    expired = false;
-    checks = made.freeChecks;
-    freeLeft = made.freeChecks;
-    freeUsed = true;
-    if (made.freeChecks === 0) {
-      el("free-status").textContent =
-        "No free checks this time: this browser has had them, or today's are all given out. Buy checks to start.";
-      el("free-status").dataset.kind = "error";
-    }
-    void refreshCredits();
-  } else {
-    el("free-status").textContent =
-      made.reason === "offline"
-        ? OFFLINE
-        : "Unfret couldn't make your pass just now. Please try again later.";
-    el("free-status").dataset.kind = "error";
-  }
-  renderAccount();
+function getFreeChecks(): void {
+  if (session) return;
+  openTab(freeUsed ? checkoutPath(undefined) : WELCOME_SETUP_PATH);
 }
 
-/** The free pass the extension makes on install, when that failed (offline): tried again when the popup opens. */
+/**
+ * The free pass the install didn't make (offline, or the welcome page closed first), when this profile's own note
+ * says it had its free checks: a pass without them needs nothing from the welcome page, so it is made when the popup
+ * opens. Otherwise "Get your free checks" leads to the welcome page, which makes it.
+ */
 async function retryFreePass(): Promise<void> {
   const pending = await chrome.storage.local.get<{ passPending?: boolean }>("passPending");
-  if (session || pending.passPending !== true) return;
+  if (session || pending.passPending !== true || !freeUsed) return;
   gettingPass = true;
   renderAccount();
   const made = await makeFreePass(apiBase);
@@ -586,7 +563,7 @@ async function init(): Promise<void> {
   el("buy").addEventListener("click", () => {
     openTab(checkoutPath(session));
   });
-  el("get-free").addEventListener("click", () => void getFreeChecks());
+  el("get-free").addEventListener("click", getFreeChecks);
   el("sign-in-more").addEventListener("click", (event) => {
     event.preventDefault();
     signInOpen = true;

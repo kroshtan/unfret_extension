@@ -3,7 +3,31 @@
 Releases of the Unfret browser extension. (Earlier releases are described in their commit messages and in the
 backend's changelog, which lists each one published at `/extension`.)
 
-## Unreleased
+## 0.12.0 (unreleased)
+
+- **The page address a check sends is cleaned first** (security audit L8): without its fragment (`#…`), a user name
+  or password, `;jsessionid=` in the path, and query parameters that are about the visitor rather than the product:
+  tracking and referral parameters (`utm_*`, `hsa_*`, `gclid`, `fbclid`, `msclkid`, `mc_eid`, `igshid`, `ref`, `ref_`,
+  affiliate tags, Amazon's search and placement trail, …), sessions and tokens (`sid`, `PHPSESSID`, `token`, …),
+  `email`, and any parameter whose value is an e-mail address or an Unfret pass. What picks the product or its variant
+  (`id`, `variant`, `th`, `size`, …) stays, as it was written. Relative links on the page (policy pages, photos) are
+  resolved against the cleaned address too. The lists are the backend's (`result_cache.is_tracking_param`, from
+  backend 0.13.0), copied by `make parity` into `test/fixtures/url-params.expected.json`, so the server keys an
+  address the same whichever client sent it.
+- **A reinstall without browser sync gets no second round of free checks.** Removing the extension wipes its
+  `storage.sync` note when the browser doesn't sync, so the extension no longer makes its pass before the welcome page
+  opens: it opens `/welcome?setup=1`, which tells it (a yes or no, through the welcome page's content script) whether
+  the website's own note in this browser (the link checker's) says it had its free checks, and only then makes the
+  pass, with free checks if neither note says so. The page then shows "You have 5 free checks", or says why the pass
+  came without them, and a pass made with free checks sets the website's note too. The popup's "Get your free checks"
+  opens the same page; it makes a pass by itself only when this profile's own note already rules the free checks out
+  (an install that couldn't reach the server). A smoke test removes the extension and installs it again in the same
+  profile.
+- **Store texts for 0.12.0**: the listing's "How you pay" (5 free deep checks on install, then free quick checks;
+  packs bought on unfret.net by card or crypto; gift codes for any pass but the buyer's own), the accuracy page, "no
+  affiliate links to shops", and the reviewer notes (the free checks on install; the test key only as a fallback, in
+  the settings). The privacy statement and the store's privacy texts say what the address loses and what the welcome
+  page tells the extension.
 
 - **The privacy statement (`PRIVACY.md`) and the store's privacy texts match 0.12.0**: the free pass made on install
   (its proof-of-work request), the Unfret pass and its backup code in the settings, the free-checks note in
@@ -90,7 +114,9 @@ backend's changelog, which lists each one published at `/extension`.)
   tomorrow" and a check becomes a quick one, saying why. Buying checks stays the "Buy checks" button.
 - When the website hands the extension a bought pass while it uses its own free pass, the page says so, and on a
   switch the free checks left move to the new pass (`POST /v1/keys/move-free-checks`).
-- Version 0.12.0.
+- Version 0.12.0. Needs backend 0.13.0 or later (`minBackendVersion`: the welcome page that makes the free pass, the
+  extension hand-off answers, free passes, affiliate codes); production runs 0.12.0, so the backend release goes
+  first, and the store workflow's order guard refuses a submission until it has.
 
 ## 0.11.0 (2026-11-16)
 

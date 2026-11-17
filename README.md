@@ -100,11 +100,15 @@ toolbar click ─► popup ─► background ─► inject extract.js into the t
   `{type: "unfret-session-status", status}` for these, a message pages from before 0.12.0 ignore.
 - **Addresses without secrets.** Every Unfret page the extension opens and every link it shows goes through
   `withoutSecrets` (`shared/urls.ts`): query parameters and fragments with a pass or backup code are dropped. A pass
-  is only ever named by its public ID (`key_id`).
-- **First run.** After a new install (not an update) the extension makes its own free pass and the background opens
-  `<API base>/welcome` once. Signed out (after signing out, or when the free pass couldn't be made), the popup's one
-  primary button is "Get your free checks" (the free pass, made as on install, once per browser profile; after that
-  it is "Buy checks"), with the sign-in choices behind "Sign in with an Unfret pass or wallet" and a small "Have a
+  is only ever named by its public ID (`key_id`). The address of a page you check goes through `checkedUrl`: no
+  fragment, user name or password, and no tracking or referral parameters, sessions, tokens or e-mail addresses (the
+  backend's list, kept equal by `make parity`); what picks the product or its variant stays.
+- **First run.** After a new install (not an update) the background opens `<API base>/welcome?setup=1` once. That
+  page tells the extension whether the website's own note in this browser says it had its free checks (a yes or no;
+  a reinstall without browser sync has lost the extension's note in `storage.sync`), and the extension makes its own
+  free pass then, with free checks only if neither note says so. Signed out (after signing out, or when the free pass
+  couldn't be made), the popup's one primary button is "Get your free checks" (the same welcome page, once per
+  browser; after that it is "Buy checks"), with the sign-in choices behind "Sign in with an Unfret pass or wallet" and a small "Have a
   gift code from a friend?" link; out of checks, "Get more checks".
 - **"Have an invite?"** (popup and settings, when signed in) redeems a code onto the account in use
   (`POST /v1/invites/redeem`, with its own sign-in); only a new wallet or a never-funded key can. The code isn't kept.
@@ -198,6 +202,8 @@ The same HTML must give the same PageFacts in the browser as on the server, or t
 features than it was trained on. `test/parity.test.ts` runs the TypeScript extractors over `test/fixtures/*.html`
 and compares them field by field with the Python extractors' output (`*.expected.json`), and validates against the
 backend's PageFacts JSON schema. When the backend's extractors change, run `make parity` and port the change.
+`make parity` also writes `test/fixtures/url-params.expected.json`, the query parameters the backend drops from a page
+address, which `test/urls.test.ts` compares with the extension's `checkedUrl` lists.
 
 The live-only additions (stylesheet-hidden text, live checkbox state, observed countdowns) deliberately go beyond
 the server's view; they are conservative so as not to skew the scorer, and the scorer should eventually be

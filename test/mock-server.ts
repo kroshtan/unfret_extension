@@ -11,6 +11,8 @@
  * Free passes (0.12.0): `POST /v1/keys` (after `GET /v1/keys/challenge`, 4 bits) always issues FREE_PASS, with
  * `freeChecks` free checks when the body asks for them (`free: true`), none otherwise; a deep check with it uses one,
  * then 402. A quick check (`tier: "quick"`) is never charged. Token "paused" → 429 FREE_CHECKS_PAUSED on a deep check.
+ * `/welcome?setup=1` is the website's page that tells the extension whether this browser had its free checks
+ * (WELCOME_SETUP_PAGE); other `/welcome` addresses are an empty page.
  */
 
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
@@ -118,6 +120,30 @@ function json(res: ServerResponse, status: number, body: unknown): void {
   res.end(JSON.stringify(body));
 }
 
+/**
+ * `/welcome?setup=1` as the website's welcome.js does it: says whether this browser had its free checks (its
+ * localStorage note) until the extension answers, sets the note when a pass was made, and moves on.
+ */
+export const WELCOME_SETUP_PAGE = `<!doctype html><title>setup</title><script>
+  const had = localStorage.getItem("unfret-free-pass") !== null;
+  let done = false;
+  addEventListener("message", (e) => {
+    if (e.source !== window || !e.data || e.data.type !== "unfret-free-answer" || done) return;
+    done = true;
+    console.log("unfret-status:" + e.data.status);
+    if (["free", "had-free", "none-today"].includes(e.data.status)) localStorage.setItem("unfret-free-pass", "1");
+    location.replace(e.data.status === "free" ? "/welcome?free=" + e.data.free
+      : ["had-free", "none-today"].includes(e.data.status) ? "/welcome?note=" + e.data.status : "/welcome");
+  });
+  let tries = 0;
+  const ask = () => {
+    if (done || tries++ >= 40) return;
+    window.postMessage({ type: "unfret-free-ask", had }, location.origin);
+    setTimeout(ask, 250);
+  };
+  ask();
+</script>`;
+
 async function readBody(req: IncomingMessage): Promise<unknown> {
   const chunks: Buffer[] = [];
   for await (const chunk of req) chunks.push(chunk as Buffer);
@@ -154,6 +180,13 @@ export async function startMockApi(): Promise<MockApi> {
       }
       if (token === "off") {
         json(res, 503, { detail: "Sign-in is off.", error_code: "SERVICE_UNAVAILABLE" });
+        return;
+      }
+      if (path.startsWith("/welcome")) {
+        res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+        res.end(
+          path.startsWith("/welcome?setup=1") ? WELCOME_SETUP_PAGE : `<!doctype html><title>welcome</title>`,
+        );
         return;
       }
       if (path === "/v1/pricing") {

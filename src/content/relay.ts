@@ -144,3 +144,38 @@ export function acceptRefMessage(
   if (type !== REF_MESSAGE || typeof code !== "string" || !REF_CODE_RE.test(code)) return null;
   return code.toUpperCase();
 }
+
+// ── Whether this browser had its free checks, from the welcome page (0.12.0) ────────────────────────────────────
+// /welcome?setup=1 posts `{type: "unfret-free-ask", had}` to itself: whether the website's own note (the link checker's
+// `unfret-free-pass` in localStorage) says this browser already had its free checks. A boolean, nothing else. The
+// extension makes its free pass only then (a reinstall without browser sync has lost its own note in `storage.sync`),
+// and answers `{type: "unfret-free-answer", status, free}`: "free" (the pass came with `free` free checks),
+// "had-free" (without, as this browser had them), "none-today" (without: the server had none to give), "has-pass"
+// (the extension has a pass or wallet already: nothing made), "error" (offline or refused: the popup offers it again)
+// or "invalid".
+
+export const FREE_ASK_MESSAGE = "unfret-free-ask";
+export const FREE_ANSWER_MESSAGE = "unfret-free-answer";
+export const FREE_STATUSES = ["free", "had-free", "none-today", "has-pass", "error", "invalid"] as const;
+export type FreeStatus = (typeof FREE_STATUSES)[number];
+
+export function isFreeStatus(value: unknown): value is FreeStatus {
+  return (FREE_STATUSES as readonly unknown[]).includes(value);
+}
+
+/** Whether the welcome page says this browser had its free checks (true/false), or null for anything else. */
+export function acceptFreeAsk(
+  event: MessageLike,
+  pageWindow: unknown,
+  pageOrigin: string,
+  apiBase: string,
+): boolean | null {
+  if (event.source !== pageWindow) return null;
+  if (event.origin !== pageOrigin) return null;
+  if (pageOrigin !== new URL(normaliseApiBase(apiBase)).origin) return null;
+  const data = event.data;
+  if (typeof data !== "object" || data === null) return null;
+  const { type, had } = data as { type?: unknown; had?: unknown };
+  if (type !== FREE_ASK_MESSAGE || typeof had !== "boolean") return null;
+  return had;
+}

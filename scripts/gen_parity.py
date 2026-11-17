@@ -5,7 +5,9 @@ Run with the backend's virtualenv (read-only use of the backend repo):
 
     make parity BACKEND=../unfret_backend
 
-Writes test/fixtures/<name>.expected.json (PageFacts as JSON) for every entry in test/fixtures/index.json.
+Writes test/fixtures/<name>.expected.json (PageFacts as JSON) for every entry in test/fixtures/index.json, and
+test/fixtures/url-params.expected.json: the query parameters the backend drops from a page address (its result cache,
+share links, listing keys), which the extension drops before it sends one (src/shared/urls.ts, test/urls.test.ts).
 """
 
 import importlib
@@ -36,6 +38,22 @@ def main() -> None:
         out = FIXTURES / f"{name}.expected.json"
         out.write_text(json.dumps(facts.model_dump(mode="json"), indent=1, ensure_ascii=False) + "\n")
         print(f"{name}: {out.name}", file=sys.stderr)
+    write_url_params(importlib.import_module(f"{package}.result_cache"))
+
+
+def write_url_params(result_cache: object) -> None:
+    """The backend's lists of dropped query parameters, and its answer for every probe in url-params.json."""
+    probes = json.loads((FIXTURES / "url-params.json").read_text())
+    is_dropped = result_cache.is_tracking_param  # type: ignore[attr-defined]
+    expected = {
+        "tracking": sorted(result_cache._TRACKING_PARAMS),  # type: ignore[attr-defined]
+        "prefixes": list(result_cache._TRACKING_PREFIXES),  # type: ignore[attr-defined]
+        "private": sorted(result_cache._PRIVATE_PARAMS),  # type: ignore[attr-defined]
+        "dropped": [[name, value, is_dropped(name, value)] for name, value in probes],
+    }
+    out = FIXTURES / "url-params.expected.json"
+    out.write_text(json.dumps(expected, indent=1) + "\n")
+    print(f"url params: {out.name}", file=sys.stderr)
 
 
 if __name__ == "__main__":

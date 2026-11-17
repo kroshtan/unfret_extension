@@ -8,6 +8,7 @@
 
 import { UnfretApi } from "../api/client.js";
 import {
+  type FreeStatus,
   isRefStatus,
   type KeyHandoffStatus,
   type RefStatus,
@@ -24,7 +25,7 @@ import {
   savePendingOffer,
   tellTab,
 } from "../shared/handoff.js";
-import { isOwnPass, makeFreePass } from "../shared/new-pass.js";
+import { isOwnPass, makeFreePass, WELCOME_SETUP_PATH } from "../shared/new-pass.js";
 import {
   DEFAULT_API_BASE,
   isKeySession,
@@ -36,13 +37,10 @@ import {
 } from "../shared/settings.js";
 import { withoutSecrets } from "../shared/urls.js";
 
-/** The website's first-run page (Unfret Dev: on the dev deployment); `?free=<n>` says "You have n free checks". */
+/** The website's first-run page (Unfret Dev: on the dev deployment). */
 export const WELCOME_URL = `${DEFAULT_API_BASE}/welcome`;
-
-/** The welcome page for a pass with `freeChecks` free checks (none: the page for a code, a purchase or a pass). */
-export function welcomeUrl(freeChecks: number): string {
-  return freeChecks > 0 ? `${WELCOME_URL}?free=${freeChecks}` : WELCOME_URL;
-}
+/** The welcome page while the extension makes its free pass (`WELCOME_SETUP_PATH`). */
+export const WELCOME_SETUP_URL = `${DEFAULT_API_BASE}${WELCOME_SETUP_PATH}`;
 
 /**
  * Open a page of the Unfret site in a new tab, with a ticket: until the extension has a pass, that tab may hand it one
@@ -71,28 +69,62 @@ export function unfretPageUrl(apiBase: string, path: unknown): string | null {
 }
 
 /**
- * After a new install (never an update or a browser update): make the extension's own pass, with free checks unless
- * this browser profile had them, then open the welcome page saying how many. Offline or refused, the welcome page
- * opens anyway (with a ticket: a code or a purchase there signs the extension in) and the popup tries again
- * (`passPending`).
+ * After a new install (never an update or a browser update): open the welcome page, which tells the extension whether
+ * this browser had its free checks, and the extension makes its pass then (`receiveFreeAsk`): a reinstall without
+ * browser sync has lost the extension's own note of that. The page opens with a ticket (a code or a purchase there
+ * signs the extension in). Until the pass is made, the popup offers the free checks again (`passPending`).
  *
  * @returns Whether it was a new install.
  */
 export async function welcomeOnInstall(
   details: { reason: string },
   open: (url: string) => unknown = openUnfretTab,
-  makePass: (apiBase: string) => ReturnType<typeof makeFreePass> = makeFreePass,
 ): Promise<boolean> {
   if (details.reason !== "install") return false;
-  const { apiBase, session } = await loadSettings();
-  let freeChecks = 0;
-  if (!session) {
-    const made = await makePass(apiBase);
-    if (made.ok) freeChecks = made.freeChecks;
-    else await chrome.storage.local.set({ passPending: true });
+  const { session } = await loadSettings();
+  if (session) {
+    void open(WELCOME_URL);
+    return true;
   }
-  void open(welcomeUrl(freeChecks));
+  await chrome.storage.local.set({ passPending: true });
+  void open(WELCOME_SETUP_URL);
   return true;
+}
+
+/** The answer to the welcome page's question: how the free pass went, and how many free checks it came with. */
+export interface FreeAnswer {
+  status: FreeStatus;
+  free?: number;
+}
+
+let making: Promise<FreeAnswer> | undefined; // one free pass at a time, whatever number of welcome pages ask
+
+/**
+ * The welcome page says whether this browser had its free checks (the website's own note: a yes or no). Without a
+ * pass or wallet yet, make the extension's free pass now: with free checks only if neither that note nor this
+ * profile's own flag says they were given. Only from the welcome page of the configured Unfret site.
+ */
+export async function receiveFreeAsk(
+  message: { had?: unknown },
+  sender: chrome.runtime.MessageSender,
+  extensionId: string,
+  makePass: typeof makeFreePass = makeFreePass,
+): Promise<FreeAnswer> {
+  const { apiBase, session } = await loadSettings();
+  if (!fromUnfretPage(sender, extensionId, apiBase, "/welcome")) return { status: "invalid" };
+  if (typeof message.had !== "boolean") return { status: "invalid" };
+  if (making) return making;
+  if (session) return { status: "has-pass" };
+  const had = message.had;
+  making = (async (): Promise<FreeAnswer> => {
+    const made = await makePass(apiBase, undefined, had);
+    if (!made.ok) return { status: "error" };
+    if (made.freeChecks > 0) return { status: "free", free: made.freeChecks };
+    return { status: made.asked ? "none-today" : "had-free" };
+  })().finally(() => {
+    making = undefined;
+  });
+  return making;
 }
 
 function senderOrigin(sender: chrome.runtime.MessageSender): string {
