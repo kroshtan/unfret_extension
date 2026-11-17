@@ -3,32 +3,101 @@ name: CI
 on:
   push:
     branches: [main]
+  # A pull request is checked once it is ready: not while its title starts with "WIP:" or "[WIP]" (a draft), and
+  # dropping that prefix (an `edited` event; Forgejo has no `ready_for_review`) starts the run (README, "Pull
+  # requests and CI").
   pull_request:
+    types: [opened, synchronize, reopened, edited]
   workflow_dispatch:
 
+# Forgejo applies `concurrency` to whole runs only (a job's own `concurrency` is ignored). A pull request's newer
+# commit cancels its older run; an edit never cancels anything, it queues. On main, runs queue one behind the other
+# and are never cancelled, so a publish is never cut off or dropped; a superseded run skips its checks instead
+# (check, "Still needed?").
 concurrency:
   group: ${{ forgejo.workflow }}-${{ forgejo.ref }}
-  cancel-in-progress: ${{ forgejo.event_name == 'pull_request' }}
+  cancel-in-progress: ${{ forgejo.event_name == 'pull_request' && forgejo.event.action != 'edited' }}
 
 jobs:
   # The public runner: an unprivileged throwaway container with no docker socket and no secrets.
   check:
+    if: forgejo.event_name != 'pull_request' || !forgejo.event.pull_request.draft
     runs-on: kroshtan-public
+    outputs:
+      checked: ${{ steps.gate.outputs.run }}
     steps:
+      # Is this check still needed? (README, "Pull requests and CI".) On main, runs queue one behind the other,
+      # and a run whose commit is no longer the branch's newest checks nothing: the newer commit's own run checks it.
+      # On a pull request, an edit that leaves it ready (a new description or title) reports the result its commit
+      # already has instead of checking it again; dropping "WIP:" (the commit has no result yet) runs the checks.
+      - name: Still needed?
+        id: gate
+        env:
+          API: ${{ forgejo.server_url }}/api/v1/repos/${{ forgejo.repository }}
+          EVENT: ${{ forgejo.event_name }}
+          ACTION: ${{ forgejo.event.action }}
+          SHA: ${{ forgejo.event.pull_request.head.sha || forgejo.sha }}
+          BRANCH: ${{ forgejo.ref_name }}
+          RUN: ${{ forgejo.run_number }}
+          CONTEXT: CI / ${{ forgejo.job }} (pull_request)
+        run: |
+          python3 -I - <<'PY'
+          import json, os, sys, urllib.parse, urllib.request
+
+          env = os.environ
+
+          def get(path):
+              # The repository is public: its branches and commit statuses need no token.
+              with urllib.request.urlopen(env["API"] + path, timeout=30) as response:
+                  return json.load(response)
+
+          def decide(run, why):
+              print(why)
+              with open(env.get("FORGEJO_OUTPUT") or env["GITHUB_OUTPUT"], "a") as output:
+                  output.write(f"run={run}\n")
+              sys.exit()
+
+          if env["EVENT"] in ("push", "workflow_dispatch"):
+              tip = get("/branches/" + urllib.parse.quote(env["BRANCH"], safe=""))["commit"]["id"]
+              if tip != env["SHA"]:
+                  decide("false", f"::notice::superseded: {env['BRANCH']} is at {tip} now; that commit's run checks it")
+          elif env["EVENT"] == "pull_request" and env["ACTION"] == "edited":
+              statuses = get(f"/commits/{env['SHA']}/statuses?sort=highestindex&limit=50")
+              earlier = [
+                  s for s in statuses
+                  if s["context"] == env["CONTEXT"] and f"/runs/{env['RUN']}/" not in (s["target_url"] or "")
+              ]
+              if earlier:
+                  last = max(earlier, key=lambda s: s["id"])
+                  if last["status"] == "success":
+                      decide("false", f"::notice::this commit already passed: {last['target_url']}")
+                  if last["status"] == "failure" and last["description"].startswith("Failing"):
+                      print(f"::error::this commit already failed: {last['target_url']} (push a fix or re-run it)")
+                      sys.exit(1)
+          decide("true", "checking this commit")
+          PY
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.gate.outputs.run == 'true'
       - name: Install dependencies
+        if: steps.gate.outputs.run == 'true'
         run: npm ci
       - name: Lint
+        if: steps.gate.outputs.run == 'true'
         run: npm run lint
       - name: Typecheck
+        if: steps.gate.outputs.run == 'true'
         run: npm run typecheck
       - name: Test
+        if: steps.gate.outputs.run == 'true'
         run: npm test
       - name: Build
+        if: steps.gate.outputs.run == 'true'
         run: npm run build
       - name: Lint the Firefox build (AMO rules)
+        if: steps.gate.outputs.run == 'true'
         run: npx web-ext lint --source-dir dist/firefox
       - name: Check the store package
+        if: steps.gate.outputs.run == 'true'
         run: node scripts/store-package.mjs
 
   # Unfret Dev, on every push to main (and manual runs on main): build it as version <package.json>.<run number>,
@@ -43,7 +112,11 @@ jobs:
   # open pull requests on the backend repository (scope write:repository).
   publish-dev:
     needs: check
-    if: forgejo.event_name != 'pull_request' && forgejo.ref == 'refs/heads/main'
+    # Only a commit whose own checks ran and passed: a superseded run checks nothing, and the newer commit's run
+    # publishes instead.
+    if: >-
+      forgejo.event_name != 'pull_request' && forgejo.ref == 'refs/heads/main'
+      && needs.check.outputs.checked == 'true'
     runs-on: kroshtan-deploy
     container:
       image: node:22-bookworm
