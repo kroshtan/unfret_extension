@@ -12,6 +12,43 @@ third-party requests: the extension talks to the Unfret API and nothing else.
 ([store/AMO.md](store/AMO.md)). Both are built byte for byte from this repository. The older self-hosted install is
 described in [INSTALL.md](INSTALL.md), but no longer offered.
 
+- Website: [unfret.net](https://unfret.net) · [check a link](https://unfret.net/check) ·
+  [developers and AI agents](https://unfret.net/developers)
+- The service behind it (API, website, scoring):
+  [git.kroshtan.com/kroshtan/unfret_backend](https://git.kroshtan.com/kroshtan/unfret_backend) ·
+  [GitHub mirror](https://github.com/kroshtan/unfret_backend)
+- Android app: [git.kroshtan.com/kroshtan/unfret_android](https://git.kroshtan.com/kroshtan/unfret_android)
+- This extension: [git.kroshtan.com/kroshtan/unfret_extension](https://git.kroshtan.com/kroshtan/unfret_extension)
+
+## How accurate it is
+
+The extension reads the page; the verdict comes from the Unfret service. On Unfret's labelled corpus of **1,582
+product pages** (scam shops, junk and dropshipping, and legitimate shops), replayed through the analysis with the open
+baseline model, the score has a **ROC AUC of 0.897**:
+
+| Verdict          | Pages | Scam or junk among them |
+| ---------------- | ----- | ----------------------- |
+| Serious concerns | 282   | 95%                     |
+| Think twice      | 423   | 82%                     |
+| Worth a look     | 404   | 46%                     |
+| Looks fine       | 464   | 7%                      |
+
+Think twice or Serious concerns catches 74% of the scam and junk pages, with 12% of legitimate pages getting one
+(false alarms). The corpus includes the pages the model was trained on, so expect somewhat lower numbers on new pages;
+details in the [backend's README](https://git.kroshtan.com/kroshtan/unfret_backend#how-accurate-it-is).
+
+**The model.** The scoring model in the backend repository is an open baseline, and a self-hosted Unfret uses it.
+The service at unfret.net runs privately retrained versions of it. The labelled corpus and the duplicate-product image
+dataset are private.
+
+## Run it against your own server
+
+Start the backend on your machine ([its README](https://git.kroshtan.com/kroshtan/unfret_backend#run-your-own):
+Docker Compose, an LLM API key, two secrets), build the extension (`make install build-dev`), load `dist/chrome` or
+`dist/firefox` unpacked (see [Development](#development)) and set the API base in the extension's settings to
+`http://localhost:8080`. The settings accept only `localhost` and `127.0.0.1`; for a server elsewhere, change the API
+origin in `scripts/manifest.mjs` and build your own copy.
+
 ## How it works
 
 ```
@@ -106,8 +143,8 @@ Load unpacked:
 - **Firefox**: `about:debugging#/runtime/this-firefox` → Load Temporary Add-on → `dist/firefox/manifest.json`.
   Firefox has no `declarativeContent`, so it shows no marketplace marker; analysis works the same.
 
-To use a local backend, open the extension's settings and set the API base to e.g. `http://localhost:8080`
-(the browser asks for access to that address).
+To use a local backend, set the API base in the extension's settings to e.g. `http://localhost:8080` (the browser
+asks for access to that address; see [Run it against your own server](#run-it-against-your-own-server)).
 
 `make build` writes four builds: `dist/chrome` (the store variant, zipped as `dist/unfret-chrome-<version>.zip`),
 `dist/chrome-selfhosted` (with the update URL and public key, signed into a CRX by `make release`), `dist/chrome-dev`
