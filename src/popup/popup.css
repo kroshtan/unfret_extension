@@ -473,6 +473,155 @@ body[data-auth="expired"] #account-status {
   background: #ffffff;
 }
 
+/* ── The result card: the same product elsewhere, sources, the next step, what was checked ─────────────────────── */
+
+.reasons .source,
+.positives .source {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.same-product {
+  margin-top: 0.6rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--note);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  line-height: 1.4;
+}
+
+.same-product strong {
+  display: block;
+  font-weight: 650;
+}
+
+.same-product .pair {
+  display: flex;
+  gap: 0.6rem;
+  margin: 0.45rem 0;
+}
+
+.same-product figure {
+  margin: 0;
+  max-width: 96px;
+}
+
+.same-product img {
+  display: block;
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.same-product figcaption {
+  margin-top: 0.2rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.same-product .detail {
+  display: block;
+  font-size: 0.93rem;
+  color: var(--ink-2);
+}
+
+.clean {
+  margin: 0.6rem 0 0;
+  font-weight: 600;
+  color: var(--good);
+}
+
+.next-step {
+  margin-top: 0.6rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+
+#result-body .next-step h2,
+#share-preview-body .next-step h2 {
+  margin-top: 0;
+}
+
+.next-step p {
+  margin: 0;
+  font-size: 0.93rem;
+}
+
+#result-body h2 .count,
+#share-preview-body h2 .count {
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.checked-list {
+  display: grid;
+  gap: 0.3rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.93rem;
+}
+
+.checked-list li {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.checked-list .mark {
+  display: inline-flex;
+  flex: none;
+  width: 1.2rem;
+  height: 1.2rem;
+  margin-top: 0.05rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  color: var(--muted);
+}
+
+.checked-list .mark::before {
+  content: "";
+  width: 0.7rem;
+  height: 0.7rem;
+  margin: auto;
+  background: currentColor;
+  -webkit-mask: var(--sym, var(--i-dash)) center / contain no-repeat;
+  mask: var(--sym, var(--i-dash)) center / contain no-repeat;
+}
+
+.checked-list .checked .mark {
+  --sym: var(--i-check);
+  border-color: var(--good);
+  background: var(--good-soft);
+  color: var(--good);
+}
+
+.checked-list .concern .mark {
+  --sym: var(--i-bang);
+  border-color: var(--care);
+  background: var(--care-soft);
+  color: var(--care);
+}
+
+.checked-list .not_checked {
+  color: var(--muted);
+}
+
+.checked-list .why {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
 .charge-note {
   margin: 0.6rem 0 0;
   font-weight: 600;
@@ -530,7 +679,15 @@ body[data-auth="expired"] #account-status {
   margin: 0;
 }
 
-/* ── "This is wrong" ────────────────────────────────────────────────────────────────────────────────────────── */
+#objection-row {
+  margin: 0.5rem 0 0;
+}
+
+#objection-row button.link {
+  font-size: inherit;
+}
+
+/* ── "Wrong result?" ───────────────────────────────────────────────────────────────────────────────────────── */
 
 #report {
   margin-top: 0.75rem;

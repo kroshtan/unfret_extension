@@ -51,10 +51,18 @@ export const VERDICT = {
       title: "Suspicious number of reviews",
       detail: "4,800 ratings for a product that's only been listed for 6 weeks.",
       severity: "high",
+      source: "The reviews on the page",
     },
   ],
   positives: [],
   language: "en",
+  // The result card (backend: the result card).
+  next_step: { type: "junk_or_scam", text: "Better to buy this from a shop you know." },
+  checklist: [
+    { key: "who", label: "Who's behind the shop", status: "checked", note: "" },
+    { key: "reviews", label: "Reviews", status: "concern", note: "Suspicious number of reviews" },
+  ],
+  checks_run: 12,
 };
 
 export const INVITE_OK = `ufi_${"a".repeat(32)}`;

@@ -106,18 +106,55 @@ export interface VerdictReason {
   severity: "high" | "medium" | "low";
   /** Up to three thumbnails of matching photos (photo-reuse evidence), served by the API itself. */
   thumbnails?: string[];
+  /** Where the evidence comes from, in words ("Domain registry (RDAP)"); absent from older results. */
+  source?: string | null;
 }
 
 export interface VerdictPositive {
   type: string;
   title: string;
   detail: string;
+  source?: string | null;
+}
+
+/** One line of the result card's "What we checked" (server ≥ the result card). */
+export interface CheckItem {
+  key: string;
+  label: string;
+  status: "checked" | "concern" | "not_checked";
+  /** Why it wasn't checked, or the finding it's about; may be empty. */
+  note?: string;
+}
+
+/** The same product photo on another shop (Unfret's image index): shown first, with both photos. */
+export interface SameProduct {
+  title: string;
+  detail: string;
+  /** The other shop's domain, "Amazon", or "an Amazon catalogue listing (brand: …)". */
+  where: string;
+  domain?: string | null;
+  others?: number;
+  price?: number | null;
+  currency?: string | null;
+  price_text?: string | null;
+  price_seen_on?: string | null;
+  /** Thumbnails through the API's own image proxy. */
+  image: string;
+  own_image?: string | null;
+}
+
+/** The result card's fields of a verdict; all optional (cached and older results have none). */
+export interface ResultCard {
+  checklist?: CheckItem[];
+  checks_run?: number | null;
+  next_step?: { type: string; text: string } | null;
+  same_product?: SameProduct | null;
 }
 
 export type Band = "reliable" | "concerns" | "careful" | "junk_or_scam";
 
 /** The shopper-facing verdict, as the server wrote it (shown as it comes, whatever its language). */
-export interface Verdict {
+export interface Verdict extends ResultCard {
   band: Band;
   label: string;
   headline: string;
@@ -186,7 +223,7 @@ export interface SharePreview {
   symbol: string;
   headline: string;
   result: {
-    verdict?: {
+    verdict?: ResultCard & {
       band?: ShareBand;
       label?: string;
       symbol?: string;
@@ -196,8 +233,9 @@ export interface SharePreview {
         detail: string;
         severity: VerdictReason["severity"];
         thumbnails?: string[];
+        source?: string | null;
       }[];
-      positives?: { title: string; detail: string }[];
+      positives?: { title: string; detail: string; source?: string | null }[];
     };
     /** Flags with their labels only (evidence is always empty on a shared page). */
     assessment?: { flags?: SharedFlag[]; confidence?: number; model_version?: string };

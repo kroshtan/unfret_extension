@@ -246,6 +246,130 @@ describe("photo thumbnails", () => {
   });
 });
 
+describe("result card", () => {
+  const API = "https://unfret.net";
+  const CARD: AnalysisResult = {
+    score: 35,
+    explanation: "",
+    charged: true,
+    verdict: {
+      band: "careful",
+      label: "Think twice",
+      headline: "A brand-new shop, and the same product elsewhere.",
+      reasons: [
+        {
+          type: "new_domain",
+          title: "Brand-new web shop",
+          detail: "This web shop's address was registered only 23 days ago.",
+          severity: "high",
+          source: "Domain registry (RDAP)",
+        },
+        {
+          type: "photo_reused",
+          title: "Same photo on other shops",
+          detail: "The main product photo is the same photo as on 1 other shop (cheap.shop).",
+          severity: "medium",
+          thumbnails: [`${API}/v1/images/1/thumbnail.jpg`],
+          source: "Unfret's image index",
+        },
+      ],
+      positives: [],
+      same_product: {
+        title: "Looks like the same product, sold elsewhere for $12.99",
+        detail:
+          "The main photo is the same photo as on cheap.shop. Unfret saw it there for $12.99 on 7 November 2026.",
+        where: "cheap.shop",
+        domain: "cheap.shop",
+        price_text: "$12.99",
+        image: `${API}/v1/images/1/thumbnail.jpg`,
+        own_image: `${API}/v1/images/2/thumbnail.jpg`,
+      },
+      next_step: {
+        type: "shop_reviews",
+        text: "Look for reviews of the shop itself on other sites before you pay.",
+      },
+      checklist: [
+        { key: "who", label: "Who's behind the shop", status: "concern", note: "Brand-new web shop" },
+        { key: "reviews", label: "Reviews", status: "not_checked", note: "The page shows no reviews." },
+        { key: "tricks", label: "Hidden tricks", status: "checked", note: "" },
+      ],
+      checks_run: 11,
+    },
+  };
+
+  it("shows the same product first with both photos, then the findings with their sources", () => {
+    const root = document.createElement("div");
+    renderResult(root, CARD, API);
+    const first = root.querySelector(".headline")?.nextElementSibling;
+    expect(first?.className).toBe("same-product");
+    expect(first?.querySelector("strong")?.textContent).toBe(
+      "Looks like the same product, sold elsewhere for $12.99",
+    );
+    const photos = [...(first?.querySelectorAll<HTMLImageElement>("img") ?? [])];
+    expect(photos.map((i) => i.getAttribute("src"))).toEqual([
+      `${API}/v1/images/2/thumbnail.jpg`,
+      `${API}/v1/images/1/thumbnail.jpg`,
+    ]);
+    expect([...(first?.querySelectorAll("figcaption") ?? [])].map((c) => c.textContent)).toEqual([
+      "This page",
+      "cheap.shop",
+    ]);
+    expect([...root.querySelectorAll(".reasons .source")].map((s) => s.textContent)).toEqual([
+      "Source: Domain registry (RDAP)",
+      "Source: Unfret's image index",
+    ]);
+    expect(root.querySelector(".reasons .thumbs")).toBeNull(); // the photo is shown once, up top
+  });
+
+  it("ends with one next step and what was checked, ticked, marked or not checked and why", () => {
+    const root = document.createElement("div");
+    renderResult(root, CARD, API);
+    expect([...root.querySelectorAll("h2")].map((h) => h.textContent)).toEqual([
+      "What we noticed",
+      "What you can do",
+      "What we checked · 11 checks",
+    ]);
+    expect(root.querySelector(".next-step p")?.textContent).toContain("reviews of the shop itself");
+    const items = [...root.querySelectorAll(".checked-list li")];
+    expect(items.map((li) => li.className)).toEqual(["concern", "not_checked", "checked"]);
+    expect(items[1]?.textContent).toBe("Reviews: not checkedThe page shows no reviews.");
+  });
+
+  it("says how many checks found nothing on a clean result", () => {
+    const root = document.createElement("div");
+    const clean: AnalysisResult = {
+      score: 92,
+      explanation: "",
+      verdict: {
+        band: "reliable",
+        label: "Looks fine",
+        headline: "Nothing worrying.",
+        reasons: [],
+        positives: [],
+        checks_run: 14,
+      },
+    };
+    renderResult(root, clean, API);
+    expect(root.querySelector(".clean")?.textContent).toBe("Nothing worrying in 14 checks.");
+  });
+
+  it("leaves the same product out without an API origin or from another origin", () => {
+    const root = document.createElement("div");
+    renderResult(root, CARD);
+    expect(root.querySelector(".same-product")).toBeNull();
+    const elsewhere = structuredClone(CARD);
+    if (elsewhere.verdict?.same_product)
+      elsewhere.verdict.same_product.image = "https://evil.example/v1/images/1/x.jpg";
+    renderResult(root, elsewhere, API);
+    expect(root.querySelector(".same-product")).toBeNull();
+  });
+
+  it("renders an older result (no card fields) as before", () => {
+    const root = rendered(JUNK);
+    expect(root.querySelector(".same-product, .next-step, .checked-list, .clean")).toBeNull();
+  });
+});
+
 describe("progress checklist", () => {
   it("is a fixed list of plain items that tick off, updated in place", () => {
     const list = document.createElement("ul");

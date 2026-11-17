@@ -91,7 +91,7 @@ More requests go to the same API, each only when you ask for it:
   (the product's title and link, the shop, the day of the check and the verdict; no score and no quotes from the page);
   nothing is stored until you click **Share**. The page is then public at `unfret.net/r/…` for anyone with
   the link, for 90 days, and never says who checked. You get a delete code, shown once, to remove it sooner.
-- **This is wrong** (reporting a result): that one check's product facts, page text and result, with your sign-in,
+- **Wrong result?** (reporting a result): that one check's product facts, page text and result, with your sign-in,
   only after you chose a reason and clicked **Send report**.
 - **Have an invite or gift code?**: the code you enter, with your sign-in, to add its checks to your account. The
   server notes which pack's buyer a gift code came from only as a keyed one-way hash, so the buyer can't use their own;
@@ -115,7 +115,7 @@ and backup code (shown in the settings, so you can save it), and, until that pas
 `storage.sync`: only whether this browser had its free checks (your browser may sync it, as it does settings).
 
 Only in memory (the browser's session storage, cleared when you close the browser, never written to disk): the
-results of your checks, each with the request it was made from (for "This is wrong") and, if you shared it, its link
+results of your checks, each with the request it was made from (for "Wrong result?") and, if you shared it, its link
 and delete code, cleared when you leave the page; a phone sign-in that is still waiting; which tabs the extension
 opened on `unfret.net` for you (an hour each); and a pass or sign-in the website handed over while the extension asks
 you about it (above). Invite and gift codes you enter are not kept at all.

@@ -524,8 +524,9 @@ describe("with the access a click grants (activeTab)", () => {
 
     const view = await renderedPopup(granted, tabId);
     expect(view.label).toBe("Serious concerns");
-    expect(view.headings).toEqual(["What we noticed"]);
+    expect(view.headings).toEqual(["What we noticed", "What you can do", "What we checked · 12 checks"]);
     expect(view.reasons).toEqual(["Suspicious number of reviews"]);
+    expect(view.text).toContain("Source: The reviews on the page");
     expect(view.text).not.toMatch(/listing\.|=\s*\d/u);
   });
 });
@@ -721,7 +722,7 @@ describe("in a Dutch browser", () => {
 
     const view = await renderedPopup(dutch, tabId);
     expect(view.lang).toBe("en");
-    expect(view.headings).toEqual(["What we noticed"]);
+    expect(view.headings).toEqual(["What we noticed", "What you can do", "What we checked · 12 checks"]);
     expect(view.analyse).toBe("Check this page");
   });
 });
