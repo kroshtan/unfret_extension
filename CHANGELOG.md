@@ -52,6 +52,10 @@ backend's changelog, which lists each one published at `/extension`.)
   checking a page; the popup says the same. A reinstall in the same browser profile gets a pass without free checks
   (a flag in `storage.sync`). Offline at install, the popup tries again when it opens. The pass's backup code is in
   the settings page, to save if you add checks to it.
+- **An affiliate's link counts for the pass made on install.** When an affiliate's link (`unfret.net/?ref=CODE`)
+  brought the user, the welcome page hands the code to the extension (a content script on `/welcome` only, like the
+  checkout's), and the extension tells the server once with its own pass (`POST /v1/affiliates/attribute`), so the
+  first pack bought on it gets the affiliate bonus. Nothing else is read from the page or sent with it.
 - **Quick checks are free.** With no checks left, the button reads "Quick check (free)" (instead of "Get more checks"): the rules-only check of the
   page itself. While today's free deep checks are used up for everyone, the popup says "Free deep checks are back
   tomorrow" and a check becomes a quick one, saying why. Buying checks stays the "Buy checks" button.

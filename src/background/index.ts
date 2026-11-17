@@ -12,7 +12,7 @@
  */
 
 import { type AnalyzeBody, ApiError, type ReportReason, UnfretApi } from "../api/client.js";
-import { KEY_MESSAGE, SESSION_MESSAGE } from "../content/relay.js";
+import { KEY_MESSAGE, REF_MESSAGE, SESSION_MESSAGE } from "../content/relay.js";
 import {
   ANALYSIS_PORT,
   type BackgroundUpdate,
@@ -26,7 +26,7 @@ import { CONSENT_HINT, FREE_PAUSED, OFFLINE, SESSION_EXPIRED } from "../shared/t
 import { badgeFor } from "./badge.js";
 import { registerMarketplaceHint } from "./icon-hint.js";
 import { extractFromTab } from "./inject.js";
-import { fromUnfretPage, receiveKey, welcomeOnInstall } from "./onboarding.js";
+import { fromUnfretPage, receiveKey, receiveRef, welcomeOnInstall } from "./onboarding.js";
 
 // Content scripts registered for a local dev API, by id suffix (releases before the rename used another prefix).
 const DEV_RELAYS = [
@@ -86,7 +86,24 @@ function setState(tabId: number, state: TabState): void {
 // ── Session relay ────────────────────────────────────────────────────────────
 
 chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) => {
-  const m = message as { type?: unknown; session?: unknown; key?: unknown; replace?: unknown } | null;
+  const m = message as {
+    type?: unknown;
+    session?: unknown;
+    key?: unknown;
+    replace?: unknown;
+    code?: unknown;
+  } | null;
+  if (m?.type === REF_MESSAGE) {
+    void receiveRef(m, sender, chrome.runtime.id).then(
+      (reply) => {
+        sendResponse(reply);
+      },
+      () => {
+        sendResponse({ status: "error" });
+      },
+    );
+    return true; // async response
+  }
   if (m?.type === KEY_MESSAGE) {
     void receiveKey(m, sender, chrome.runtime.id).then(
       (reply) => {
