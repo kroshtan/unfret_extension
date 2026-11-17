@@ -1,5 +1,7 @@
 # Unfret browser extension
 
+![Unfret checking a test shop: Serious concerns, with a fake countdown, a pre-ticked extra and an unbelievable discount](docs/demo.gif)
+
 Risk signals for the product page you're looking at: Temu-grade listings on Amazon dressed up with thousands of
 five-star reviews, dropship stores, fake countdowns, pre-ticked add-ons and fees that only appear at checkout.
 Unfret reports evidence and a plain-words verdict; it never calls a shop a scam.
