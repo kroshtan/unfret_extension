@@ -27,7 +27,37 @@ const REFUSED: Record<string, string> = {
     "Invites and intro codes are for new accounts: this one has had checks before, or used one.",
   INVITE_ENDED: "This code has ended.",
   INTRO_DAILY_CAP: "Today's free checks from codes are gone: they're back tomorrow.",
+  INVITE_MONTHLY_LIMIT:
+    "You've already used a gift code this month; this one still works next month, or give it to someone else.",
 };
+
+const MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+/**
+ * One gift code per pass or wallet a calendar month (429 `INVITE_MONTHLY_LIMIT`; the code stays unused): in the
+ * extension's words, naming the month from the server's `metadata.next_month` ("2026-12-01") when it sent one.
+ */
+export function monthlyLimitMessage(metadata: unknown): string {
+  const next = (metadata as { next_month?: unknown } | null | undefined)?.next_month;
+  const month = typeof next === "string" ? /^\d{4}-(\d{2})-\d{2}$/u.exec(next)?.[1] : undefined;
+  const name = month ? MONTHS[Number(month) - 1] : undefined;
+  return name
+    ? `You've already used a gift code this month; this one still works from ${name}, or give it to someone else.`
+    : (REFUSED.INVITE_MONTHLY_LIMIT ?? "");
+}
 
 export type InviteRedemption =
   { ok: true; checksAdded: number; checks: number } | { ok: false; message: string; signedOut: boolean };
@@ -54,6 +84,8 @@ export async function redeemInvite(apiBase: string, token: string, value: string
   } catch (error) {
     if (!(error instanceof ApiError)) return { ok: false, message: OFFLINE, signedOut: false };
     if (error.needsSignIn) return { ok: false, message: SESSION_EXPIRED, signedOut: true };
+    if (error.code === "INVITE_MONTHLY_LIMIT")
+      return { ok: false, message: monthlyLimitMessage(error.metadata), signedOut: false };
     const refused = REFUSED[error.code];
     if (refused) {
       // The server's own words, unless it sent none (then the same text from here).

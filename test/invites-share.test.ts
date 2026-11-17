@@ -4,9 +4,10 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { type AnalysisResult, ApiError, UnfretApi } from "../src/api/client.js";
-import { INVITE_RE, normaliseInvite, redeemInvite } from "../src/shared/invites.js";
+import { INVITE_RE, monthlyLimitMessage, normaliseInvite, redeemInvite } from "../src/shared/invites.js";
 import { createShare, previewShare, shareError, shareRequest } from "../src/shared/share.js";
 import {
+  INVITE_MONTHLY_CODE,
   INVITE_NOT_NEW_CODE,
   INVITE_OK,
   INVITE_UNKNOWN_CODE,
@@ -97,6 +98,25 @@ describe("invites", () => {
     ],
   ])("shows the server's reason for a refused code (%s)", async (code, message) => {
     expect(await redeemInvite(api.url, KEY, code)).toEqual({ ok: false, message, signedOut: false });
+  });
+
+  it("one gift code a month: says when this one works again, or to give it away (429 INVITE_MONTHLY_LIMIT)", async () => {
+    expect(await redeemInvite(api.url, KEY, INVITE_MONTHLY_CODE)).toEqual({
+      ok: false,
+      message:
+        "You've already used a gift code this month; this one still works from December, or give it to someone else.",
+      signedOut: false,
+    });
+    expect(await redeemInvite(api.url, KEY, "MONTHLYBARE")).toEqual({
+      ok: false,
+      message:
+        "You've already used a gift code this month; this one still works next month, or give it to someone else.",
+      signedOut: false,
+    });
+    expect(monthlyLimitMessage({ next_month: "2027-01-01" })).toContain("from January");
+    for (const odd of [undefined, null, {}, { next_month: "soon" }, { next_month: "2027-13-01" }]) {
+      expect(monthlyLimitMessage(odd)).toContain("still works next month");
+    }
   });
 
   it("says so when the sign-in expired, and when the server can't be reached", async () => {

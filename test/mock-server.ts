@@ -61,8 +61,20 @@ export const INVITE_OK = `ufi_${"a".repeat(32)}`;
 export const INVITE_USED_CODE = `ufi_${"b".repeat(32)}`;
 export const INVITE_UNKNOWN_CODE = `ufi_${"c".repeat(32)}`;
 export const INVITE_NOT_NEW_CODE = `ufi_${"d".repeat(32)}`;
+/** Refused with 429 INVITE_MONTHLY_LIMIT (`metadata.next_month` 2026-12-01); MONTHLYBARE: the same without metadata. */
+export const INVITE_MONTHLY_CODE = `ufi_${"e".repeat(32)}`;
 
-const INVITE_REFUSALS: Record<string, { status: number; error_code: string; detail: string }> = {
+const INVITE_REFUSALS: Record<
+  string,
+  { status: number; error_code: string; detail: string; metadata?: Record<string, unknown> }
+> = {
+  [INVITE_MONTHLY_CODE]: {
+    status: 429,
+    error_code: "INVITE_MONTHLY_LIMIT",
+    detail: "This pass already used a gift code this month.",
+    metadata: { next_month: "2026-12-01" },
+  },
+  MONTHLYBARE: { status: 429, error_code: "INVITE_MONTHLY_LIMIT", detail: "" },
   [INVITE_USED_CODE]: {
     status: 409,
     error_code: "INVITE_USED",
@@ -248,7 +260,12 @@ export async function startMockApi(): Promise<MockApi> {
         }
         const code = (body as { code?: string } | null)?.code ?? "";
         const refusal = INVITE_REFUSALS[code];
-        if (refusal) json(res, refusal.status, { detail: refusal.detail, error_code: refusal.error_code });
+        if (refusal)
+          json(res, refusal.status, {
+            detail: refusal.detail,
+            error_code: refusal.error_code,
+            ...(refusal.metadata ? { metadata: refusal.metadata } : {}),
+          });
         else if (code === "FRIENDS")
           json(res, 200, {
             checks_added: 5,

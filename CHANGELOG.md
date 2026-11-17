@@ -5,6 +5,11 @@ backend's changelog, which lists each one published at `/extension`.)
 
 ## 0.12.0 (unreleased)
 
+- **One gift code a month.** A pass or wallet that already redeemed a gift code this calendar month is refused with
+  429 `INVITE_MONTHLY_LIMIT` (backend B5); the popup and settings now say "You've already used a gift code this
+  month; this one still works from December, or give it to someone else." (the month from `metadata.next_month`;
+  "next month" without it) instead of "That invite didn't work". The help text under the code field says a gift code
+  adds 5 checks to the pass or wallet in use, one a month, and not one from your own pack.
 - **The page address a check sends is cleaned first** (security audit L8): without its fragment (`#…`), a user name
   or password, `;jsessionid=` in the path, and query parameters that are about the visitor rather than the product:
   tracking and referral parameters (`utm_*`, `hsa_*`, `gclid`, `fbclid`, `msclkid`, `mc_eid`, `igshid`, `ref`, `ref_`,
@@ -24,7 +29,8 @@ backend's changelog, which lists each one published at `/extension`.)
   (an install that couldn't reach the server). A smoke test removes the extension and installs it again in the same
   profile.
 - **Store texts for 0.12.0**: the listing's "How you pay" (5 free deep checks on install, then free quick checks;
-  packs bought on unfret.net by card or crypto; gift codes for any pass but the buyer's own), the accuracy page, "no
+  packs bought on unfret.net by card or crypto; gift codes of 5 checks, one per 25 checks bought, for any pass but
+  the buyer's own), the accuracy page, "no
   affiliate links to shops", and the reviewer notes (the free checks on install; the test key only as a fallback, in
   the settings). The privacy statement and the store's privacy texts say what the address loses and what the welcome
   page tells the extension.
