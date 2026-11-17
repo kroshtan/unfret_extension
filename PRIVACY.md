@@ -1,6 +1,6 @@
 # Unfret privacy policy (browser extension)
 
-_Last updated: 16 November 2026 (version 0.11.0; a new key from the checkout page signs the extension in, welcome page after installing; earlier: photo lookup corrected, service providers and private sellers' ads added). Draft for the store listings; to be reviewed before publication._
+_Last updated: 17 November 2026 (version 0.12.0: a free Unfret pass made on install, free quick checks; 0.11.0: a new key from the checkout page signs the extension in, welcome page after installing; earlier: photo lookup corrected, service providers and private sellers' ads added). Draft for the store listings; to be reviewed before publication._
 
 Unfret is made by Kroshtan (Floris van Beers, the Netherlands).
 
@@ -34,7 +34,17 @@ that page itself, and answers the page only with whether it signed in. If the ex
 another key or wallet, it asks you on the page first and changes nothing unless you agree. Your key is never sent
 back to the page or to anyone else.
 
-After you install it, the extension opens a welcome page on `unfret.net` once. It sends nothing with it.
+After you install it, the extension asks `unfret.net` once for a new **Unfret pass** (an anonymous API key: no
+account, no e-mail) with a few free checks, and opens a welcome page on `unfret.net` that says how many it got. That
+request carries nothing about you or your browsing: only the answer to a small computing puzzle (a proof of work that
+keeps out bots). To give free checks only once, the extension notes in the browser's `storage.sync` that this browser
+had them; your browser may sync that note between your devices, as it does settings, and a reinstall then gets a
+pass without free checks. The note says nothing else. The pass and its backup code are kept in your browser; the
+backup code is shown in the extension's settings, so you can save it if you add checks to the pass.
+
+If the checkout page hands the extension another pass while it uses the free pass it made, the page asks you first;
+when you agree, the free pass's free checks left move to the new pass (the extension sends the new pass's public ID,
+never the pass itself).
 
 The extension has no standing access to any website. It can read a page only after you click its toolbar button on
 that page (the browser's `activeTab` grant, for that one tab). On Amazon and bol.com product pages the toolbar icon
@@ -46,7 +56,9 @@ see the page or its address.
 Only to the Unfret API (`unfret.net`, hosted in the EU), when you click "Check this page":
 
 - the page address and the product facts and text described above;
-- your session token, which identifies the Solana wallet you signed in with.
+- your session token, which identifies the Solana wallet you signed in with, or your Unfret pass;
+- for a **quick check** (free; offered when you have no checks left, or while today's free checks are used up),
+  the same page data, marked as a quick check: Unfret then reads only the page itself, by its rules.
 
 Two more requests go to the same API, and only when you ask for them:
 
@@ -58,19 +70,24 @@ Two more requests go to the same API, and only when you ask for them:
 - **Have an invite?**: the invite code you enter, with your sign-in, to add its checks to your account. Invite codes
   are not linked to whoever bought the pack they came with.
 
-The extension makes no other network requests: no analytics, no trackers, no third parties.
+The extension makes no other network requests: no analytics, no trackers, no third parties. (The request for a new
+pass on install, above, is the one it makes without a click.)
 
 ## What is stored
 
-In your browser: your session (token, wallet address, expiry), whether your last sign-in expired, and your
-settings. Analysis results are kept only in memory (the browser's session storage, so a result survives the
+In your browser: your session (token, wallet address, expiry; or your Unfret pass), whether your last sign-in
+expired, your settings, and for the pass the extension made itself, its public ID and backup code. In
+`storage.sync`: only whether this browser had its free checks. Analysis results are kept only in memory (the browser's session storage, so a result survives the
 extension's background process going to sleep); they are cleared when you leave the page or close the browser and
 are never written to disk. A shared result's link and delete code are kept the same way, with that result. Invite
 codes you enter are not kept at all.
 
 The extension is in English and asks Unfret for English results; it sends nothing about your browser's language.
 
-On the server: your wallet address and its credit balance. The server does not keep the addresses or contents of
+On the server: your wallet address and its credit balance, or your pass's public ID, its balance, its free checks
+left and one-way hashes of the pass and its backup code. To limit how many free passes one internet connection gets in
+a day, the server counts them in memory only, under a salted one-way hash of the address, gone at its next restart:
+it never stores your IP address. The server does not keep the addresses or contents of
 the pages you analyse, and does not link what you analysed to your wallet. For product pages with a public product
 number (an Amazon ASIN, a bol.com ID or a barcode) it keeps an anonymous price observation for 90 days: a one-way
 hash of the shop's domain and that number, the day, the price and the claimed "was" price, with no address, wallet,

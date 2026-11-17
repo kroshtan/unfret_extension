@@ -47,6 +47,16 @@ backend's changelog, which lists each one published at `/extension`.)
   more checks" button. Out of checks, the button gets more checks on any page, so the hint now says "You have no
   checks left."; once there are checks again, it says the page can't be checked. While a check runs, the hint says
   the popup can be closed.
+- **Free checks on install.** Unfret makes itself an Unfret pass when it's installed (no code, no account, no
+  purchase) with 5 free deep checks, and the welcome page says "You have 5 free checks" and leads straight to
+  checking a page; the popup says the same. A reinstall in the same browser profile gets a pass without free checks
+  (a flag in `storage.sync`). Offline at install, the popup tries again when it opens. The pass's backup code is in
+  the settings page, to save if you add checks to it.
+- **Quick checks are free.** With no checks left, the button reads "Quick check (free)" (instead of "Get more checks"): the rules-only check of the
+  page itself. While today's free deep checks are used up for everyone, the popup says "Free deep checks are back
+  tomorrow" and a check becomes a quick one, saying why. Buying checks stays the "Buy checks" button.
+- When the website hands the extension a bought pass while it uses its own free pass, the page says so, and on a
+  switch the free checks left move to the new pass (`POST /v1/keys/move-free-checks`).
 - Version 0.12.0.
 
 ## 0.11.0 (2026-11-16)

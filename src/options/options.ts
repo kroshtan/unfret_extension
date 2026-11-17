@@ -4,6 +4,7 @@ import { UnfretApi } from "../api/client.js";
 import { checksText } from "../popup/view.js";
 import { CODE_CHECKOUT, inviteAdded, redeemInvite } from "../shared/invites.js";
 import { KEY_FAILURE, signInWithKey } from "../shared/key-sign-in.js";
+import { isOwnPass, ownPass } from "../shared/new-pass.js";
 import {
   accountLabel,
   checkoutPath,
@@ -52,6 +53,10 @@ async function renderAccount(): Promise<void> {
   el("buy").textContent = isKeySession(session) ? "Buy checks for this pass" : "Buy checks";
   el("invite").hidden = !session;
   el("have-code-row").hidden = Boolean(session);
+  // The pass Unfret made on install: its backup code was never shown anywhere else.
+  const own = (await isOwnPass(session)) ? await ownPass() : undefined;
+  el("backup").hidden = own === undefined;
+  el("backup-code").textContent = own?.recoveryCode ?? "";
   if (session) {
     try {
       // Hide "Have an invite?" for an account that has had credit, where no code would be accepted.

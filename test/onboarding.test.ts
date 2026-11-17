@@ -1,6 +1,7 @@
 /**
  * Onboarding (0.11.0): the checkout page hands a new API key to the extension, the welcome page opens once after
- * installing, and the popup offers one next step when signed out or out of checks.
+ * installing, and the popup offers one next step when signed out or out of checks. 0.12.0: a free pass on install,
+ * free quick checks.
  */
 
 import { readFileSync } from "node:fs";
@@ -8,7 +9,7 @@ import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { manifest } from "../scripts/manifest.mjs";
-import { receiveKey, WELCOME_URL, welcomeOnInstall } from "../src/background/onboarding.js";
+import { receiveKey, WELCOME_URL, welcomeOnInstall, welcomeUrl } from "../src/background/onboarding.js";
 import { acceptKeyMessage, isKeyHandoffStatus, KEY_MESSAGE } from "../src/content/relay.js";
 import { checkoutPath, type Session } from "../src/shared/settings.js";
 
@@ -27,28 +28,31 @@ const WALLET: Session = {
   expiresAt: "2999-01-01T00:00:00.000Z",
 };
 
-/** chrome.storage.local over a plain object. */
-function stubStorage(data: Record<string, unknown>): void {
+/** A chrome.storage area over a plain object. */
+function area(data: Record<string, unknown>): Record<string, unknown> {
+  return {
+    get: (keys: string | string[]) =>
+      Promise.resolve(
+        Object.fromEntries(
+          (Array.isArray(keys) ? keys : [keys]).filter((k) => k in data).map((k) => [k, data[k]]),
+        ),
+      ),
+    set: (items: Record<string, unknown>) => {
+      Object.assign(data, items);
+      return Promise.resolve();
+    },
+    remove: (keys: string | string[]) => {
+      for (const k of Array.isArray(keys) ? keys : [keys]) Reflect.deleteProperty(data, k);
+      return Promise.resolve();
+    },
+  };
+}
+
+/** chrome.storage.local (and .sync) over plain objects. */
+function stubStorage(data: Record<string, unknown>, sync: Record<string, unknown> = {}): void {
   vi.stubGlobal("chrome", {
     runtime: { id: "ext-id" },
-    storage: {
-      local: {
-        get: (keys: string | string[]) =>
-          Promise.resolve(
-            Object.fromEntries(
-              (Array.isArray(keys) ? keys : [keys]).filter((k) => k in data).map((k) => [k, data[k]]),
-            ),
-          ),
-        set: (items: Record<string, unknown>) => {
-          Object.assign(data, items);
-          return Promise.resolve();
-        },
-        remove: (keys: string | string[]) => {
-          for (const k of Array.isArray(keys) ? keys : [keys]) Reflect.deleteProperty(data, k);
-          return Promise.resolve();
-        },
-      },
-    },
+    storage: { local: area(data), sync: area(sync) },
   });
 }
 
@@ -118,9 +122,11 @@ describe("the key the checkout page posts (content script)", () => {
     }
   });
 
-  it("answers the page with a status only", () => {
+  it("answers the page with a status only (and whether it is the extension's free pass)", () => {
     const relay = readFileSync("src/content/key-relay.ts", "utf8");
-    expect(relay).toContain("window.postMessage({ type: KEY_RECEIVED_MESSAGE, status }, location.origin)");
+    expect(relay).toContain("{ type: KEY_RECEIVED_MESSAGE, status, free_pass: true }");
+    expect(relay).toContain(": { type: KEY_RECEIVED_MESSAGE, status };");
+    expect(relay).toContain("window.postMessage(answer, location.origin);");
     expect(isKeyHandoffStatus("signed-in")).toBe(true);
     expect(isKeyHandoffStatus(KEY)).toBe(false);
   });
@@ -138,14 +144,14 @@ describe("storing the handed-off key (background)", () => {
 
   it("signs in with the key when signed out (or after an expired sign-in)", async () => {
     data.sessionExpired = true;
-    expect(await receiveKey({ key: KEY }, checkout, "ext-id")).toBe("signed-in");
+    expect(await receiveKey({ key: KEY }, checkout, "ext-id")).toEqual({ status: "signed-in" });
     expect(data.session).toEqual(keySessionOf(KEY));
     expect(data).not.toHaveProperty("sessionExpired");
   });
 
   it("says so when it already uses that key", async () => {
     data.session = keySessionOf(KEY);
-    expect(await receiveKey({ key: KEY }, checkout, "ext-id")).toBe("already");
+    expect(await receiveKey({ key: KEY }, checkout, "ext-id")).toEqual({ status: "already" });
   });
 
   it.each([
@@ -153,10 +159,57 @@ describe("storing the handed-off key (background)", () => {
     ["a wallet", WALLET],
   ])("asks before replacing %s, and replaces only once the user agreed", async (_name, current) => {
     data.session = current;
-    expect(await receiveKey({ key: KEY }, checkout, "ext-id")).toBe("other-account");
+    expect(await receiveKey({ key: KEY }, checkout, "ext-id")).toEqual({ status: "other-account" });
     expect(data.session).toEqual(current); // never swapped silently
-    expect(await receiveKey({ key: KEY, replace: "yes" }, checkout, "ext-id")).toBe("other-account");
-    expect(await receiveKey({ key: KEY, replace: true }, checkout, "ext-id")).toBe("signed-in");
+    expect(await receiveKey({ key: KEY, replace: "yes" }, checkout, "ext-id")).toEqual({
+      status: "other-account",
+    });
+    expect(await receiveKey({ key: KEY, replace: true }, checkout, "ext-id")).toEqual({
+      status: "signed-in",
+    });
+    expect(data.session).toEqual(keySessionOf(KEY));
+  });
+
+  it("says when it has its own free pass, and takes its free checks along on a switch", async () => {
+    data.session = keySessionOf(OTHER_KEY);
+    data.ownPass = { keyId: "zzzzzzzzzz", recoveryCode: `ufr_zzzzzzzzzz_${"c".repeat(52)}` };
+    const calls: { url: string; auth: string; body: string }[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string, init: RequestInit) => {
+        const headers = init.headers as Record<string, string>;
+        calls.push({ url, auth: headers.Authorization ?? "", body: init.body as string });
+        return Promise.resolve(new Response(JSON.stringify({ moved: 3 }), { status: 200 }));
+      }),
+    );
+    expect(await receiveKey({ key: KEY }, checkout, "ext-id")).toEqual({
+      status: "other-account",
+      freePass: true,
+    });
+    expect(calls).toEqual([]);
+    expect(await receiveKey({ key: KEY, replace: true }, checkout, "ext-id")).toEqual({
+      status: "signed-in",
+    });
+    expect(calls).toEqual([
+      {
+        url: "https://unfret.net/v1/keys/move-free-checks",
+        auth: `Bearer ${OTHER_KEY}`, // from the free pass, which the extension holds
+        body: JSON.stringify({ to_key_id: "abcdefghij" }), // to the new pass, by its ID only
+      },
+    ]);
+    expect(data.session).toEqual(keySessionOf(KEY));
+  });
+
+  it("switches even when the free checks can't be moved (offline)", async () => {
+    data.session = keySessionOf(OTHER_KEY);
+    data.ownPass = { keyId: "zzzzzzzzzz", recoveryCode: "x" };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.reject(new TypeError("offline"))),
+    );
+    expect(await receiveKey({ key: KEY, replace: true }, checkout, "ext-id")).toEqual({
+      status: "signed-in",
+    });
     expect(data.session).toEqual(keySessionOf(KEY));
   });
 
@@ -171,29 +224,54 @@ describe("storing the handed-off key (background)", () => {
     ["another page of the site", { ...checkout, url: `${ORIGIN}/connect` }],
     ["no address", { id: "ext-id", frameId: 0 }],
   ])("refuses a key from %s", async (_name, sender) => {
-    expect(await receiveKey({ key: KEY }, sender, "ext-id")).toBe("invalid");
+    expect(await receiveKey({ key: KEY }, sender, "ext-id")).toEqual({ status: "invalid" });
     expect(data).not.toHaveProperty("session");
   });
 
   it.each([[undefined], [42], ["ufk_nope"], [` ${KEY}`]])("refuses a malformed key: %s", async (key) => {
-    expect(await receiveKey({ key }, checkout, "ext-id")).toBe("invalid");
+    expect(await receiveKey({ key }, checkout, "ext-id")).toEqual({ status: "invalid" });
     expect(data).not.toHaveProperty("session");
   });
 });
 
 describe("the welcome page", () => {
-  it("opens once, after a new install", () => {
+  let data: Record<string, unknown>;
+  beforeEach(() => {
+    data = {};
+    stubStorage(data);
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("opens once, after a new install, saying how many free checks the new pass has", async () => {
     const open = vi.fn();
-    expect(welcomeOnInstall({ reason: "install" }, open)).toBe(true);
-    expect(open).toHaveBeenCalledWith("https://unfret.net/welcome");
+    const makePass = vi.fn(() =>
+      Promise.resolve({ ok: true as const, session: keySessionOf(KEY), freeChecks: 5 }),
+    );
+    expect(await welcomeOnInstall({ reason: "install" }, open, makePass)).toBe(true);
+    expect(makePass).toHaveBeenCalledWith("https://unfret.net");
+    expect(open).toHaveBeenCalledWith("https://unfret.net/welcome?free=5");
     expect(WELCOME_URL).toBe("https://unfret.net/welcome");
+    expect(welcomeUrl(0)).toBe(WELCOME_URL);
   });
 
-  it.each(["update", "chrome_update", "browser_update", "shared_module_update"])("not after %s", (reason) => {
+  it("offline at install: the welcome page anyway, and the popup tries again", async () => {
     const open = vi.fn();
-    expect(welcomeOnInstall({ reason }, open)).toBe(false);
-    expect(open).not.toHaveBeenCalled();
+    const makePass = vi.fn(() => Promise.resolve({ ok: false as const, reason: "offline" as const }));
+    expect(await welcomeOnInstall({ reason: "install" }, open, makePass)).toBe(true);
+    expect(open).toHaveBeenCalledWith("https://unfret.net/welcome");
+    expect(data.passPending).toBe(true);
   });
+
+  it.each(["update", "chrome_update", "browser_update", "shared_module_update"])(
+    "not after %s",
+    async (reason) => {
+      const open = vi.fn();
+      const makePass = vi.fn();
+      expect(await welcomeOnInstall({ reason }, open, makePass)).toBe(false);
+      expect(open).not.toHaveBeenCalled();
+      expect(makePass).not.toHaveBeenCalled();
+    },
+  );
 
   it("is wired to onInstalled", () => {
     expect(readFileSync("src/background/index.ts", "utf8")).toContain("welcomeOnInstall(details);");
@@ -232,7 +310,7 @@ describe("getting more checks", () => {
 
   it("is where the popup's and the options page's buttons go", () => {
     const popup = readFileSync("src/popup/popup.ts", "utf8");
-    expect(popup.match(/openTab\(checkoutPath\(session\)\)/gu)).toHaveLength(2); // Buy checks, Get more checks
+    expect(popup.match(/openTab\(checkoutPath\(session\)\)/gu)).toHaveLength(1); // Buy checks
     expect(popup).not.toContain('? "/checkout?for=key" : "/checkout"'); // a key's top-up used to make a new key
     const options = readFileSync("src/options/options.ts", "utf8");
     expect(options).toContain('el("buy").setAttribute("href", `${apiBase}${checkoutPath(session)}`)');
@@ -243,8 +321,13 @@ describe("the popup's next step", () => {
   let data: Record<string, unknown>;
   let opened: string[];
   let fetched: string[];
+  let posted: unknown[];
 
-  async function openPopup(credits: number | null, url = "https://shop.example/p/1"): Promise<void> {
+  async function openPopup(
+    credits: number | null,
+    extra: Record<string, unknown> = {},
+    url = "https://shop.example/p/1",
+  ): Promise<void> {
     const body = /<body>([\s\S]*)<\/body>/u.exec(readFileSync("src/popup/popup.html", "utf8"))?.[1] ?? "";
     document.body.innerHTML = body.replace(/<script[\s\S]*?<\/script>/gu, "");
     stubStorage(data);
@@ -266,7 +349,10 @@ describe("the popup's next step", () => {
     };
     chromeStub.runtime = {
       id: "ext-id",
-      connect: () => ({ onMessage: { addListener: () => undefined }, postMessage: () => undefined }),
+      connect: () => ({
+        onMessage: { addListener: () => undefined },
+        postMessage: (message: unknown) => posted.push(message),
+      }),
       openOptionsPage: () => Promise.resolve(),
     };
     vi.stubGlobal(
@@ -279,7 +365,7 @@ describe("the popup's next step", () => {
         const json =
           path === "/v1/pricing"
             ? { hot_wallet: "HOT", packs: [] }
-            : { checks_remaining: credits, invite_eligible: false };
+            : { checks_remaining: credits, invite_eligible: false, ...extra };
         return Promise.resolve(new Response(JSON.stringify(json), { status: 200 }));
       }),
     );
@@ -298,6 +384,7 @@ describe("the popup's next step", () => {
     data = { consent: { version: 2 } };
     opened = [];
     fetched = [];
+    posted = [];
   });
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -329,18 +416,56 @@ describe("the popup's next step", () => {
     expect(visible("sign-in-key")).toBe(true);
   });
 
-  it("signed in with a key and no checks: Get more checks opens that key's top-up", async () => {
+  it("signed in with a key and no checks: a free quick check, and Buy checks tops up that key", async () => {
     data.session = keySessionOf(KEY);
     await openPopup(0);
     await vi.waitFor(() => {
-      expect(document.getElementById("analyse")?.textContent).toBe("Get more checks");
+      expect(document.getElementById("analyse")?.textContent).toBe("Quick check (free)");
     });
     const analyse = document.getElementById("analyse") as HTMLButtonElement;
     expect(analyse.disabled).toBe(false);
-    expect(visible("buy")).toBe(false); // one way, not two
+    expect(document.getElementById("hint")?.textContent).toContain("Quick checks are free");
+    expect(visible("buy")).toBe(true);
     expect(visible("get-started-row")).toBe(false);
     analyse.click();
+    expect(posted).toEqual([
+      { type: "watch", tabId: 1 },
+      { type: "analyze", tabId: 1, tier: "quick" },
+    ]);
+    document.getElementById("buy")?.click();
     expect(opened).toEqual(["https://unfret.net/checkout?mode=topup&key_id=abcdefghij"]);
+  });
+
+  it("a new free pass: You have 5 free checks, and Check this page", async () => {
+    data.session = keySessionOf(KEY);
+    await openPopup(5, { free_checks_remaining: 5 });
+    await vi.waitFor(() => {
+      expect(document.getElementById("credits")?.textContent).toBe("You have 5 free checks");
+    });
+    const analyse = document.getElementById("analyse") as HTMLButtonElement;
+    expect(analyse.textContent).toBe("Check this page");
+    analyse.click();
+    expect(posted.at(-1)).toEqual({ type: "analyze", tabId: 1 });
+  });
+
+  it("free checks paused for the day: back tomorrow, and a quick check meanwhile", async () => {
+    data.session = keySessionOf(KEY);
+    await openPopup(3, { free_checks_remaining: 3, free_checks_paused: true });
+    await vi.waitFor(() => {
+      expect(document.getElementById("analyse")?.textContent).toBe("Quick check (free)");
+    });
+    expect(document.getElementById("hint")?.textContent).toBe(
+      "Free deep checks are back tomorrow. Quick checks still work.",
+    );
+  });
+
+  it("bought checks still run deep checks while the free ones are paused", async () => {
+    data.session = keySessionOf(KEY);
+    await openPopup(8, { free_checks_remaining: 3, free_checks_paused: true });
+    await vi.waitFor(() => {
+      expect(document.getElementById("credits")?.textContent).toBe("8 checks left");
+    });
+    expect(document.getElementById("analyse")?.textContent).toBe("Check this page");
   });
 
   it("signed in with checks: Check this page, and Buy checks tops up the key", async () => {
@@ -364,19 +489,20 @@ describe("the popup's next step", () => {
     expect(fetched).not.toContain("/v1/pricing"); // the popup doesn't ask for it at all
   });
 
-  it("out of checks on a page that can't be checked: the hint says what the button does", async () => {
+  it("out of checks on a page that can't be checked: the quick check waits for a page that can", async () => {
     data.session = keySessionOf(KEY);
-    await openPopup(0, "chrome://newtab/");
+    await openPopup(0, {}, "chrome://newtab/");
     await vi.waitFor(() => {
-      expect(document.getElementById("analyse")?.textContent).toBe("Get more checks");
+      expect(document.getElementById("analyse")?.textContent).toBe("Quick check (free)");
     });
-    expect(document.getElementById("hint")?.textContent).toBe("You have no checks left.");
-    expect((document.getElementById("analyse") as HTMLButtonElement).disabled).toBe(false);
+    expect(document.getElementById("hint")?.textContent).toBe("This page can't be checked.");
+    expect((document.getElementById("analyse") as HTMLButtonElement).disabled).toBe(true);
+    expect(visible("buy")).toBe(true);
   });
 
   it("with checks on a page that can't be checked: the hint says so", async () => {
     data.session = keySessionOf(KEY);
-    await openPopup(5, "chrome://newtab/");
+    await openPopup(5, {}, "chrome://newtab/");
     await vi.waitFor(() => {
       expect(document.getElementById("credits")?.textContent).toBe("5 checks left");
     });
@@ -384,13 +510,13 @@ describe("the popup's next step", () => {
     expect((document.getElementById("analyse") as HTMLButtonElement).disabled).toBe(true);
   });
 
-  it("signed in with a wallet and no checks: the checkout as before", async () => {
+  it("signed in with a wallet and no checks: Buy checks opens the checkout as before", async () => {
     data.session = WALLET;
     await openPopup(0);
     await vi.waitFor(() => {
-      expect(document.getElementById("analyse")?.textContent).toBe("Get more checks");
+      expect(document.getElementById("analyse")?.textContent).toBe("Quick check (free)");
     });
-    document.getElementById("analyse")?.click();
+    document.getElementById("buy")?.click();
     expect(opened).toEqual(["https://unfret.net/checkout"]);
   });
 });

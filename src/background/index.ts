@@ -11,7 +11,7 @@
  * when the browser closes) so they survive the service worker sleeping. Nothing about pages is written to disk.
  */
 
-import { ApiError, type ReportReason, UnfretApi } from "../api/client.js";
+import { type AnalyzeBody, ApiError, type ReportReason, UnfretApi } from "../api/client.js";
 import { KEY_MESSAGE, SESSION_MESSAGE } from "../content/relay.js";
 import {
   ANALYSIS_PORT,
@@ -22,7 +22,7 @@ import {
 import { consentGiven, isDevBase, loadSettings, parseSession, saveSession } from "../shared/settings.js";
 import { createShare, previewShare, shareRequest } from "../shared/share.js";
 import { isAnalysable } from "../shared/sites.js";
-import { CONSENT_HINT, OFFLINE, SESSION_EXPIRED } from "../shared/text.js";
+import { CONSENT_HINT, FREE_PAUSED, OFFLINE, SESSION_EXPIRED } from "../shared/text.js";
 import { badgeFor } from "./badge.js";
 import { registerMarketplaceHint } from "./icon-hint.js";
 import { extractFromTab } from "./inject.js";
@@ -89,8 +89,8 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
   const m = message as { type?: unknown; session?: unknown; key?: unknown; replace?: unknown } | null;
   if (m?.type === KEY_MESSAGE) {
     void receiveKey(m, sender, chrome.runtime.id).then(
-      (status) => {
-        sendResponse({ status });
+      (reply) => {
+        sendResponse(reply);
       },
       () => {
         sendResponse({ status: "invalid" });
@@ -130,22 +130,30 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 /** Tabs with an analysis starting or running; checked and set synchronously, before any await. */
 const inFlight = new Set<number>();
 
-async function analyse(tabId: number): Promise<void> {
+async function analyse(tabId: number, tier?: "quick"): Promise<void> {
   // Two "analyze" messages in quick succession (a double click, two popups) used to both pass a status check
   // that only changed after `await loadSettings()`, and both were charged.
   if (inFlight.has(tabId)) return;
   inFlight.add(tabId);
   try {
-    await runAnalysis(tabId);
+    await runAnalysis(tabId, tier);
   } finally {
     inFlight.delete(tabId);
   }
 }
 
+/** Why a deep check couldn't be paid for, when a quick check is offered instead; null for any other failure. */
+function quickBecause(error: unknown): string | null {
+  if (!(error instanceof ApiError)) return null;
+  if (error.code === "FREE_CHECKS_PAUSED") return `${FREE_PAUSED} Here's a quick check meanwhile.`;
+  if (error.needsCredits) return "You have no checks left, so here's a quick check instead.";
+  return null;
+}
+
 /** Uploaded text is capped: the server reads the first 20,000 characters, and sending more only costs bandwidth. */
 export const MAX_UPLOAD_TEXT_CHARS = 24_000;
 
-async function runAnalysis(tabId: number): Promise<void> {
+async function runAnalysis(tabId: number, tier?: "quick"): Promise<void> {
   const current = states.get(tabId);
   if (current?.status === "extracting" || current?.status === "analysing") return;
   const { apiBase, session } = await loadSettings();
@@ -183,16 +191,41 @@ async function runAnalysis(tabId: number): Promise<void> {
     let state: Extract<TabState, { status: "analysing" }> = { status: "analysing", findings: [], steps: [] };
     setState(tabId, state);
     const upload = text.slice(0, MAX_UPLOAD_TEXT_CHARS);
-    const body = { url: facts.url, page_facts: facts, ...(upload ? { page_content: upload } : {}) };
-    for await (const event of api.analyze(body)) {
-      if (event.kind === "page_type") state = { ...state, pageType: event.pageType };
-      else if (event.kind === "step") state = { ...state, steps: [...(state.steps ?? []), event.skill] };
-      else if (event.kind === "finding") state = { ...state, findings: [...state.findings, event.finding] };
-      else {
-        setState(tabId, { ...state, status: "done", result: event.result, body });
+    const page: AnalyzeBody = {
+      url: facts.url,
+      page_facts: facts,
+      ...(upload ? { page_content: upload } : {}),
+    };
+    // A deep check that needs checks the account doesn't have (none left, or only free ones while they're paused for
+    // the day) becomes a quick check, free, saying why.
+    let note: string | undefined;
+    let body: AnalyzeBody = tier === "quick" ? { ...page, tier } : page;
+    for (;;) {
+      try {
+        for await (const event of api.analyze(body)) {
+          if (event.kind === "page_type") state = { ...state, pageType: event.pageType };
+          else if (event.kind === "step") state = { ...state, steps: [...(state.steps ?? []), event.skill] };
+          else if (event.kind === "finding")
+            state = { ...state, findings: [...state.findings, event.finding] };
+          else {
+            setState(tabId, {
+              ...state,
+              status: "done",
+              result: event.result,
+              body,
+              ...(note ? { note } : {}),
+            });
+            return;
+          }
+          setState(tabId, state);
+        }
         return;
+      } catch (error) {
+        const because = body.tier === undefined ? quickBecause(error) : null;
+        if (because === null) throw error;
+        note = because;
+        body = { ...page, tier: "quick" };
       }
-      setState(tabId, state);
     }
   } catch (error) {
     const apiError = error instanceof ApiError ? error : null;
@@ -314,7 +347,7 @@ chrome.runtime.onConnect.addListener((port) => {
     watched.add(message.tabId);
     void stateOf(message.tabId).then((state) => {
       port.postMessage({ type: "state", tabId: message.tabId, state } satisfies BackgroundUpdate);
-      if (message.type === "analyze") void analyse(message.tabId);
+      if (message.type === "analyze") void analyse(message.tabId, message.tier);
       if (message.type === "report") void report(message.tabId, message.reason);
       if (message.type === "share-preview") void sharePreview(message.tabId);
       if (message.type === "share") void share(message.tabId);
@@ -350,7 +383,7 @@ async function syncDevRelay(): Promise<void> {
 }
 
 chrome.runtime.onInstalled.addListener((details) => {
-  welcomeOnInstall(details);
+  void welcomeOnInstall(details);
   void syncDevRelay();
   void registerMarketplaceHint();
 });

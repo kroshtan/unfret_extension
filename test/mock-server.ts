@@ -7,6 +7,10 @@
  * INVITE_NOT_NEW_CODE are refused with the server's codes and words; once INVITE_OK is redeemed by a token,
  * `/v1/credits` reports `invite_eligible: false` for it (before that the field is absent, like an older server). Shares (`/v1/shares/preview`, `/v1/shares`) refuse
  * a request with Authorization, like the server; share token "expired.mac" → 422, "busy.mac" → 429 on create.
+ *
+ * Free passes (0.12.0): `POST /v1/keys` (after `GET /v1/keys/challenge`, 4 bits) always issues FREE_PASS, with
+ * `freeChecks` free checks when the body asks for them (`free: true`), none otherwise; a deep check with it uses one,
+ * then 402. A quick check (`tier: "quick"`) is never charged. Token "paused" → 429 FREE_CHECKS_PAUSED on a deep check.
  */
 
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
@@ -16,6 +20,8 @@ import type { SharePreview } from "../src/api/client.js";
 
 export interface MockApi {
   url: string;
+  /** The free checks the next free pass gets, and those left on it. */
+  free: { perPass: number; left: number };
   requests: { path: string; auth: string; body: unknown; language?: string }[];
   /**
    * Phone pairing behaviour. `POST /v1/auth/pair` returns `id`; polls of "pair-ok" answer 202 `pendingPolls` times,
@@ -73,6 +79,8 @@ const INVITE_REFUSALS: Record<string, { status: number; error_code: string; deta
   },
 };
 
+export const FREE_PASS = `ufk_freepasszz_${"f".repeat(52)}`;
+export const FREE_PASS_BACKUP = `ufr_freepasszz_${"b".repeat(52)}`;
 export const SHARE_ID = "k3v7q2m9x4b8n6c1d5f0h2j4la";
 export const SHARE_DELETE_CODE = "delcode7q2m9x4b8n6c1d5f0h2";
 
@@ -121,6 +129,7 @@ export async function startMockApi(): Promise<MockApi> {
   const requests: MockApi["requests"] = [];
   const pairing: MockApi["pairing"] = { id: "pair-ok", pendingPolls: 2, delivered: false, flaked: false };
   const invited = new Set<string>(); // tokens that redeemed an invite
+  const free: MockApi["free"] = { perPass: 5, left: 0 };
   let base = "";
   const server: Server = createServer((req, res) => {
     void (async () => {
@@ -259,6 +268,39 @@ export async function startMockApi(): Promise<MockApi> {
         }
         return;
       }
+      if (path === "/v1/keys/challenge") {
+        json(res, 200, { challenge: "mock-challenge", bits: 4, expires_at: 4_102_444_800 });
+        return;
+      }
+      if (path === "/v1/keys" && req.method === "POST") {
+        free.left = (body as { free?: unknown } | null)?.free === true ? free.perPass : 0;
+        json(res, 201, {
+          key_id: "freepasszz",
+          key: FREE_PASS,
+          recovery_code: FREE_PASS_BACKUP,
+          account: "key:freepasszz",
+          balance_usd_micros: 0,
+          free_checks: free.left,
+        });
+        return;
+      }
+      if (path === "/v1/keys/move-free-checks" && req.method === "POST") {
+        const moved = token === FREE_PASS ? free.left : 0;
+        if (token === FREE_PASS) free.left = 0;
+        json(res, 200, { moved });
+        return;
+      }
+      if (path === "/v1/credits" && token === FREE_PASS) {
+        json(res, 200, {
+          address: "key:freepasszz",
+          balance_lamports: 0,
+          checks_remaining: free.left,
+          free_checks_remaining: free.left,
+          free_checks_paused: false,
+          invite_eligible: true,
+        });
+        return;
+      }
       if (path === "/v1/credits") {
         json(res, 200, {
           address: "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin",
@@ -269,6 +311,41 @@ export async function startMockApi(): Promise<MockApi> {
         return;
       }
       if (path === "/v1/analyze/stream") {
+        const quick = (body as { tier?: unknown } | null)?.tier === "quick";
+        if (!quick && token === "paused") {
+          json(res, 429, {
+            detail: "Free deep checks are back tomorrow (00:00 UTC). Quick checks still work.",
+            error_code: "FREE_CHECKS_PAUSED",
+            metadata: { retry_after_s: 3600, quick_checks: true },
+          });
+          return;
+        }
+        if (!quick && token === FREE_PASS && free.left === 0) {
+          json(res, 402, {
+            detail: "Not enough credits for an analysis.",
+            error_code: "INSUFFICIENT_CREDITS",
+          });
+          return;
+        }
+        const freeCheck = !quick && token === FREE_PASS;
+        if (freeCheck) free.left -= 1;
+        if (quick) {
+          res.writeHead(200, { "Content-Type": "text/event-stream", "Access-Control-Allow-Origin": "*" });
+          res.end(
+            "event: result\ndata: " +
+              JSON.stringify({
+                score: 40,
+                explanation: "An inflated discount.",
+                verdict: { ...VERDICT, band: "careful", label: "Think twice" },
+                balance_usd_micros: 0,
+                balance_lamports: 0,
+                charged: false,
+                tier: "quick",
+              }) +
+              "\n\n",
+          );
+          return;
+        }
         if (token === "broke") {
           json(res, 402, {
             detail: "Not enough credits.",
@@ -304,6 +381,8 @@ export async function startMockApi(): Promise<MockApi> {
               },
               balance_lamports: 6_000_000,
               charged: true,
+              tier: "deep",
+              ...(freeCheck ? { free_check: true } : {}),
               verdict: VERDICT,
               report_token: "report-token.mac",
               share_token: "share-token.mac",
@@ -320,6 +399,7 @@ export async function startMockApi(): Promise<MockApi> {
   base = `http://127.0.0.1:${port}`;
   return {
     url: base,
+    free,
     requests,
     pairing,
     close: () =>
