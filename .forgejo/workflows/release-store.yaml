@@ -11,8 +11,9 @@ name: Release to the extension stores
 # the Firefox zip and the source zip addons.mozilla.org asks for. Then it submits them to the stores picked in
 # `stores` (scripts/store-publish.mjs): the Chrome zip to the Chrome Web Store item for review, the Firefox zip with
 # its source as a new listed version on addons.mozilla.org. Each store is its own step: one failing doesn't stop the
-# other, a store whose secrets aren't set is skipped with a notice, and a version a store already has is left alone,
-# so a run can be repeated.
+# other, a store whose secrets aren't set is skipped with a notice, and a version a store already has is not uploaded
+# again, so a run can be repeated (on addons.mozilla.org a repeat finishes a version an earlier run created: the
+# reviewer notes it is missing are added; store/AMO.md).
 #
 # Order guard: nothing goes to a store unless production's backend (https://unfret.net/v1/health) runs at least
 # package.json's `minBackendVersion`: newer extensions send page data older backends refuse. Deploy the backend first.

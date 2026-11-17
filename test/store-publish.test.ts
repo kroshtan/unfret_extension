@@ -2,7 +2,7 @@
 // Submitting to the Chrome Web Store and addons.mozilla.org: the order guard, the request shapes, the JWT, the
 // dry run and the one-time refresh-token helper. No request leaves the test: fetch is a fake.
 import { createHash, createHmac, createVerify, generateKeyPairSync } from "node:crypto";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -15,7 +15,9 @@ import {
   pkce,
   readClient,
 } from "../scripts/cws-refresh-token.mjs";
+import { manifest } from "../scripts/manifest.mjs";
 import {
+  amoCompatibility,
   amoJwt,
   checkBackend,
   compareVersions,
@@ -28,10 +30,12 @@ import {
   gateProblem,
   httpClient,
   main,
+  packageManifest,
   publishChrome,
   publishFirefox,
   readServiceAccount,
 } from "../scripts/store-publish.mjs";
+import { zipBuffer, zipEntry } from "../scripts/zip.mjs";
 
 interface Call {
   method: string;
@@ -69,6 +73,25 @@ function file(name: string, content: string): string {
   temp.push(dir);
   const path = join(dir, name);
   writeFileSync(path, content);
+  return path;
+}
+/** A Firefox package: the release build's manifest (with Firefox for Android), or one without `gecko_android`. */
+function firefoxZip(
+  version: string,
+  { android = true, dir }: { android?: boolean; dir?: string } = {},
+): string {
+  const built = manifest("firefox", { version, description: "Unfret" });
+  const settings = built.browser_specific_settings as Record<string, unknown>;
+  const content = android ? built : { ...built, browser_specific_settings: { gecko: settings.gecko } };
+  const src = mkdtempSync(join(tmpdir(), "unfret-firefox-"));
+  temp.push(src);
+  writeFileSync(join(src, "manifest.json"), JSON.stringify(content));
+  mkdirSync(join(src, "popup"));
+  writeFileSync(join(src, "popup", "popup.html"), "<!doctype html>");
+  const target = dir ?? mkdtempSync(join(tmpdir(), "unfret-stores-"));
+  if (!dir) temp.push(target);
+  const path = join(target, `unfret-firefox-${version}.zip`);
+  writeFileSync(path, zipBuffer(src));
   return path;
 }
 const quiet = (): void => undefined;
@@ -311,8 +334,19 @@ describe("addons.mozilla.org", () => {
     expect(() => amoJwt({ issuer: "i", secret: "s", lifetime: 301 })).toThrow(/five minutes/u);
   });
 
-  it("uploads as listed, waits for validation, creates the version with its source, then sets Firefox only", async () => {
-    const zipPath = file("unfret-firefox-0.10.1.zip", "xpi");
+  it("reads the package's manifest: the release build keeps Firefox for Android", () => {
+    const released = packageManifest(firefoxZip("0.11.0"));
+    expect(released.browser_specific_settings).toHaveProperty("gecko_android");
+    expect(amoCompatibility(released)).toBeNull();
+    expect(amoCompatibility(packageManifest(firefoxZip("0.11.0", { android: false })))).toEqual(["firefox"]);
+    expect(() => packageManifest(file("unfret-firefox-0.11.0.zip", "xpi"))).toThrow(/not a zip/u);
+    const zip = readFileSync(firefoxZip("0.11.0"));
+    expect(zipEntry(zip, "popup/popup.html")?.toString()).toBe("<!doctype html>");
+    expect(zipEntry(zip, "missing.json")).toBeNull();
+  });
+
+  it("uploads as listed, creates the version with its source, then sends the notes alone (no compatibility with Android)", async () => {
+    const zipPath = firefoxZip("0.10.1");
     const sourcePath = file("unfret-source-0.10.1.zip", "src");
     const { fetch, calls } = fakeFetch([
       ["GET /addon/unfret/versions/0.10.1/", [404, { detail: "Not found." }]],
@@ -331,7 +365,8 @@ describe("addons.mozilla.org", () => {
       approvalNotes: "test key ufk_x",
       wait: noWait,
     });
-    expect(result).toMatch(/submitted as a listed version with its source/u);
+    expect(result).toMatch(/submitted as a listed version with its source.*; reviewer notes set$/u);
+    expect(calls.map((c) => c.method)).toEqual(["GET", "POST", "GET", "POST", "PATCH"]);
     for (const call of calls) expect(call.headers.Authorization).toMatch(/^JWT [\w-]+\.[\w-]+\.[\w-]+$/u);
     const upload = calls[1]?.body as FormData;
     expect(upload.get("channel")).toBe("listed");
@@ -339,14 +374,153 @@ describe("addons.mozilla.org", () => {
     const version = calls[3]?.body as FormData;
     expect(version.get("upload")).toBe("u1");
     expect(await (version.get("source") as File).text()).toBe("src");
-    expect(JSON.parse(String(calls[4]?.body))).toEqual({
-      compatibility: ["firefox"],
-      approval_notes: "test key ufk_x",
-    });
+    expect(calls[4]?.headers["Content-Type"]).toBe("application/json");
+    expect(JSON.parse(String(calls[4]?.body))).toEqual({ approval_notes: "test key ufk_x" });
+    expect(calls.some((c) => typeof c.body === "string" && c.body.includes("compatibility"))).toBe(false);
   });
 
-  it("stops on a failed validation and skips an existing version", async () => {
-    const zipPath = file("unfret-firefox-0.10.1.zip", "xpi");
+  it("sends the notes and a desktop-only compatibility separately, so a refused one doesn't lose the other", async () => {
+    const zipPath = firefoxZip("0.10.1", { android: false });
+    const sourcePath = file("unfret-source-0.10.1.zip", "src");
+    const { fetch, calls } = fakeFetch([
+      ["GET /addon/unfret/versions/0.10.1/", [404, {}]],
+      ["POST /upload/", { uuid: "u1", processed: true, valid: true }],
+      ["POST /addon/unfret/versions/", { id: 42 }],
+      ["PATCH /addon/unfret/versions/42/", { id: 42 }],
+      [
+        "PATCH /addon/unfret/versions/42/",
+        [
+          400,
+          {
+            compatibility: [
+              "Can not override compatibility information set in the manifest for this application (Firefox for Android)",
+            ],
+          },
+        ],
+      ],
+    ]);
+    await expect(
+      publishFirefox({
+        http: httpClient({ fetch, log: quiet }),
+        credentials: { issuer: "i", secret: "s" },
+        zipPath,
+        sourcePath,
+        version: "0.10.1",
+        approvalNotes: "notes",
+      }),
+    ).rejects.toThrow(
+      /submitted as a listed version.*; reviewer notes set; but these failed.*\n {2}compatibility firefox: .*HTTP 400/su,
+    );
+    expect(calls.slice(3).map((c) => JSON.parse(String(c.body)) as unknown)).toEqual([
+      { approval_notes: "notes" },
+      { compatibility: ["firefox"] },
+    ]);
+
+    // And the other way round: notes refused, compatibility still set.
+    const notesRefused = fakeFetch([
+      ["GET /addon/unfret/versions/0.10.1/", [404, {}]],
+      ["POST /upload/", { uuid: "u1", processed: true, valid: true }],
+      ["POST /addon/unfret/versions/", { id: 42 }],
+      ["PATCH /addon/unfret/versions/42/", [400, { approval_notes: ["too long"] }]],
+      ["PATCH /addon/unfret/versions/42/", { id: 42 }],
+    ]);
+    await expect(
+      publishFirefox({
+        http: httpClient({ fetch: notesRefused.fetch, log: quiet }),
+        credentials: { issuer: "i", secret: "s" },
+        zipPath,
+        sourcePath,
+        version: "0.10.1",
+        approvalNotes: "notes",
+      }),
+    ).rejects.toThrow(/compatibility firefox set; but these failed.*reviewer notes: .*too long/su);
+    expect(notesRefused.calls).toHaveLength(5);
+  });
+
+  it("finishes a version AMO already has: adds the missing notes, uploads nothing", async () => {
+    const zipPath = firefoxZip("0.11.0");
+    const sourcePath = file("unfret-source-0.11.0.zip", "src");
+    const credentials = { issuer: "i", secret: "s" };
+    // Run 84: the version was created, the PATCH after it refused.
+    const created = {
+      id: 6717859,
+      version: "0.11.0",
+      approval_notes: "",
+      compatibility: { firefox: { min: "140.0", max: "*" }, android: { min: "142.0", max: "*" } },
+      file: { status: "unreviewed" },
+    };
+    const resume = fakeFetch([
+      ["GET /addon/unfret/versions/0.11.0/", created],
+      ["PATCH /addon/unfret/versions/6717859/", { id: 6717859 }],
+    ]);
+    expect(
+      await publishFirefox({
+        http: httpClient({ fetch: resume.fetch, log: quiet }),
+        credentials,
+        zipPath,
+        sourcePath,
+        version: "0.11.0",
+        approvalNotes: "notes\nwith the key",
+      }),
+    ).toBe(
+      "addons.mozilla.org: 0.11.0 already exists (version 6717859); nothing uploaded; reviewer notes set",
+    );
+    expect(resume.calls.map((c) => `${c.method} ${c.url}`)).toEqual([
+      "GET https://addons.mozilla.org/api/v5/addons/addon/unfret/versions/0.11.0/",
+      "PATCH https://addons.mozilla.org/api/v5/addons/addon/unfret/versions/6717859/",
+    ]);
+    expect(JSON.parse(String(resume.calls[1]?.body))).toEqual({ approval_notes: "notes\nwith the key" });
+
+    // Run again once the notes are there: nothing to do.
+    const again = fakeFetch([
+      ["GET /addon/unfret/versions/0.11.0/", { ...created, approval_notes: "notes\r\nwith the key\n" }],
+    ]);
+    expect(
+      await publishFirefox({
+        http: httpClient({ fetch: again.fetch, log: quiet }),
+        credentials,
+        zipPath,
+        sourcePath,
+        version: "0.11.0",
+        approvalNotes: "notes\nwith the key",
+      }),
+    ).toMatch(/nothing uploaded; reviewer notes already set$/u);
+    expect(again.calls).toHaveLength(1);
+
+    // A desktop-only package on a version that has Android gets its compatibility; a disabled version is left alone.
+    const desktop = fakeFetch([
+      ["GET /addon/unfret/versions/0.11.0/", created],
+      ["PATCH /addon/unfret/versions/6717859/", { id: 6717859 }],
+    ]);
+    expect(
+      await publishFirefox({
+        http: httpClient({ fetch: desktop.fetch, log: quiet }),
+        credentials,
+        zipPath: firefoxZip("0.11.0", { android: false }),
+        sourcePath,
+        version: "0.11.0",
+      }),
+    ).toMatch(/no reviewer notes \(AMO_APPROVAL_NOTES is not set\); compatibility firefox set$/u);
+    expect(JSON.parse(String(desktop.calls[1]?.body))).toEqual({ compatibility: ["firefox"] });
+
+    const disabled = fakeFetch([
+      ["GET /addon/unfret/versions/0.11.0/", { ...created, file: { status: "disabled" } }],
+    ]);
+    expect(
+      await publishFirefox({
+        http: httpClient({ fetch: disabled.fetch, log: quiet }),
+        credentials,
+        zipPath,
+        sourcePath,
+        version: "0.11.0",
+        approvalNotes: "notes",
+      }),
+    ).toMatch(/already exists \(disabled\); nothing uploaded or changed/u);
+    expect(disabled.calls).toHaveLength(1);
+  });
+
+  it("stops on a failed validation and doesn't upload a version that exists", async () => {
+    const zipPath = firefoxZip("0.10.1");
     const sourcePath = file("unfret-source-0.10.1.zip", "src");
     const credentials = { issuer: "i", secret: "s" };
     const invalid = fakeFetch([
@@ -380,7 +554,7 @@ describe("addons.mozilla.org", () => {
         sourcePath,
         version: "0.10.1",
       }),
-    ).toMatch(/already exists/u);
+    ).toMatch(/already exists \(version 7\); nothing uploaded/u);
     expect(exists.calls).toHaveLength(1);
   });
 });
@@ -398,13 +572,19 @@ describe("the dry run", () => {
     };
     const store = mkdtempSync(join(tmpdir(), "unfret-store-"));
     temp.push(store);
-    for (const kind of ["chrome", "firefox", "source"])
+    for (const kind of ["chrome", "source"])
       writeFileSync(join(store, `unfret-${kind}-${pkg.version}.zip`), "zip");
+    firefoxZip(pkg.version, { dir: store });
     let code: number;
     try {
       code = await main(
         ["--dry-run"],
-        { UNFRET_STORE_DIR: store, CWS_CLIENT_ID: "cid", AMO_JWT_SECRET: "must-not-appear" },
+        {
+          UNFRET_STORE_DIR: store,
+          CWS_CLIENT_ID: "cid",
+          AMO_JWT_SECRET: "must-not-appear",
+          AMO_APPROVAL_NOTES: "key ufk_must-not-appear",
+        },
         fetch,
       );
     } finally {
@@ -418,7 +598,12 @@ describe("the dry run", () => {
     expect(out).toContain(":upload");
     expect(out).toContain(":publish");
     expect(out).toContain("[dry run] POST https://addons.mozilla.org/api/v5/addons/upload/");
-    expect(out).toContain("[dry run] PATCH https://addons.mozilla.org/api/v5/addons/addon/unfret/versions/");
+    // The release build declares Firefox for Android: only the notes follow the version create.
+    expect(out).toContain(
+      "[dry run] PATCH https://addons.mozilla.org/api/v5/addons/addon/unfret/versions/%3Cversion%20id%3E/ " +
+        '[Authorization: JWT …] {"approval_notes":"<AMO_APPROVAL_NOTES>"}',
+    );
+    expect(out).not.toContain("compatibility");
     // The OAuth refresh token is the primary path; its secrets show as placeholders.
     expect(out).toContain("<CWS_REFRESH_TOKEN>");
     expect(out).not.toContain("must-not-appear");

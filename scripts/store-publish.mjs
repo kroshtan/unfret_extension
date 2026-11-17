@@ -11,10 +11,11 @@
 //     CWS_PUBLISHER_ID and the owner's OAuth client with its refresh token, CWS_CLIENT_ID, CWS_CLIENT_SECRET and
 //     CWS_REFRESH_TOKEN (scripts/cws-refresh-token.mjs gets the token), or instead of those three a service account
 //     linked to the publisher, CWS_SERVICE_ACCOUNT_KEY (its JSON key; the token comes from a signed JWT, RFC 7523).
-//   addons.mozilla.org (API v5, JWT auth): skip if this version exists, upload unfret-firefox-<version>.zip as a
-//     listed upload, wait for validation, create the version with unfret-source-<version>.zip as its source, then
-//     set its compatibility to Firefox desktop only (AMO_ANDROID=1 keeps the manifest's Android too). Needs
-//     AMO_JWT_ISSUER and AMO_JWT_SECRET; AMO_APPROVAL_NOTES, if set, become the version's notes to the reviewer.
+//   addons.mozilla.org (API v5, JWT auth): upload unfret-firefox-<version>.zip as a listed upload, wait for
+//     validation, create the version with unfret-source-<version>.zip as its source, then, each in its own request,
+//     give it the notes to the reviewer (AMO_APPROVAL_NOTES, if set) and, only for a package whose manifest has no
+//     `gecko_android`, the compatibility Firefox desktop only. A version AMO already has is not uploaded again; a
+//     re-run only adds what that version is missing. Needs AMO_JWT_ISSUER and AMO_JWT_SECRET.
 // A store whose secrets are missing is skipped with a notice; an API error fails the run. Secrets are never printed:
 // tokens are masked in CI (`::add-mask::`) and the dry run shows <NAME> placeholders.
 //
@@ -25,6 +26,8 @@ import { createHmac, createSign, randomUUID } from "node:crypto";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+
+import { zipEntry } from "./zip.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -361,14 +364,45 @@ function validationErrors(validation) {
   return messages.map((m) => `${m.message ?? m.id}${m.file ? ` (${m.file})` : ""}`).join("\n  ");
 }
 
-/** Submit `zipPath` as a new listed version with `sourcePath` as its source. Returns what happened. */
+/** The manifest.json inside the Firefox package; throws when the zip has none. */
+export function packageManifest(zipPath) {
+  const entry = zipEntry(readFileSync(zipPath), "manifest.json");
+  if (!entry) throw new Error(`${basename(zipPath)} has no manifest.json`);
+  return JSON.parse(entry.toString("utf8"));
+}
+
+/**
+ * The compatibility to set on AMO for a package with this manifest, or null to leave AMO's (read from the manifest)
+ * alone. AMO refuses to drop an application the manifest declares ("Can not override compatibility information set
+ * in the manifest"), so a manifest with `gecko_android` keeps Firefox for Android; one without it is made desktop
+ * only, in case AMO carries Android over from an earlier version. Desktop only is a build-time choice.
+ */
+export function amoCompatibility(manifest) {
+  return manifest?.browser_specific_settings?.gecko_android ? null : ["firefox"];
+}
+
+/** Notes as AMO stores them, for comparing: line endings and surrounding blank space don't count. */
+const sameNotes = (a, b) =>
+  String(a ?? "")
+    .replaceAll("\r\n", "\n")
+    .trim() ===
+  String(b ?? "")
+    .replaceAll("\r\n", "\n")
+    .trim();
+
+/**
+ * Submit `zipPath` as a new listed version with `sourcePath` as its source, then set what the version create can't
+ * take in the same (multipart) request, each in its own request: the reviewer notes, then the compatibility (only
+ * for a package without Firefox for Android). A version AMO already has is never uploaded again, but a run that
+ * failed after AMO created it is finished: missing notes or compatibility are added to that version. Returns what
+ * happened; throws after trying every step when one of them failed.
+ */
 export async function publishFirefox({
   http,
   credentials,
   zipPath,
   sourcePath,
   version,
-  android = false,
   approvalNotes = "",
   slug = AMO_SLUG,
   wait = pause,
@@ -382,78 +416,120 @@ export async function publishFirefox({
     return { Authorization: `JWT ${token}` };
   };
   const urls = amoUrls(slug);
+  const compatibility = amoCompatibility(packageManifest(zipPath));
 
-  const { status: existing } = await http.send({
+  const { status, data: found } = await http.send({
     url: urls.version(version),
     headers: auth(),
     accept: [404],
     dry: { status: 404 },
   });
-  if (existing === 200) return `addons.mozilla.org: ${version} already exists; nothing uploaded`;
+  let target = found;
+  const done = [];
+  if (status === 200) {
+    if (!found.id) throw new StoreApiError(`addons.mozilla.org: version ${version} came back without an id`);
+    if (found.is_disabled || found.file?.status === "disabled") {
+      return `addons.mozilla.org: ${version} already exists (disabled); nothing uploaded or changed`;
+    }
+    done.push(`${version} already exists (version ${found.id}); nothing uploaded`);
+  } else {
+    const upload = new FormData();
+    upload.set("channel", "listed");
+    upload.set("upload", new Blob([readFileSync(zipPath)], { type: "application/zip" }), basename(zipPath));
+    const { data: created } = await http.send({
+      method: "POST",
+      url: urls.upload,
+      headers: auth(),
+      body: upload,
+      dry: { data: { uuid: "<upload uuid>", processed: true, valid: true } },
+    });
+    let detail = created;
+    for (let i = 0; !detail.processed && i < 120; i++) {
+      await wait(5000);
+      detail = (await http.send({ url: urls.uploadDetail(created.uuid), headers: auth() })).data;
+    }
+    if (!detail.processed)
+      throw new StoreApiError("addons.mozilla.org: validation didn't finish in 10 minutes");
+    if (!detail.valid) {
+      throw new StoreApiError(
+        `addons.mozilla.org: the upload failed validation:\n  ${validationErrors(detail.validation)}`,
+      );
+    }
 
-  const upload = new FormData();
-  upload.set("channel", "listed");
-  upload.set("upload", new Blob([readFileSync(zipPath)], { type: "application/zip" }), basename(zipPath));
-  const { data: created } = await http.send({
-    method: "POST",
-    url: urls.upload,
-    headers: auth(),
-    body: upload,
-    dry: { data: { uuid: "<upload uuid>", processed: true, valid: true } },
-  });
-  let detail = created;
-  for (let i = 0; !detail.processed && i < 120; i++) {
-    await wait(5000);
-    detail = (await http.send({ url: urls.uploadDetail(created.uuid), headers: auth() })).data;
-  }
-  if (!detail.processed)
-    throw new StoreApiError("addons.mozilla.org: validation didn't finish in 10 minutes");
-  if (!detail.valid) {
-    throw new StoreApiError(
-      `addons.mozilla.org: the upload failed validation:\n  ${validationErrors(detail.validation)}`,
+    // The source file can only go as multipart, which takes nothing but upload, source and license (AMO's docs):
+    // the notes and the compatibility follow as JSON, each on its own so that one refused can't lose the other.
+    const versionForm = new FormData();
+    versionForm.set("upload", created.uuid);
+    versionForm.set(
+      "source",
+      new Blob([readFileSync(sourcePath)], { type: "application/zip" }),
+      basename(sourcePath),
+    );
+    target = (
+      await http.send({
+        method: "POST",
+        url: urls.versions,
+        headers: auth(),
+        body: versionForm,
+        dry: {
+          data: {
+            id: "<version id>",
+            version,
+            edit_url: `https://addons.mozilla.org/developers/addon/${slug}/versions/`,
+          },
+        },
+      })
+    ).data;
+    if (!target.id) throw new StoreApiError("addons.mozilla.org: the version create returned no id");
+    done.push(
+      `${version} submitted as a listed version with its source` +
+        `${target.edit_url ? ` (${target.edit_url})` : ""}; Firefox updates installed copies once it is approved`,
     );
   }
 
-  // Source can only be sent as multipart, and compatibility only as JSON: two requests, as AMO's docs say.
-  const versionForm = new FormData();
-  versionForm.set("upload", created.uuid);
-  versionForm.set(
-    "source",
-    new Blob([readFileSync(sourcePath)], { type: "application/zip" }),
-    basename(sourcePath),
-  );
-  const { data: newVersion } = await http.send({
-    method: "POST",
-    url: urls.versions,
-    headers: auth(),
-    body: versionForm,
-    dry: {
-      data: {
-        id: "<version id>",
-        version,
-        edit_url: `https://addons.mozilla.org/developers/addon/${slug}/versions/`,
-      },
-    },
-  });
-  if (!newVersion.id) throw new StoreApiError("addons.mozilla.org: the version create returned no id");
-
-  const patch = {};
-  if (!android) patch.compatibility = ["firefox"];
-  if (approvalNotes) patch.approval_notes = approvalNotes;
-  if (Object.keys(patch).length > 0) {
-    const shown = { ...patch, ...(approvalNotes ? { approval_notes: "<AMO_APPROVAL_NOTES>" } : {}) };
-    await http.send({
-      method: "PATCH",
-      url: urls.version(newVersion.id),
-      headers: { ...auth(), "Content-Type": "application/json" },
-      body: JSON.stringify(patch),
-      shown: ` ${JSON.stringify(shown)}`,
-    });
+  const problems = [];
+  const patch = async (what, body, shown) => {
+    try {
+      await http.send({
+        method: "PATCH",
+        url: urls.version(target.id),
+        headers: { ...auth(), "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        shown: ` ${JSON.stringify(shown ?? body)}`,
+      });
+      done.push(`${what} set`);
+    } catch (error) {
+      problems.push(`${what}: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  };
+  if (!approvalNotes) {
+    done.push("no reviewer notes (AMO_APPROVAL_NOTES is not set)");
+  } else if (sameNotes(target.approval_notes, approvalNotes)) {
+    done.push("reviewer notes already set");
+  } else {
+    await patch(
+      "reviewer notes",
+      { approval_notes: approvalNotes },
+      { approval_notes: "<AMO_APPROVAL_NOTES>" },
+    );
   }
-  return (
-    `addons.mozilla.org: ${version} submitted as a listed version with its source` +
-    `${newVersion.edit_url ? ` (${newVersion.edit_url})` : ""}; Firefox updates installed copies once it is approved`
-  );
+  if (compatibility) {
+    const apps = Array.isArray(target.compatibility)
+      ? target.compatibility
+      : Object.keys(target.compatibility ?? {});
+    if (status === 200 && apps.length > 0 && apps.every((app) => compatibility.includes(app))) {
+      done.push(`compatibility already ${apps.join(", ")}`);
+    } else {
+      await patch(`compatibility ${compatibility.join(", ")}`, { compatibility });
+    }
+  }
+  if (problems.length > 0) {
+    throw new StoreApiError(
+      `addons.mozilla.org: ${done.join("; ")}; but these failed (a re-run adds them to the version):\n  ` +
+        problems.join("\n  "),
+    );
+  }
+  return `addons.mozilla.org: ${done.join("; ")}`;
 }
 
 // ── The command line ─────────────────────────────────────────────────────────────────────────────────────────────
@@ -560,7 +636,6 @@ export async function main(argv = process.argv.slice(2), env = process.env, fetc
             version,
             zipPath: files.firefox,
             sourcePath: files.source,
-            android: env.AMO_ANDROID === "1",
             approvalNotes: env.AMO_APPROVAL_NOTES ?? "",
             credentials: { issuer: value("AMO_JWT_ISSUER"), secret: value("AMO_JWT_SECRET") },
           }),
