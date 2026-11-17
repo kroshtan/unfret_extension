@@ -1,4 +1,7 @@
-/** Signing in with an API key instead of a wallet: shared by the popup and the options page. */
+/**
+ * Signing in with an API key (an "Unfret pass", as the website calls it) instead of a wallet: shared by the popup and
+ * the options page.
+ */
 
 import { ApiError, UnfretApi } from "../api/client.js";
 import { keySession, saveSession, type Session } from "./settings.js";
@@ -23,7 +26,7 @@ export async function signInWithKey(apiBase: string, value: string): Promise<Key
 
 /** What to say about a failed key sign-in. */
 export const KEY_FAILURE = {
-  invalid: "That isn't an API key (it starts with ufk_).",
-  rejected: "The server doesn't know this key (or it was replaced with its recovery code).",
+  invalid: "That doesn't look like an Unfret pass (it starts with ufk_). Copy it again in full.",
+  rejected: "Unfret doesn't know this pass (or it was replaced with its backup code).",
   offline: OFFLINE,
 } as const;

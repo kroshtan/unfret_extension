@@ -37,13 +37,13 @@
         </div>
         <p id="have-code-row" class="small" hidden>
           <a id="have-code" class="link" target="_blank" rel="noopener">Have a code?</a>
-          <span class="muted">The website gives you a key with its checks and signs Unfret in with it.</span>
+          <span class="muted">The website gives you a pass with its checks and signs Unfret in with it.</span>
         </p>
         <div id="invite" hidden>
           <h3>Have an invite or intro code?</h3>
           <p class="muted small">
-            An invite adds 3 checks, an intro code a few, to a new wallet or a new API key, one that never had
-            checks.
+            An invite adds 3 checks, an intro code a few, to a new wallet or a new Unfret pass, one that never
+            had checks.
           </p>
           <label for="invite-input">Invite or intro code</label>
           <input
@@ -61,16 +61,22 @@
       </section>
 
       <section class="card" aria-labelledby="key-heading">
-        <h2 id="key-heading">Use an API key instead</h2>
+        <h2 id="key-heading">Use an Unfret pass instead</h2>
         <p class="muted small">
-          An API key is an alternative to a wallet: buy checks for it with a card, SOL or USDC on the checkout
-          page and paste it here. It is kept only in this browser.
+          An Unfret pass is an alternative to a wallet: buy checks for it with a card, SOL or USDC on the
+          checkout page and paste it here. It is kept only in this browser.
         </p>
-        <label for="api-key">API key</label>
-        <input id="api-key" type="password" spellcheck="false" autocomplete="off" placeholder="ufk_…" />
+        <label for="api-key">Your pass</label>
+        <input
+          id="api-key"
+          type="password"
+          spellcheck="false"
+          autocomplete="off"
+          placeholder="Paste your pass"
+        />
         <div class="row">
-          <button id="key-use" type="button">Use this key</button>
-          <a id="key-get" class="link" target="_blank" rel="noopener">Get or top up a key</a>
+          <button id="key-use" type="button">Use this pass</button>
+          <a id="key-get" class="link" target="_blank" rel="noopener">Get a pass or add checks</a>
         </div>
         <p id="key-status" class="muted small" role="status"></p>
       </section>
@@ -92,10 +98,10 @@
         <p>
           Unfret reads a page only when you click "Check this page". It then sends the product facts and the
           page's visible product text (without account menus, your addresses or forms) to the Unfret server.
-          It stores only your sign-in session or API key, your consent and these settings in your browser, and
-          no analysis history. A page is shared for review only when you report a result as wrong and agree. A
-          result becomes a public link only when you share it and confirm what the preview shows; that link
-          names no account.
+          It stores only your sign-in session or Unfret pass, your consent and these settings in your browser,
+          and no analysis history. A page is shared for review only when you report a result as wrong and
+          agree. A result becomes a public link only when you share it and confirm what the preview shows;
+          that link names no account.
         </p>
         <p>
           <a id="privacy-link" class="link" target="_blank" rel="noopener">Read the privacy statement</a>

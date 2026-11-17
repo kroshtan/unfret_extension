@@ -20,7 +20,7 @@ English
 
 Shopping online shouldn't feel like a gamble. Unfret checks the product page you're looking at and tells you, in plain words, whether anything about it should worry you.
 
-Click the Unfret button on a product page and you get one of four answers (Looks fine, A few things to check, Some warning signs, or Many warning signs) with the reasons behind it:
+Click the Unfret button on a product page and you get one of four answers (Looks fine, Worth a look, Think twice, or Serious concerns) with the reasons behind it:
 
 • Fake countdowns that restart when you reload the page
 • "Was" prices nobody ever paid, and discounts too good to be true
@@ -57,6 +57,6 @@ Website: https://unfret.net
 ## Images
 
 - Store icon (128×128, 96×96 artwork with 16 px padding): `icons/icon-128.png`
-- Screenshots (1280×800): `store/screenshots/1-many-warning-signs.png`, `2-looks-fine.png`, `3-consent.png`
+- Screenshots (1280×800): `store/screenshots/1-serious-concerns.png`, `2-looks-fine.png`, `3-consent.png`
 - Small promo tile (440×280): `store/assets/promo-small-440x280.png`
 - Marquee (1400×560): `store/assets/promo-marquee-1400x560.png`

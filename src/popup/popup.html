@@ -35,7 +35,7 @@
         or the business details the provider publishes.
       </p>
       <h3>Paying for checks</h3>
-      <p class="small">Sign in with a Solana wallet, or use an API key, and use prepaid checks.</p>
+      <p class="small">Sign in with a Solana wallet, or use an Unfret pass, and use prepaid checks.</p>
       <p class="small">
         <a id="privacy" href="#" class="link">Read the privacy statement</a>
       </p>
@@ -54,10 +54,10 @@
         <button id="get-started" type="button" class="primary">Get started</button>
       </div>
       <p id="sign-in-more-row" class="small" hidden>
-        <a id="sign-in-more" class="link" href="#">Sign in with an API key or wallet</a>
+        <a id="sign-in-more" class="link" href="#">Sign in with an Unfret pass or wallet</a>
       </p>
       <div class="row">
-        <button id="sign-in-key" type="button" class="secondary" hidden>API key</button>
+        <button id="sign-in-key" type="button" class="secondary" hidden>Unfret pass</button>
         <button id="sign-in" type="button" class="secondary" hidden>Wallet in this browser</button>
         <button id="sign-in-phone" type="button" class="secondary" hidden>Wallet on your phone</button>
         <button id="buy" type="button" class="secondary" hidden>Buy checks</button>
@@ -65,13 +65,13 @@
       </div>
       <p id="have-code-row" class="small" hidden>
         <a id="have-code" class="link" href="#">Have a code?</a>
-        <span class="muted">The website gives you a key with its checks and signs Unfret in with it.</span>
+        <span class="muted">The website gives you a pass with its checks and signs Unfret in with it.</span>
       </p>
       <details id="invite" class="invite small" hidden>
         <summary>Have an invite or intro code?</summary>
         <p class="muted">
-          An invite adds 3 checks, an intro code a few, to a new wallet or a new API key, one that never had
-          checks.
+          An invite adds 3 checks, an intro code a few, to a new wallet or a new Unfret pass, one that never
+          had checks.
         </p>
         <label for="invite-input">Invite or intro code</label>
         <input
@@ -89,19 +89,25 @@
     </section>
 
     <section id="key" class="card" aria-labelledby="key-heading" hidden>
-      <h2 id="key-heading">Sign in with an API key</h2>
-      <label for="key-input" class="small">API key</label>
-      <input id="key-input" type="password" spellcheck="false" autocomplete="off" placeholder="ufk_…" />
+      <h2 id="key-heading">Sign in with an Unfret pass</h2>
+      <label for="key-input" class="small">Your pass</label>
+      <input
+        id="key-input"
+        type="password"
+        spellcheck="false"
+        autocomplete="off"
+        placeholder="Paste your pass"
+      />
       <p id="key-status" class="muted small" role="status" aria-live="polite"></p>
       <div class="row">
-        <button id="key-use" type="button" class="primary">Use this key</button>
+        <button id="key-use" type="button" class="primary">Use this pass</button>
         <button id="key-cancel" type="button" class="secondary">Cancel</button>
       </div>
-      <p class="small"><a id="key-get" class="link" href="#">No key yet? Get one on the checkout page</a></p>
+      <p class="small"><a id="key-get" class="link" href="#">No pass yet? Get one on the checkout page</a></p>
       <p class="muted small">
-        Have an invite or intro code and no key yet?
-        <a id="key-code" class="link" href="#">Use it on the website</a>: you get a new key with its checks in
-        one step. With a new key or wallet you can also enter it under “Have an invite or intro code?”.
+        Have an invite or intro code and no pass yet?
+        <a id="key-code" class="link" href="#">Use it on the website</a>: you get a new pass with its checks
+        in one step. With a new pass or wallet you can also enter it under “Have an invite or intro code?”.
       </p>
     </section>
 

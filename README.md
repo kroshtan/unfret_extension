@@ -48,7 +48,7 @@ toolbar click ─► popup ─► background ─► inject extract.js into the t
   agreed. The page gets `{type: "unfret-key-received", status}` back: no key, account or balance.
 - **First run.** After a new install (not an update) the background opens `<API base>/welcome` once: a code, buying
   checks, or a key you have. Signed out, the popup's one primary button is "Get started" (that page), with the
-  sign-in choices behind "Sign in with an API key or wallet"; out of checks, "Get more checks".
+  sign-in choices behind "Sign in with an Unfret pass or wallet"; out of checks, "Get more checks".
 - **"Have an invite?"** (popup and settings, when signed in) redeems a code onto the account in use
   (`POST /v1/invites/redeem`, with its own sign-in); only a new wallet or a never-funded key can. The code isn't kept.
 - **"Share this result"** asks the API for a preview of the public page (`POST /v1/shares/preview`), and only on

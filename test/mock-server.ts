@@ -35,7 +35,7 @@ export const PAIRED_SESSION = {
 /** The verdict the mock analysis returns. */
 export const VERDICT = {
   band: "junk_or_scam",
-  label: "Many warning signs",
+  label: "Serious concerns",
   headline: "Thousands of reviews on a six-week-old listing and an inflated discount.",
   reasons: [
     {
@@ -84,13 +84,13 @@ export const SHARE_PREVIEW: SharePreview = {
   checked_on: "2026-11-10",
   checked_on_text: "10 November 2026",
   band: "warning",
-  label: "Many warning signs",
+  label: "Serious concerns",
   symbol: "✕",
   headline: "Several things on this page are typical of junk or dropshipped goods.",
   result: {
     verdict: {
       band: "warning",
-      label: "Many warning signs",
+      label: "Serious concerns",
       symbol: "✕",
       headline: "Several things on this page are typical of junk or dropshipped goods.",
       reasons: [{ title: "Suspicious number of reviews", detail: "", severity: "high", thumbnails: [] }],

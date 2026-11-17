@@ -49,9 +49,20 @@ export function checkoutPath(session: Session | undefined): string {
   return KEY_ID_RE.test(id) ? `/checkout?mode=topup&key_id=${id}` : "/checkout?mode=topup";
 }
 
-/** How to name the account: a shortened wallet address, or the key's public ID. */
+/**
+ * A pass's public ID as the website shows it: in capitals, in two groups ("ABCDE-FGHIJ"), so it can be read out and
+ * compared. Only the words change: the key and its stored `key:<id>` stay lower case.
+ */
+export function showPassId(id: string): string {
+  const value = id.toUpperCase();
+  return value.length === 10 ? `${value.slice(0, 5)}-${value.slice(5)}` : value;
+}
+
+/** How to name the account: a shortened wallet address, or the pass's public ID ("ABCDE-FGHIJ"). */
 export function accountLabel(session: Session): string {
-  return isKeySession(session) ? session.address.slice("key:".length) : shortAddress(session.address);
+  return isKeySession(session)
+    ? showPassId(session.address.slice("key:".length))
+    : shortAddress(session.address);
 }
 
 interface Stored {

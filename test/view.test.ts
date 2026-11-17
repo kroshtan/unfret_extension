@@ -144,8 +144,50 @@ describe("result view", () => {
   it("still works with an older server that sends no verdict", () => {
     const root = rendered({ score: 30, explanation: "Several warning signs." });
     expect(bandOf({ score: 30 })).toBe("careful");
-    expect(root.querySelector(".verdict .label")?.textContent).toBe("Some warning signs");
+    expect(root.querySelector(".verdict .label")?.textContent).toBe("Think twice");
     expect(root.querySelector(".headline")?.textContent).toBe("Several warning signs.");
+    // A verdict below "Looks fine" always names a reason, even when the result has none.
+    expect([...root.querySelectorAll(".reasons strong")].map((s) => s.textContent)).toEqual([
+      "Several small signals",
+    ]);
+  });
+
+  it("always shows a reason for the middle verdicts, never for a reliable page without one", () => {
+    for (const [score, band, label] of [
+      [60, "concerns", "Worth a look"],
+      [30, "careful", "Think twice"],
+    ] as const) {
+      const root = rendered({
+        score,
+        explanation: "",
+        verdict: { band, label, headline: "x", reasons: [], positives: [], language: "en" },
+      });
+      expect(root.querySelector(".verdict .label")?.textContent).toBe(label);
+      expect([...root.querySelectorAll(".reasons strong")].map((s) => s.textContent)).toEqual([
+        "Several small signals",
+      ]);
+    }
+    const fine = rendered({
+      score: 90,
+      explanation: "",
+      verdict: {
+        band: "reliable",
+        label: "Looks fine",
+        headline: "x",
+        reasons: [],
+        positives: [],
+        language: "en",
+      },
+    });
+    expect(fine.querySelector(".reasons")).toBeNull();
+  });
+
+  it("names the four verdicts in the website's words when the server sends none", () => {
+    expect(
+      [90, 60, 30, 10].map(
+        (score) => rendered({ score, explanation: "" }).querySelector(".label")?.textContent,
+      ),
+    ).toEqual(["Looks fine", "Worth a look", "Think twice", "Serious concerns"]);
   });
 });
 
@@ -156,8 +198,8 @@ describe("photo thumbnails", () => {
     explanation: "",
     verdict: {
       band: "junk_or_scam",
-      label: "Many warning signs",
-      headline: "Many warning signs: photo used elsewhere.",
+      label: "Serious concerns",
+      headline: "Serious concerns: photo used elsewhere.",
       reasons: [
         {
           type: "photo_on_other_shops",
@@ -245,10 +287,10 @@ describe("share preview", () => {
     expect(root.textContent).toContain(
       "Checked by an Unfret user on 10 November 2026; the page may have changed.",
     );
-    // The shared page's "warning" band looks like the popup's "Many warning signs".
+    // The shared page's "warning" band looks like the popup's "Serious concerns".
     expect(root.querySelector(".verdict")?.className).toBe("verdict junk_or_scam");
     expect(root.querySelector(".verdict .symbol")?.textContent).toBe("✕");
-    expect(root.querySelector(".verdict .label")?.textContent).toBe("Many warning signs");
+    expect(root.querySelector(".verdict .label")?.textContent).toBe("Serious concerns");
     expect([...root.querySelectorAll(".reasons strong")].map((s) => s.textContent)).toEqual([
       "Suspicious number of reviews",
     ]);

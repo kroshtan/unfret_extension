@@ -23,8 +23,8 @@ const MANY = {
   charged: true,
   verdict: {
     band: "junk_or_scam",
-    label: "Many warning signs",
-    headline: "Many warning signs: fake countdown, unknown brand and a brand-new web shop.",
+    label: "Serious concerns",
+    headline: "Fake countdown, unknown brand and a brand-new web shop.",
     reasons: [
       {
         type: "timer_resets",
@@ -86,7 +86,7 @@ const FINE = {
 
 const SHOTS = [
   {
-    file: "1-many-warning-signs.png",
+    file: "1-serious-concerns.png",
     title: "Know before you buy",
     line: "One click checks a product page for fake countdowns, made-up brands, brand-new shops and too-good discounts.",
     result: MANY,
@@ -161,7 +161,7 @@ try {
           session: { token: `t-${"x".repeat(30)}`, address, expiresAt: "2999-01-01T00:00:00.000Z" },
         });
         if (consent) await chrome.storage.local.remove("consent");
-        else await chrome.storage.local.set({ consent: { version: 1 } });
+        else await chrome.storage.local.set({ consent: { version: 2 } }); // CONSENT_VERSION (src/shared/settings.ts)
         await chrome.storage.session.set({
           // With the page's address and a share token, as a real check has, so "Share this result" shows.
           [`tab:${tabId}`]: result
