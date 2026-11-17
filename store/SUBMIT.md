@@ -113,7 +113,7 @@ The API v2 also accepts a Google Cloud service account linked to the publisher
 
 3. Forgejo secrets: `AMO_JWT_ISSUER` = `jwt_issuer`, `AMO_JWT_SECRET` = `jwt_secret`. Optionally
    `AMO_APPROVAL_NOTES`: the "Notes to reviewer" block from [AMO.md](AMO.md) with the test key filled in; each new
-   version then carries it.
+   version then carries it (sent in a request of its own, and added on a re-run if it is missing).
 
 ## The first submission, in the developer dashboard (https://chrome.google.com/webstore/devconsole)
 

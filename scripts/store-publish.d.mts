@@ -96,13 +96,14 @@ export function amoUrls(
   versions: string;
   version: (id: string | number) => string;
 };
+export function packageManifest(zipPath: string): Record<string, unknown>;
+export function amoCompatibility(manifest: unknown): string[] | null;
 export function publishFirefox(options: {
   http: HttpClient;
   credentials: { issuer: string; secret: string };
   zipPath: string;
   sourcePath: string;
   version: string;
-  android?: boolean;
   approvalNotes?: string;
   slug?: string;
   wait?: (ms: number) => Promise<unknown>;

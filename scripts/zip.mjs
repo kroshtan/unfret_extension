@@ -1,7 +1,8 @@
-// A minimal, deterministic zip writer (deflate, fixed timestamps, sorted entries) for the store packages.
+// A minimal, deterministic zip writer (deflate, fixed timestamps, sorted entries) for the store packages, and a reader
+// for one entry of such a zip (the store release reads the Firefox package's manifest.json).
 import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join, relative, sep } from "node:path";
-import { deflateRawSync } from "node:zlib";
+import { deflateRawSync, inflateRawSync } from "node:zlib";
 
 const CRC_TABLE = Array.from({ length: 256 }, (_, n) => {
   let c = n;
@@ -82,4 +83,39 @@ export function zipBuffer(dir) {
 
 export function zipDirectory(dir, target) {
   writeFileSync(target, zipBuffer(dir));
+}
+
+/**
+ * One file of a zip (stored or deflated, no zip64), as bytes, or null when the zip has no such entry. Throws when
+ * `zip` is not a zip.
+ */
+export function zipEntry(zip, name) {
+  let end = -1;
+  for (let i = zip.length - 22; i >= Math.max(0, zip.length - 22 - 0xffff); i--) {
+    if (zip.readUInt32LE(i) === 0x06054b50) {
+      end = i;
+      break;
+    }
+  }
+  if (end < 0) throw new Error("not a zip file");
+  const count = zip.readUInt16LE(end + 10);
+  let at = zip.readUInt32LE(end + 16);
+  for (let n = 0; n < count; n++) {
+    if (zip.readUInt32LE(at) !== 0x02014b50) throw new Error("a broken zip central directory");
+    const method = zip.readUInt16LE(at + 10);
+    const size = zip.readUInt32LE(at + 20);
+    const nameLength = zip.readUInt16LE(at + 28);
+    const skip = nameLength + zip.readUInt16LE(at + 30) + zip.readUInt16LE(at + 32);
+    const local = zip.readUInt32LE(at + 42);
+    if (zip.toString("utf8", at + 46, at + 46 + nameLength) === name) {
+      if (zip.readUInt32LE(local) !== 0x04034b50) throw new Error(`a broken zip entry ${name}`);
+      const start = local + 30 + zip.readUInt16LE(local + 26) + zip.readUInt16LE(local + 28);
+      const data = zip.subarray(start, start + size);
+      if (method === 0) return Buffer.from(data);
+      if (method === 8) return inflateRawSync(data);
+      throw new Error(`zip entry ${name} uses compression method ${method}`);
+    }
+    at += 46 + skip;
+  }
+  return null;
 }
