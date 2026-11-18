@@ -26,14 +26,16 @@ import { answerOffer, dropTickets, type Offer, OPEN_MESSAGE, pendingOffer } from
 import { consentGiven, isDevBase, loadSettings } from "../shared/settings.js";
 import { createShare, previewShare, shareRequest } from "../shared/share.js";
 import { isAnalysable } from "../shared/sites.js";
-import { CONSENT_HINT, FREE_PAUSED, OFFLINE, SESSION_EXPIRED } from "../shared/text.js";
+import { CONSENT_HINT, FREE_PAUSED, OFFLINE } from "../shared/text.js";
 import { checkedUrl } from "../shared/urls.js";
 import { badgeFor } from "./badge.js";
+import { checkFailed } from "./failure.js";
 import { registerMarketplaceHint } from "./icon-hint.js";
 import { extractFromTab } from "./inject.js";
 import {
   fromExtensionPage,
   openUnfretTab,
+  passEndedOnUpdate,
   receiveFreeAsk,
   receiveKey,
   receiveRef,
@@ -300,24 +302,7 @@ async function runAnalysis(tabId: number, tier?: "quick"): Promise<void> {
       }
     }
   } catch (error) {
-    const apiError = error instanceof ApiError ? error : null;
-    // The server's technical detail isn't shown: every case gets plain words.
-    const message = apiError?.serviceOff
-      ? "Unfret checks aren't available right now. Please try again later."
-      : apiError?.needsSignIn
-        ? SESSION_EXPIRED
-        : apiError?.needsCredits
-          ? "You have no checks left."
-          : apiError
-            ? "The check failed. No check was used."
-            : OFFLINE;
-    setState(tabId, {
-      status: "error",
-      message,
-      needsSignIn: apiError?.needsSignIn ?? false,
-      needsCredits: apiError?.needsCredits ?? false,
-      refunded: apiError !== null && !apiError.needsSignIn && !apiError.needsCredits,
-    });
+    setState(tabId, await checkFailed(session, error));
   }
 }
 
@@ -456,6 +441,7 @@ async function syncDevRelay(): Promise<void> {
 
 chrome.runtime.onInstalled.addListener((details) => {
   void welcomeOnInstall(details);
+  void passEndedOnUpdate(details);
   void syncDevRelay();
   void registerMarketplaceHint();
 });

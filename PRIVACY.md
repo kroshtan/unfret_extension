@@ -1,6 +1,6 @@
 # Unfret privacy policy (browser extension)
 
-_Last updated: 17 November 2026 (version 0.12.0: a free Unfret pass made on install, free quick checks, the extension asks in its own window before switching accounts, every request and stored item listed, the page address sent without its fragment, tracking parameters, sessions or e-mail addresses, the welcome page says whether this browser had its free checks; 0.11.0: a new key from the checkout page signs the extension in, welcome page after installing; earlier: photo lookup corrected, service providers and private sellers' ads added). Draft for the store listings; to be reviewed before publication._
+_Last updated: 17 November 2026 (version 0.12.0: a free Unfret pass made on install, free quick checks, the extension asks in its own window before switching accounts, every request and stored item listed, the page address sent without its fragment, tracking parameters, sessions or e-mail addresses, the welcome page says whether this browser had its free checks, a pass the server no longer knows is forgotten and a new one offered; 0.11.0: a new key from the checkout page signs the extension in, welcome page after installing; earlier: photo lookup corrected, service providers and private sellers' ads added). Draft for the store listings; to be reviewed before publication._
 
 Unfret is made by Kroshtan (Floris van Beers, the Netherlands).
 
@@ -45,7 +45,9 @@ After you install it, the extension opens a welcome page on `unfret.net` and ask
 many it got. That request carries nothing about you or your browsing: it fetches a small computing puzzle and sends
 back its answer (a proof of work, a few seconds of computing in your browser, that keeps out bots) and whether it asks
 for free checks. If that fails (offline), or after you signed out, the popup's **Get your free checks** opens the
-welcome page again, which makes the pass the same way. To give free checks only once, the extension notes in the
+welcome page again, which makes the pass the same way. So does a pass `unfret.net` no longer knows (the passes made
+before Unfret's new free start were retired): the extension forgets it and its backup code, and
+offers a new pass, with the free checks if this browser never had them. To give free checks only once, the extension notes in the
 browser's `storage.sync` that this browser had them; your browser may sync that note between your devices, as it
 does settings, and a reinstall then gets a pass without free checks. Without sync, removing the extension removes
 that note too, so the welcome page tells the extension, before it asks for free checks, whether the website's own
@@ -110,7 +112,7 @@ if an affiliate's link brought you, that one note to `unfret.net`, both above.
 ## What is stored
 
 In your browser (`storage.local`): your sign-in (your Unfret pass; or a wallet's session token, address and expiry),
-whether your last sign-in expired, your consent, your settings, for the pass the extension made itself its public ID
+whether your last sign-in expired or your last pass ended (a yes, so the popup can say so), your consent, your settings, for the pass the extension made itself its public ID
 and backup code (shown in the settings, so you can save it), and, until that pass is made, a note to offer it again. In
 `storage.sync`: only whether this browser had its free checks (your browser may sync it, as it does settings).
 

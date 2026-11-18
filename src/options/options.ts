@@ -5,7 +5,7 @@ import { checksText } from "../popup/view.js";
 import { OPEN_MESSAGE } from "../shared/handoff.js";
 import { CODE_CHECKOUT, inviteAdded, redeemInvite } from "../shared/invites.js";
 import { KEY_FAILURE, signInWithKey } from "../shared/key-sign-in.js";
-import { isOwnPass, ownPass } from "../shared/new-pass.js";
+import { endPass, isOwnPass, ownPass, passEndedBy } from "../shared/new-pass.js";
 import {
   accountLabel,
   checkoutPath,
@@ -20,6 +20,7 @@ import {
   saveApiBase,
   shortAddress,
 } from "../shared/settings.js";
+import { PASS_ENDED } from "../shared/text.js";
 import { withoutSecrets } from "../shared/urls.js";
 
 function el(id: string): HTMLElement {
@@ -41,10 +42,15 @@ function input(id: string): HTMLInputElement {
   return found;
 }
 
+/** Below Unfret's new free start's note: where the new pass is (the popup offers it, as after installing). */
+const PASS_ENDED_NEXT = "Open Unfret from the toolbar for your new pass.";
+
 async function renderAccount(): Promise<void> {
-  const { apiBase, session } = await loadSettings();
+  const { apiBase, session, passEnded } = await loadSettings();
   el("account-status").textContent = !session
-    ? "Not signed in."
+    ? passEnded
+      ? `${PASS_ENDED} ${PASS_ENDED_NEXT}`
+      : "Not signed in."
     : isKeySession(session)
       ? `Using Unfret pass ${accountLabel(session)}.`
       : `Signed in as ${shortAddress(session.address)} until ${new Date(session.expiresAt).toLocaleDateString("en")}.`;
@@ -64,8 +70,14 @@ async function renderAccount(): Promise<void> {
       // Hide "Have an invite?" for an account that has had credit, where no code would be accepted.
       const credits = await new UnfretApi(apiBase, session.token).credits();
       if (credits.invite_eligible === false) el("invite").hidden = true;
-    } catch {
-      // Offline or an expired sign-in: keep the field; redeeming explains what's wrong.
+    } catch (error) {
+      // A pass the server no longer knows (Unfret's new free start): forget it and say so. Offline or an expired
+      // sign-in: keep the field; redeeming explains what's wrong.
+      if (passEndedBy(session, error)) {
+        await endPass(session);
+        await renderAccount();
+        return;
+      }
     }
   }
   el("key-get").setAttribute(
@@ -106,7 +118,8 @@ async function useInvite(): Promise<void> {
   }
   say("invite-status", outcome.message, "error");
   if (outcome.signedOut) {
-    await expireSession();
+    if (outcome.passEnded === true && isKeySession(session)) await endPass(session);
+    else await expireSession();
     await renderAccount();
   }
 }

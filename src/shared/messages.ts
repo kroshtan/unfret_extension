@@ -45,6 +45,8 @@ export type TabState =
       message: string;
       needsSignIn: boolean;
       needsCredits: boolean;
+      /** The server no longer knows the pass (Unfret's new free start): it is forgotten, a new one is offered. */
+      passEnded?: boolean;
       /** True when no check was used (the server refunds failed analyses). */
       refunded?: boolean;
     };

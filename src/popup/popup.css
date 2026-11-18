@@ -178,6 +178,15 @@ body[data-auth="expired"] #account-status {
   display: block;
 }
 
+/* The server no longer knew the pass (Unfret's new free start): a calm note, not an error. */
+.pass-ended {
+  margin: 0 0 0.6rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--ink-2);
+}
+
 /* "Have an invite?" under the account. */
 .invite {
   border-top: 1px solid var(--line);

@@ -3,6 +3,10 @@
 export const OFFLINE = "Couldn't reach Unfret. Check your connection.";
 export const SESSION_EXPIRED =
   "Your sign-in expired; your checks are still there. Sign in again to use them.";
+/** The server no longer knows the pass in use (Unfret's new free start retired the old passes). */
+export const PASS_ENDED = "Unfret has a new free start: your old pass has ended.";
+/** After PASS_ENDED, in a browser that already had its free checks (its new pass comes without them). */
+export const PASS_ENDED_PAID = "Quick checks stay free; deep checks come in packs.";
 export const NO_CHECK_USED = "No check was used.";
 
 /** How many checks are left; `free` of them free ones (all of them free: "You have 5 free checks"). */

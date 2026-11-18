@@ -27,9 +27,22 @@ import { CODE_CHECKOUT, inviteAdded, redeemInvite } from "../shared/invites.js";
 import { KEY_FAILURE, signInWithKey } from "../shared/key-sign-in.js";
 import { OPEN_MESSAGE } from "../shared/handoff.js";
 import { isAnalysable } from "../shared/sites.js";
-import { freeChecksUsed, makeFreePass, WELCOME_SETUP_PATH } from "../shared/new-pass.js";
+import {
+  endPass,
+  freeChecksUsed,
+  makeFreePass,
+  WELCOME_RENEWED_PATH,
+  WELCOME_SETUP_PATH,
+} from "../shared/new-pass.js";
 import { withoutSecrets } from "../shared/urls.js";
-import { CONSENT_HINT, FREE_PAUSED, OFFLINE, SESSION_EXPIRED } from "../shared/text.js";
+import {
+  CONSENT_HINT,
+  FREE_PAUSED,
+  OFFLINE,
+  PASS_ENDED,
+  PASS_ENDED_PAID,
+  SESSION_EXPIRED,
+} from "../shared/text.js";
 import {
   buildChecklist,
   checklistDone,
@@ -58,6 +71,11 @@ function show(id: string, visible: boolean): void {
 let apiBase = "";
 let session: Session | undefined;
 let expired = false;
+/**
+ * The server no longer knew the pass in use (Unfret's new free start): the calm note above the account, for as long as
+ * this popup is open, and the free pass as the next step (its note in storage goes once a new pass is made).
+ */
+let passEnded = false;
 let checks: number | undefined;
 /** Of `checks`, the free ones; and whether today's free deep checks are all used (then only quick checks are free). */
 let freeLeft = 0;
@@ -98,14 +116,31 @@ function openTab(path: string): void {
     });
 }
 
-async function sessionRejected(): Promise<void> {
-  await expireSession();
+/**
+ * The server refused the session (a 401). `ended`: it said the pass is unknown (`INVALID_API_KEY`), so the pass is
+ * forgotten and the free pass offered again (Unfret's new free start); otherwise an expired or revoked sign-in.
+ */
+async function sessionRejected(ended = false): Promise<void> {
+  if (ended && isKeySession(session)) {
+    if (session) await endPass(session); // the background may have done so already: the same either way
+    passEnded = true;
+    expired = false;
+  } else if (ended) {
+    passEnded = true; // the background forgot the pass already
+  } else {
+    await expireSession();
+    expired = true;
+  }
   session = undefined;
-  expired = true;
   checks = undefined;
   freeLeft = 0;
   inviteEligible = undefined;
   renderAccount();
+  if (passEnded) {
+    // As after installing: the empty pass at once in a profile that had its free checks, else the free checks' number.
+    void retryFreePass();
+    if (!freeUsed) void loadFreePerPass();
+  }
 }
 
 async function refreshCredits(): Promise<void> {
@@ -118,7 +153,7 @@ async function refreshCredits(): Promise<void> {
     inviteEligible = credits.invite_eligible;
     renderAccount();
   } catch (error) {
-    if (error instanceof ApiError && error.needsSignIn) await sessionRejected();
+    if (error instanceof ApiError && error.needsSignIn) await sessionRejected(error.passEnded);
   }
 }
 
@@ -176,6 +211,7 @@ async function showPairing(pairing: Pairing): Promise<void> {
     await saveSession(outcome.session);
     session = outcome.session;
     expired = false;
+    passEnded = false;
     show("phone", false);
     renderAccount();
     void refreshCredits();
@@ -224,6 +260,8 @@ function untilText(expiresAt: string): string {
 
 function renderAccount(): void {
   const usingKey = isKeySession(session);
+  el("pass-ended").textContent = freeUsed ? `${PASS_ENDED} ${PASS_ENDED_PAID}` : PASS_ENDED;
+  show("pass-ended", passEnded);
   el("account-status").textContent = session
     ? `${usingKey ? "Using Unfret pass" : "Signed in as"} ${accountLabel(session)}`
     : expired
@@ -242,9 +280,11 @@ function renderAccount(): void {
     ? "Buy checks"
     : gettingPass
       ? "Getting your free checks…"
-      : freePerPass
-        ? `Get your ${freePerPass} free checks`
-        : "Get your free checks";
+      : passEnded
+        ? `Get your ${freePerPass ?? 5} free deep checks`
+        : freePerPass
+          ? `Get your ${freePerPass} free checks`
+          : "Get your free checks";
   getFree.disabled = gettingPass;
   show("sign-in-more-row", !session && !choosing);
   show("sign-in-choices", choosing);
@@ -316,7 +356,7 @@ async function loadFreePerPass(): Promise<void> {
  */
 function getFreeChecks(): void {
   if (session) return;
-  openTab(freeUsed ? checkoutPath(undefined) : WELCOME_SETUP_PATH);
+  openTab(freeUsed ? checkoutPath(undefined) : passEnded ? WELCOME_RENEWED_PATH : WELCOME_SETUP_PATH);
 }
 
 /**
@@ -402,7 +442,7 @@ function render(state: TabState): void {
     el("error-message").textContent = state.message;
     show("error-refunded", state.refunded === true);
     if (!ownCard) announce(state.message);
-    if (state.needsSignIn) void sessionRejected();
+    if (state.needsSignIn) void sessionRejected(state.passEnded === true);
   }
 }
 
@@ -517,7 +557,7 @@ async function useInvite(): Promise<void> {
     } else {
       status.textContent = outcome.message;
       status.dataset.kind = "error";
-      if (outcome.signedOut) await sessionRejected();
+      if (outcome.signedOut) await sessionRejected(outcome.passEnded === true);
     }
   } finally {
     button("invite-use").disabled = false;
@@ -525,7 +565,7 @@ async function useInvite(): Promise<void> {
 }
 
 async function init(): Promise<void> {
-  ({ apiBase, session, expired } = await loadSettings());
+  ({ apiBase, session, expired, passEnded } = await loadSettings());
   consented = await consentGiven();
   showConsent(!consented);
   el("about").addEventListener("click", (event) => {
@@ -626,6 +666,7 @@ async function init(): Promise<void> {
     field.value = "";
     session = result.session;
     expired = false;
+    passEnded = false;
     checks = result.checks;
     inviteEligible = result.inviteEligible;
     renderAccount();
