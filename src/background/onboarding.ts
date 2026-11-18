@@ -91,6 +91,36 @@ export async function welcomeOnInstall(
   return true;
 }
 
+/** Whether a version ("0.11.0") is older than 0.12.0, the first that knows a pass can end. */
+function before0120(version: string | undefined): boolean {
+  const [major, minor] = (version ?? "").split(".").map(Number);
+  if (major === undefined || minor === undefined || Number.isNaN(major) || Number.isNaN(minor)) return false;
+  return major === 0 && minor < 12;
+}
+
+/**
+ * An update from before 0.12.0: those versions took any 401 for an expired sign-in, so a pass retired at Unfret's new
+ * free start (backend 0.13.0) left them signed out with "Your sign-in expired" and no way to the free pass. Such a
+ * state (expired, nothing stored) becomes the ended pass's: its calm note, and the free pass offered again. A stored
+ * session is left as it is (the server says whether it still works).
+ *
+ * @returns Whether it did so.
+ */
+export async function passEndedOnUpdate(details: {
+  reason: string;
+  previousVersion?: string | undefined;
+}): Promise<boolean> {
+  if (details.reason !== "update" || !before0120(details.previousVersion)) return false;
+  const stored = await chrome.storage.local.get<{ session?: unknown; sessionExpired?: boolean }>([
+    "session",
+    "sessionExpired",
+  ]);
+  if (stored.session !== undefined || stored.sessionExpired !== true) return false;
+  await chrome.storage.local.remove("sessionExpired");
+  await chrome.storage.local.set({ passEnded: true, passPending: true });
+  return true;
+}
+
 /** The answer to the welcome page's question: how the free pass went, and how many free checks it came with. */
 export interface FreeAnswer {
   status: FreeStatus;

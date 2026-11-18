@@ -1,7 +1,7 @@
 /**
  * The only things the extension stores: the API base URL, the session (token, wallet address, expiry; or an API key
- * in its place), whether the last session expired (so the popup can say so) and which version of the consent screen
- * was accepted. No browsing data, no analysis results, no history.
+ * in its place), whether the last session expired or the last pass ended (so the popup can say so) and which version
+ * of the consent screen was accepted. No browsing data, no analysis results, no history.
  */
 
 // Set by the build: the dev deployment for "Unfret Dev", production for everything else (and in tests).
@@ -69,6 +69,7 @@ interface Stored {
   apiBase?: string;
   session?: Session;
   sessionExpired?: boolean;
+  passEnded?: boolean;
 }
 
 const BASE58_ADDRESS_RE = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/u;
@@ -113,13 +114,28 @@ export function sessionValid(session: Session | undefined, now: Date = new Date(
   return session !== undefined && Date.parse(session.expiresAt) > now.getTime();
 }
 
-export async function loadSettings(): Promise<{ apiBase: string; session?: Session; expired: boolean }> {
-  const stored = await chrome.storage.local.get<Stored>(["apiBase", "session", "sessionExpired"]);
+export async function loadSettings(): Promise<{
+  apiBase: string;
+  session?: Session;
+  expired: boolean;
+  passEnded: boolean;
+}> {
+  const stored = await chrome.storage.local.get<Stored>([
+    "apiBase",
+    "session",
+    "sessionExpired",
+    "passEnded",
+  ]);
   const apiBase = normaliseApiBase(stored.apiBase);
   // A stored session past its expiry, or one the server rejected: the checks are still on the wallet.
   const hadSession = stored.session !== undefined;
-  if (sessionValid(stored.session)) return { apiBase, session: stored.session, expired: false };
-  return { apiBase, expired: hadSession || stored.sessionExpired === true };
+  if (sessionValid(stored.session))
+    return { apiBase, session: stored.session, expired: false, passEnded: false };
+  return {
+    apiBase,
+    expired: hadSession || stored.sessionExpired === true,
+    passEnded: stored.passEnded === true,
+  };
 }
 
 export async function saveApiBase(apiBase: string): Promise<string> {
@@ -130,12 +146,12 @@ export async function saveApiBase(apiBase: string): Promise<string> {
 
 export async function saveSession(session: Session): Promise<void> {
   await chrome.storage.local.set({ session });
-  await chrome.storage.local.remove("sessionExpired");
+  await chrome.storage.local.remove(["sessionExpired", "passEnded"]);
 }
 
 /** Signing out on purpose: forget the session and that it existed. */
 export async function clearSession(): Promise<void> {
-  await chrome.storage.local.remove(["session", "sessionExpired"]);
+  await chrome.storage.local.remove(["session", "sessionExpired", "passEnded"]);
 }
 
 /** The server rejected the session (expired or revoked): forget it, but remember to say why. */

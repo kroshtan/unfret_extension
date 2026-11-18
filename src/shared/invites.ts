@@ -6,7 +6,7 @@
  */
 
 import { ApiError, UnfretApi } from "../api/client.js";
-import { OFFLINE, SESSION_EXPIRED } from "./text.js";
+import { OFFLINE, PASS_ENDED, SESSION_EXPIRED } from "./text.js";
 
 /** An invite code: `ufi_` and 32 lower-case base32 letters (the server ignores case and surrounding spaces). */
 export const INVITE_RE = /^ufi_[a-z2-7]{32}$/u;
@@ -60,7 +60,9 @@ export function monthlyLimitMessage(metadata: unknown): string {
 }
 
 export type InviteRedemption =
-  { ok: true; checksAdded: number; checks: number } | { ok: false; message: string; signedOut: boolean };
+  | { ok: true; checksAdded: number; checks: number }
+  /** `passEnded`: the server no longer knows the pass (`signedOut` too); otherwise a 401 is an expired sign-in. */
+  | { ok: false; message: string; signedOut: boolean; passEnded?: boolean };
 
 /** The code as typed (an invite, or an intro code such as FRIENDS), or null when it isn't one. */
 export function normaliseInvite(value: string): string | null {
@@ -83,6 +85,8 @@ export async function redeemInvite(apiBase: string, token: string, value: string
     return { ok: true, checksAdded: added.checks_added, checks: added.checks_remaining };
   } catch (error) {
     if (!(error instanceof ApiError)) return { ok: false, message: OFFLINE, signedOut: false };
+    if (error.needsSignIn && error.passEnded && token.startsWith("ufk_"))
+      return { ok: false, message: PASS_ENDED, signedOut: true, passEnded: true };
     if (error.needsSignIn) return { ok: false, message: SESSION_EXPIRED, signedOut: true };
     if (error.code === "INVITE_MONTHLY_LIMIT")
       return { ok: false, message: monthlyLimitMessage(error.metadata), signedOut: false };

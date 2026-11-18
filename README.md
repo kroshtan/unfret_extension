@@ -118,6 +118,14 @@ toolbar click ─► popup ─► background ─► inject extract.js into the t
   couldn't be made), the popup's one primary button is "Get your free checks" (the same welcome page, once per
   browser; after that it is "Buy checks"), with the sign-in choices behind "Sign in with an Unfret pass or wallet" and a small "Have a
   gift code from a friend?" link; out of checks, "Get more checks".
+- **A pass that ended.** When the server no longer knows the pass in use (`401 INVALID_API_KEY`: the passes made
+  before backend 0.13.0 were retired at Unfret's new free start, or a pass was replaced with its backup code), the
+  extension forgets it (and its backup code, if it made the pass itself), says calmly once "Unfret has a new free
+  start: your old pass has ended." and offers the free pass again: "Get your 5 free deep checks" opens
+  `/welcome?setup=1&renewed=1` (the welcome page repeats the note), or, in a browser that already had its free checks,
+  the popup makes a pass without them at once. A wallet's sign-in that expired is still "Sign in again". Versions
+  before 0.12.0 took that 401 for an expired sign-in; updating from one of them turns that state (expired, nothing
+  stored) into the ended pass's.
 - **"Have an invite?"** (popup and settings, when signed in) redeems a code onto the account in use
   (`POST /v1/invites/redeem`, with its own sign-in); only a new wallet or a never-funded key can. The code isn't kept.
 - **"Share this result"** asks the API for a preview of the public page (`POST /v1/shares/preview`), and only on

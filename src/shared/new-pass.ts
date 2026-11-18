@@ -12,8 +12,8 @@
  * The pass's backup code is kept with it, so the options page can show it.
  */
 
-import { type IssuedKey, UnfretApi } from "../api/client.js";
-import { keySession, saveSession, type Session } from "./settings.js";
+import { ApiError, type IssuedKey, UnfretApi } from "../api/client.js";
+import { expireSession, isKeySession, keySession, saveSession, type Session } from "./settings.js";
 
 /**
  * The website's welcome page while the extension makes its free pass: it says whether this browser had its free
@@ -21,6 +21,11 @@ import { keySession, saveSession, type Session } from "./settings.js";
  * one). Opened on install and by the popup's "Get your free checks".
  */
 export const WELCOME_SETUP_PATH = "/welcome?setup=1";
+/**
+ * The same, after the server stopped knowing this browser's pass (Unfret's new free start): the welcome page then
+ * says so ("your old pass has ended") on the welcome it moves on to. Older servers ignore `renewed`.
+ */
+export const WELCOME_RENEWED_PATH = "/welcome?setup=1&renewed=1";
 
 /** In `storage.sync`: this browser profile has had its free checks. */
 export const FREE_FLAG = "freeChecksUsed";
@@ -118,4 +123,47 @@ export async function makeFreePass(
   await saveSession(session);
   if (freeChecks > 0 || siteHad) await markFreeChecksUsed();
   return { ok: true, session, freeChecks, asked: ask };
+}
+
+/**
+ * The server no longer knows `session`'s pass (401 `INVALID_API_KEY`: retired at Unfret's new free start, or replaced
+ * with its backup code). Forget it, and its backup code if the extension made it (useless now); note once that it
+ * ended, so the popup says so calmly (not "expired": there is nothing to sign in to again) and offers the free pass
+ * again (`passPending`). The free checks' flag in `storage.sync` stays as it is: a browser that never had them gets
+ * them now, one that had them gets a pass without. A newer sign-in stored meanwhile is left alone.
+ */
+export async function endPass(session: Session): Promise<void> {
+  const stored = await chrome.storage.local.get<{ session?: Session; ownPass?: OwnPass }>([
+    "session",
+    "ownPass",
+  ]);
+  if (stored.session !== undefined && stored.session.token !== session.token) return;
+  const forget = ["session", "sessionExpired"];
+  if (stored.ownPass !== undefined && session.address === `key:${stored.ownPass.keyId}`)
+    forget.push("ownPass");
+  await chrome.storage.local.remove(forget);
+  await chrome.storage.local.set({ passEnded: true, passPending: true });
+}
+
+/** Whether the server's `error` says that `session`, a pass, has ended (a wallet's 401 never is). */
+export function passEndedBy(session: Session | undefined, error: unknown): session is Session {
+  return isKeySession(session) && error instanceof ApiError && error.passEnded;
+}
+
+/**
+ * The server refused `session` (a 401): a pass that ended ({@link endPass}), or else an expired or revoked sign-in,
+ * remembered as before so the popup asks to sign in again.
+ *
+ * @returns Which of the two it was.
+ */
+export async function rejectSession(
+  session: Session | undefined,
+  error: unknown,
+): Promise<"ended" | "expired"> {
+  if (passEndedBy(session, error)) {
+    await endPass(session);
+    return "ended";
+  }
+  await expireSession();
+  return "expired";
 }

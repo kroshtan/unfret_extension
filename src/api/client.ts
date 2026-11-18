@@ -21,6 +21,14 @@ export class ApiError extends Error {
     return this.status === 401;
   }
 
+  /**
+   * The server doesn't know this Unfret pass (any more): retired at Unfret's new free start (0.13.0), or replaced with
+   * its backup code. A wallet's sign-in that expired is a 401 too, but never this code.
+   */
+  get passEnded(): boolean {
+    return this.status === 401 && this.code === "INVALID_API_KEY";
+  }
+
   get needsCredits(): boolean {
     return this.status === 402 || this.code === "INSUFFICIENT_CREDITS";
   }
