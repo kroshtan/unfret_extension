@@ -143,12 +143,31 @@ export interface SameProduct {
   own_image?: string | null;
 }
 
+/**
+ * On a quick result (server ≥ the deep-check suggestion): whether a deep check of the same page is worth it, what it
+ * would add here and what it costs this caller, in the server's words.
+ */
+export interface DeepCheck {
+  suggested: boolean;
+  reason: string;
+  /** Looks fine: shown quietly. */
+  quiet?: boolean;
+  adds?: { key: string; area: string; label: string }[];
+  /** "A deep check also looks at …"; empty when not suggested. */
+  text?: string;
+  /** "Uses 1 of your 3 free deep checks.", "Deep checks come in packs, from $6 for 25.", … */
+  cost?: string | null;
+  action?: "run_deep" | "get_checks" | null;
+  action_label?: string | null;
+}
+
 /** The result card's fields of a verdict; all optional (cached and older results have none). */
 export interface ResultCard {
   checklist?: CheckItem[];
   checks_run?: number | null;
   next_step?: { type: string; text: string } | null;
   same_product?: SameProduct | null;
+  deep_check?: DeepCheck | null;
 }
 
 export type Band = "reliable" | "concerns" | "careful" | "junk_or_scam";
