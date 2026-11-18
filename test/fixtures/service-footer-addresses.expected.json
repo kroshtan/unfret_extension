@@ -18,6 +18,10 @@
  "json_ld": [],
  "script_srcs": [],
  "meta": {},
+ "markup_names": [
+  "locations"
+ ],
+ "external_refs": [],
  "hidden_text": [],
  "checkboxes": [],
  "timers": [],

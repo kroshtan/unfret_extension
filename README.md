@@ -78,6 +78,13 @@ toolbar click ─► popup ─► background ─► inject extract.js into the t
   addresses and addresses go into the facts (`src/extract/business.ts`, a port of the backend's `facts/business.py`).
   On classifieds platforms (Marktplaats, 2dehands, Vinted, Craigslist, Facebook Marketplace) the seller's name is
   never read, and only product IDs and payment methods are read as business facts there (also on eBay).
+- **The app traces in the markup travel as names, not HTML.** A shop's apps show in its markup rather than its text (a
+  review importer's widget class, a dropshipping app's data attribute, a product photo on the supplier's CDN), which
+  the backend's source checks read from raw HTML. The facts carry them as `markup_names` (class names, ids and
+  data-attribute names, never their values) and `external_refs` (the other sites the page refers to: a link's host
+  and path, anything else's host, never a query), outside the private areas above (`src/extract/markup.ts`, a port of
+  the backend's `facts/markup.py`). So a quick check of the test shop gives the same verdict from the extension as
+  from the link checker. Still only on a fetched page: what only inline scripts or attribute values name.
 - **Sign-in is Sign-In With Solana.** "Sign in" opens `https://unfret.net/connect`; after you sign a
   message in your wallet, that page posts the session to itself and the extension's content script (injected only
   there) relays it. The relay accepts it only from that window on the configured Unfret origin, and the

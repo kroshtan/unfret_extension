@@ -18,6 +18,20 @@
  "json_ld": [],
  "script_srcs": [],
  "meta": {},
+ "markup_names": [
+  "site-header",
+  "account-menu",
+  "cities",
+  "delivery-address",
+  "booking",
+  "contact-block",
+  "address",
+  "footer-address"
+ ],
+ "external_refs": [
+  "loodgietersnel.nl/loodgieter-almere",
+  "www.werkspot.nl/profiel/loodgieter-snel"
+ ],
  "hidden_text": [],
  "checkboxes": [],
  "timers": [],

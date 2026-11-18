@@ -36,6 +36,14 @@
  ],
  "script_srcs": [],
  "meta": {},
+ "markup_names": [
+  "data-test",
+  "data-role",
+  "buy-block",
+  "visually-hidden",
+  "carousel"
+ ],
+ "external_refs": [],
  "hidden_text": [],
  "checkboxes": [],
  "timers": [],

@@ -31,6 +31,25 @@
  "meta": {
   "og:image": "https://images.2dehands.com/api/v1/listing-twh-p/images/3a/3a9d.jpg"
  },
+ "markup_names": [
+  "data-testid",
+  "vip-ad-description",
+  "Listing",
+  "Breadcrumbs",
+  "Listing-price",
+  "Stats",
+  "Attributes",
+  "Attributes-item",
+  "BuyBlock",
+  "Description",
+  "Description-description",
+  "SellerInfo",
+  "SellerInfo-name",
+  "SellerInfo-rating",
+  "SellerInfo-badges",
+  "SellerInfo-location"
+ ],
+ "external_refs": [],
  "hidden_text": [],
  "checkboxes": [],
  "timers": [],

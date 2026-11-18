@@ -16,7 +16,8 @@ activeTab gives access to that one tab for that one click, so the extension need
 
 **scripting**: Used together with activeTab to run the page reader (`extract.js`) in the tab the user chose to check.
 It collects the product facts (title, brand, seller, price, ratings, review texts, shop policies), the contact details
-the shop publishes about itself, and the visible text, with account menus, forms and typed input, checkout and
+the shop publishes about itself, the names in the page's code that identify its apps (class names, ids and data
+attribute names, without their values) and the other sites it refers to, and the visible text, with account menus, forms and typed input, checkout and
 delivery areas and the user's own addresses removed. Nothing is injected anywhere else.
 
 **storage**: Stores the user's sign-in (an Unfret pass, or a wallet's session), their consent, their settings, and the

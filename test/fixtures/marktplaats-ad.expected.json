@@ -30,6 +30,13 @@
  "meta": {
   "og:image": "https://images.marktplaats.com/api/v1/listing-mp-p/images/ab/abc.jpg"
  },
+ "markup_names": [
+  "mp-Header-user",
+  "greeting",
+  "seller-info",
+  "contact-seller"
+ ],
+ "external_refs": [],
  "hidden_text": [],
  "checkboxes": [],
  "timers": [],

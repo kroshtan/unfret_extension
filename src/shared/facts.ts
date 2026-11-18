@@ -143,6 +143,10 @@ export interface PageFacts {
   json_ld: Record<string, unknown>[];
   script_srcs: string[];
   meta: Record<string, string>;
+  /** Class names, ids and data-attribute names (names only, never values or text); see `extract/markup.ts`. */
+  markup_names: string[];
+  /** Other sites the page refers to: host and path for a link, the host alone otherwise; never a query string. */
+  external_refs: string[];
   hidden_text: string[];
   checkboxes: Checkbox[];
   timers: string[];
@@ -194,6 +198,8 @@ export function emptyFacts(url = ""): PageFacts {
     json_ld: [],
     script_srcs: [],
     meta: {},
+    markup_names: [],
+    external_refs: [],
     hidden_text: [],
     checkboxes: [],
     timers: [],

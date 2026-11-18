@@ -37,6 +37,24 @@
  "meta": {
   "og:image": "https://i.ebayimg.com/images/g/abcAAOSw/s-l1600.jpg"
  },
+ "markup_names": [
+  "data-testid",
+  "gh-top",
+  "gh-ug",
+  "mainContent",
+  "breadcrumbs",
+  "x-item-title__mainTitle",
+  "x-price-primary",
+  "x-buybox",
+  "x-item-condition",
+  "ux-labels-values--shipping",
+  "ux-labels-values--itemLocation",
+  "ux-labels-values__labels",
+  "ux-labels-values__values",
+  "x-sellercard-atf",
+  "x-sellercard-atf__info__about-seller"
+ ],
+ "external_refs": [],
  "hidden_text": [],
  "checkboxes": [],
  "timers": [],

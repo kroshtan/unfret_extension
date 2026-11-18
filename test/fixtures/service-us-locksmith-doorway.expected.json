@@ -22,6 +22,14 @@
  "meta": {
   "og:image": "https://houston-locksmith-247.com/images/van.jpg"
  },
+ "markup_names": [
+  "phone",
+  "reviews-list",
+  "review"
+ ],
+ "external_refs": [
+  "schema.org"
+ ],
  "hidden_text": [],
  "checkboxes": [],
  "timers": [],

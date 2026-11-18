@@ -23,6 +23,15 @@
   "description": "Slotenmaker Utrecht nodig? Binnen 20 minuten bij u. Voorrijkosten €0.",
   "og:image": "https://slotenmaker-utrecht-spoed.nl/img/busje.jpg"
  },
+ "markup_names": [
+  "top",
+  "call",
+  "werkgebied",
+  "testimonials",
+  "testimonial",
+  "stars"
+ ],
+ "external_refs": [],
  "hidden_text": [],
  "checkboxes": [],
  "timers": [],

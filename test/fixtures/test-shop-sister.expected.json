@@ -1,0 +1,133 @@
+{
+ "platform": "generic",
+ "url": "https://unfret.net/test-shop/sister-shop",
+ "title": "VELUNOX Starry Sky Projector Lamp, Galaxy Night Light for Bedroom, Ocean Wave Ceiling Light, Gift for Kids",
+ "brand": "VELUNOX",
+ "seller": "",
+ "seller_rating": null,
+ "ships_from": "",
+ "price": 17.99,
+ "list_price": null,
+ "currency": "USD",
+ "date_first_available": null,
+ "rating": 4.8,
+ "rating_count": 1306,
+ "rating_histogram": {},
+ "reviews": [],
+ "variations": [],
+ "json_ld": [
+  {
+   "@type": "Product",
+   "name": "VELUNOX Starry Sky Projector Lamp, Galaxy Night Light for Bedroom, Ocean Wave Ceiling Light, Gift for Kids",
+   "brand": {
+    "@type": "Brand",
+    "name": "VELUNOX"
+   },
+   "sku": "VNX-SKY-7",
+   "offers": {
+    "@type": "Offer",
+    "price": "17.99",
+    "priceCurrency": "USD",
+    "availability": "https://schema.org/InStock"
+   },
+   "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "4.8",
+    "reviewCount": "1306"
+   }
+  }
+ ],
+ "script_srcs": [
+  "https://unfret.net/static/v-0.12.0/test-shop/shop.js"
+ ],
+ "meta": {
+  "viewport": "width=device-width, initial-scale=1",
+  "robots": "noindex, nofollow",
+  "color-scheme": "light",
+  "description": "VELUNOX Starry Sky Projector Lamp. Flash deal, today only.",
+  "og:type": "product",
+  "og:title": "VELUNOX Starry Sky Projector Lamp",
+  "og:image": "/static/v-0.12.0/test-shop/sister-hero.jpg",
+  "og:price:amount": "17.99",
+  "og:price:currency": "USD"
+ },
+ "markup_names": [
+  "gallery-main",
+  "shipping",
+  "reviews",
+  "ts-banner",
+  "shop-header",
+  "announcement",
+  "masthead",
+  "logo",
+  "logo-mark",
+  "shop-nav",
+  "cart-link",
+  "product",
+  "gallery",
+  "buybox",
+  "vendor",
+  "stars",
+  "price",
+  "price-now",
+  "price-was",
+  "price-save",
+  "hurry-stock",
+  "buy",
+  "badges",
+  "details",
+  "small-print",
+  "reviews-summary",
+  "review",
+  "review-head",
+  "review-stars",
+  "shop-footer"
+ ],
+ "external_refs": [],
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [
+  "<p class=\"hurry-stock\"> Selling fast: only 7 left."
+ ],
+ "fee_mentions": [],
+ "vat_ids": [],
+ "legal_mentions": [],
+ "copyright_lines": [
+  "© 2026 Quenvale Deals"
+ ],
+ "policy_links": {
+  "shipping": "https://unfret.net/test-shop/sister-shop#shipping"
+ },
+ "image_urls": [
+  "/static/v-0.12.0/test-shop/sister-hero.jpg",
+  "https://unfret.net/static/v-0.12.0/test-shop/sister-hero.jpg"
+ ],
+ "product_ids": {},
+ "payment_methods": [],
+ "phones": [],
+ "emails": [],
+ "addresses": [],
+ "founded_claims": [],
+ "business_name": "",
+ "legal_form": "",
+ "kvk_numbers": [],
+ "licences": [],
+ "certifications": [],
+ "cities_served": [],
+ "internal_links": [
+  {
+   "text": "✧ Quenvale Deals",
+   "url": "https://unfret.net/test-shop/sister-shop"
+  },
+  {
+   "text": "Shipping",
+   "url": "https://unfret.net/test-shop/sister-shop#shipping"
+  }
+ ],
+ "pricing_terms": [],
+ "promises": [],
+ "testimonials": [],
+ "organization_ld": [],
+ "seller_profile": null,
+ "listing": null
+}

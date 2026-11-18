@@ -36,5 +36,7 @@
   "service-homeadvisor-profile": "https://www.homeadvisor.com/rated.FrontRangeHeating.12345678.html",
   "service-nl-locksmith-callcentre": "https://zwolle-slotenmakers.nl/inbraakschade/",
   "p2p-marktplaats-config": "https://www.marktplaats.nl/v/fietsen-en-brommers/fietsen-dames-damesfietsen/m2400000001-gazelle-damesfiets-opknapper",
-  "service-houzz-frame": "https://www.houzz.com/professionals/handyman/24-7-lightning-locksmith-chicago-pfvwus-pf~1707147861"
+  "service-houzz-frame": "https://www.houzz.com/professionals/handyman/24-7-lightning-locksmith-chicago-pfvwus-pf~1707147861",
+  "test-shop": "https://unfret.net/test-shop",
+  "test-shop-sister": "https://unfret.net/test-shop/sister-shop"
 }

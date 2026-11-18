@@ -33,6 +33,14 @@
  "json_ld": [],
  "script_srcs": [],
  "meta": {},
+ "markup_names": [
+  "user-menu",
+  "pro-badges",
+  "rating-summary",
+  "overview",
+  "about"
+ ],
+ "external_refs": [],
  "hidden_text": [],
  "checkboxes": [],
  "timers": [],

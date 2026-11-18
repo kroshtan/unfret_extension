@@ -35,6 +35,13 @@
  "meta": {
   "og:image": "https://images1.vinted.net/t/03_01a2b/f800/1730000000.jpeg"
  },
+ "markup_names": [
+  "data-testid",
+  "breadcrumbs",
+  "details-list",
+  "details-list__item"
+ ],
+ "external_refs": [],
  "hidden_text": [],
  "checkboxes": [],
  "timers": [],

@@ -27,6 +27,11 @@
  ],
  "script_srcs": [],
  "meta": {},
+ "markup_names": [
+  "data-test",
+  "data-role"
+ ],
+ "external_refs": [],
  "hidden_text": [],
  "checkboxes": [],
  "timers": [],
