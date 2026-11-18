@@ -67,10 +67,10 @@ The listing (texts, images, categories, privacy policy) isn't touched. Review th
 
 **Add-on URL**: `unfret`
 
-**Summary** (≤ 250 characters; 236):
+**Summary** (≤ 250 characters; 246):
 
 ```
-Is this shop legit? Check a product page before you buy: fake discounts, dropshipping, made-up brands and pushy tricks, in plain words. 5 free checks on install, then free quick checks. Nothing is read until you click "Check this page".
+Is this shop legit? Catch fake sellers on Amazon and other marketplaces, fake shops, fake discounts and dropshipping before you buy, in plain words. 5 free deep checks on install, then unlimited free quick checks. Nothing is read until you click.
 ```
 
 **Description**: the Chrome description in [listing.en.md](listing.en.md), unchanged (AMO accepts plain text with
@@ -78,7 +78,7 @@ blank lines between paragraphs and "•" bullets).
 
 **Categories** (Firefox, up to two): **Shopping**, **Privacy & Security**.
 
-**Tags**: shopping, scam, dropshipping, reviews, fake discounts.
+**Tags**: shopping, scam, fake shop, dropshipping, reviews, fake discounts.
 
 **This add-on requires payment, non-free services or software**: **tick it** (after the 5 free checks on install,
 deep checks are prepaid packs; quick checks stay free).
@@ -90,7 +90,8 @@ deep checks are prepaid packs; quick checks stay free).
 **Privacy policy**: AMO wants the text itself, not a link. Paste the plain text of https://unfret.net/privacy (open
 the page, select all, copy), keeping the link at the top: "The current version is at https://unfret.net/privacy."
 
-**Images**: icon `icons/icon-128.png`; screenshots `store/screenshots/*.png` (1280×800 is fine on AMO).
+**Images**: icon `icons/icon-128.png`; the five screenshots `store/screenshots/*.png`, in the order of
+[listing.en.md](listing.en.md) (1280×800 is fine on AMO), each with its caption's title as the AMO caption.
 
 ## Notes to reviewer (paste, with the test key filled in)
 

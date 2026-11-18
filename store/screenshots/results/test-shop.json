@@ -1,0 +1,151 @@
+{
+  "url": "https://unfret.net/test-shop",
+  "checked": "2026-11-18",
+  "result": {
+    "assessment": {
+      "confidence": 0.9891,
+      "degraded": false,
+      "flags": [
+        {
+          "evidence": "Price 39.99 against a 'was' price of 189.99 (79% off).",
+          "kind": "signal",
+          "label": "Size of the discount",
+          "severity": "high",
+          "type": "listing.discount_pct",
+          "weight": 2.239
+        },
+        {
+          "evidence": "helps you fall asleep 87% faster",
+          "kind": "signal",
+          "label": "Hard-to-believe claims",
+          "severity": "medium",
+          "type": "content.implausible_claims",
+          "weight": 0.983
+        },
+        {
+          "evidence": "",
+          "kind": "signal",
+          "label": "Title full of search terms",
+          "severity": "medium",
+          "type": "content.title_word_soup",
+          "weight": 0.612
+        },
+        {
+          "evidence": "",
+          "kind": "signal",
+          "label": "Pushy sales talk",
+          "severity": "medium",
+          "type": "content.scam_copy",
+          "weight": 0.412
+        },
+        {
+          "evidence": "",
+          "kind": "signal",
+          "label": "Little shop information",
+          "severity": "low",
+          "type": "content.missing_trust_info",
+          "weight": 0.243
+        },
+        {
+          "evidence": "The page text addresses an AI or bot.",
+          "kind": "signal",
+          "label": "Text aimed at AI",
+          "severity": "low",
+          "type": "content.addresses_ai",
+          "weight": 0.1
+        }
+      ],
+      "model_version": "v1-20261109-222323-C",
+      "risk_score": 1
+    },
+    "charged": true,
+    "explanation": "Shop with caution: fake countdowns, pre-ticked extras, and unbelievable discounts raise serious concerns.",
+    "free_check": true,
+    "page_type": "storefront",
+    "score": 0,
+    "tier": "deep",
+    "verdict": {
+      "band": "junk_or_scam",
+      "checklist": [
+        {
+          "key": "who",
+          "label": "Who's behind the shop",
+          "note": "Brand-new web shop",
+          "status": "concern"
+        },
+        {
+          "key": "product",
+          "label": "The product and the brand",
+          "note": "Title full of search terms",
+          "status": "concern"
+        },
+        {
+          "key": "reviews",
+          "label": "Reviews",
+          "note": "Unnatural rating pattern",
+          "status": "concern"
+        },
+        {
+          "key": "prices",
+          "label": "Prices and discounts",
+          "note": "Paid extra already ticked",
+          "status": "concern"
+        },
+        {
+          "key": "tricks",
+          "label": "Hidden tricks",
+          "note": "Fake countdown",
+          "status": "concern"
+        }
+      ],
+      "checks_run": 16,
+      "headline": "Shop with caution: fake countdowns, pre-ticked extras, and unbelievable discounts raise serious concerns.",
+      "label": "Serious concerns",
+      "language": "en",
+      "next_step": {
+        "text": "Better to buy this from a shop you know.",
+        "type": "junk_or_scam"
+      },
+      "positives": [],
+      "reasons": [
+        {
+          "detail": "This countdown restarts when you reload the page: the deadline isn't real.",
+          "severity": "high",
+          "source": "The page",
+          "thumbnails": [],
+          "title": "Fake countdown",
+          "type": "timer_resets"
+        },
+        {
+          "detail": "A paid extra is ticked for you in advance (“Add Worry-Free Delivery Protection (+$4.99)”). That's not allowed in the EU: untick it if you don't want it.",
+          "severity": "high",
+          "source": "The page",
+          "thumbnails": [],
+          "title": "Paid extra already ticked",
+          "type": "preticked_addon"
+        },
+        {
+          "detail": "79% off: discounts this deep are almost always measured against a price nobody paid.",
+          "severity": "high",
+          "source": "The page",
+          "thumbnails": [],
+          "title": "Unbelievable discount",
+          "type": "implausible_discount"
+        }
+      ],
+      "same_product": {
+        "currency": "USD",
+        "detail": "The main photo is the same photo as on unfret.net/test-shop/sister-shop. Unfret saw it there for $17.99 on 18 November 2026.",
+        "domain": "unfret.net/test-shop/sister-shop",
+        "image": "https://unfret.net/v1/images/test-shop/sister-hero.jpg",
+        "others": 0,
+        "own_image": "https://unfret.net/v1/images/test-shop/projector-hero.jpg",
+        "price": 17.99,
+        "price_seen_on": "2026-11-18",
+        "price_text": "$17.99",
+        "title": "Looks like the same product, sold elsewhere for $17.99",
+        "where": "unfret.net/test-shop/sister-shop"
+      }
+    }
+  }
+}

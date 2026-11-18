@@ -3,3 +3,5 @@ node_modules/
 package-lock.json
 test/fixtures/
 src/shared/pagefacts.schema.json
+# Results as scripts/screenshots-capture.mjs writes them
+store/screenshots/results/
