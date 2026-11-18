@@ -255,6 +255,10 @@ describe("sites", () => {
     expect(isAnalysable("https://shop.example/p/1", DEFAULT_API_BASE)).toBe(true);
     expect(isAnalysable("chrome://extensions", DEFAULT_API_BASE)).toBe(false);
     expect(isAnalysable("https://chromewebstore.google.com/detail/x", DEFAULT_API_BASE)).toBe(false);
+    expect(isAnalysable("https://microsoftedge.microsoft.com/addons/detail/x/y", DEFAULT_API_BASE)).toBe(
+      false,
+    );
+    expect(isAnalysable("edge://extensions", DEFAULT_API_BASE)).toBe(false);
     expect(isAnalysable("https://unfret.net/checkout", DEFAULT_API_BASE)).toBe(false);
     expect(isAnalysable(undefined, DEFAULT_API_BASE)).toBe(false);
   });

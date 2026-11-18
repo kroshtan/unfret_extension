@@ -1,7 +1,8 @@
-// Submit the store packages in dist/store (`make store-package` first) to the Chrome Web Store and addons.mozilla.org:
-//   node scripts/store-publish.mjs [--chrome] [--firefox] [--dry-run] [--gate-only]
-// With neither --chrome nor --firefox it does both. The "Release to the extension stores" workflow runs it; the steps
-// it replaces are in store/SUBMIT.md and store/AMO.md.
+// Submit the store packages in dist/store (`make store-package` first) to the Chrome Web Store, addons.mozilla.org and
+// Microsoft Edge Add-ons:
+//   node scripts/store-publish.mjs [--chrome] [--firefox] [--edge] [--dry-run] [--gate-only]
+// With none of --chrome, --firefox and --edge it does all three. The "Release to the extension stores" workflow runs
+// it; the steps it replaces are in store/SUBMIT.md, store/AMO.md and store/EDGE.md.
 //
 // First the order guard: production's backend (https://unfret.net/v1/health) must run at least package.json's
 // `minBackendVersion`, the backend release that accepts this extension's page data (an older one refuses new fields
@@ -16,6 +17,11 @@
 //     give it the notes to the reviewer (AMO_APPROVAL_NOTES, if set) and, only for a package whose manifest has no
 //     `gecko_android`, the compatibility Firefox desktop only. A version AMO already has is not uploaded again; a
 //     re-run only adds what that version is missing. Needs AMO_JWT_ISSUER and AMO_JWT_SECRET.
+//   Microsoft Edge Add-ons (API v1.1, API key): upload the same unfret-chrome-<version>.zip to product
+//     EDGE_PRODUCT_ID's draft, wait for the upload operation, then submit the draft for certification with notes for
+//     the testers (this version's CHANGELOG headlines, then EDGE_CERTIFICATION_NOTES, if set) and wait for that
+//     operation. Needs EDGE_PRODUCT_ID, EDGE_CLIENT_ID and EDGE_API_KEY. The API only updates a product that exists:
+//     the first version goes through Partner Center by hand (store/EDGE.md).
 // A store whose secrets are missing is skipped with a notice; an API error fails the run. Secrets are never printed:
 // tokens are masked in CI (`::add-mask::`) and the dry run shows <NAME> placeholders.
 //
@@ -37,6 +43,8 @@ export const CWS_TOKEN_URL = "https://oauth2.googleapis.com/token";
 export const CWS_API = "https://chromewebstore.googleapis.com";
 export const AMO_API = "https://addons.mozilla.org/api/v5/addons/";
 export const AMO_SLUG = "unfret";
+export const EDGE_API = "https://api.addons.microsoftedge.microsoft.com";
+export const REPO_URL = "https://git.kroshtan.com/kroshtan/unfret_extension";
 const USER_AGENT = "unfret-store-publish";
 
 // ── Versions and the order guard ───────────────────────────────────────────────────────────────────────────────
@@ -112,9 +120,10 @@ function describeBody(body) {
 }
 
 /**
- * A small client: `send(request)` performs it (or, in a dry run, prints it and returns `request.dry`). A request is
- * `{ method, url, headers, body, shown, dry, accept }`: `shown` replaces the body in what is printed (to hide
- * secrets), `accept` lists extra statuses that are not errors (e.g. 404 for "doesn't exist yet").
+ * A small client: `send(request)` performs it (or, in a dry run, prints it and returns `request.dry`) and answers
+ * `{ status, data, headers }` (header names in lower case). A request is `{ method, url, headers, body, shown, dry,
+ * accept }`: `shown` replaces the body in what is printed (to hide secrets), `accept` lists extra statuses that are
+ * not errors (e.g. 404 for "doesn't exist yet").
  */
 export function httpClient({ fetch: fetchFn = fetch, dryRun = false, log = console.log } = {}) {
   const sent = [];
@@ -126,7 +135,7 @@ export function httpClient({ fetch: fetchFn = fetch, dryRun = false, log = conso
     sent.push(line);
     if (dryRun) {
       log(`[dry run] ${line}`);
-      return { status: dry.status ?? 200, data: dry.data ?? {} };
+      return { status: dry.status ?? 200, data: dry.data ?? {}, headers: dry.headers ?? {} };
     }
     log(`→ ${method} ${url}`);
     const response = await fetchFn(url, {
@@ -144,7 +153,7 @@ export function httpClient({ fetch: fetchFn = fetch, dryRun = false, log = conso
     if (!response.ok && !accept.includes(response.status)) {
       throw new StoreApiError(`${method} ${url}: HTTP ${response.status}: ${text.slice(0, 4000)}`);
     }
-    return { status: response.status, data };
+    return { status: response.status, data, headers: Object.fromEntries(response.headers) };
   }
   return { send, sent };
 }
@@ -532,6 +541,203 @@ export async function publishFirefox({
   return `addons.mozilla.org: ${done.join("; ")}`;
 }
 
+// ── Microsoft Edge Add-ons ───────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * The Edge Add-ons API v1.1 URLs for one product (learn.microsoft.com, "Use the REST API to update an extension"):
+ * the draft's package upload and its operation, the submission of the draft and its operation.
+ */
+export function edgeUrls(productId, api = EDGE_API) {
+  const product = `${api}/v1/products/${encodeURIComponent(productId)}`;
+  return {
+    upload: `${product}/submissions/draft/package`,
+    uploadStatus: (id) => `${product}/submissions/draft/package/operations/${encodeURIComponent(id)}`,
+    publish: `${product}/submissions`,
+    publishStatus: (id) => `${product}/submissions/operations/${encodeURIComponent(id)}`,
+  };
+}
+
+/** The API v1.1 headers: the API key and the client ID, both from Partner Center's Publish API page. */
+export function edgeHeaders({ clientId, apiKey }) {
+  return { Authorization: `ApiKey ${apiKey}`, "X-ClientID": clientId };
+}
+
+/** The operation ID from a 202's Location header: the ID itself, or a path or URL that ends in it; null if none. */
+export function edgeOperationId(location) {
+  const path = String(location ?? "")
+    .trim()
+    .split(/[?#]/u)[0]
+    ?.replace(/\/+$/u, "");
+  return path?.split("/").pop() || null;
+}
+
+/** This version's section of CHANGELOG.md, as the headlines of its entries (the bold start of each bullet). */
+export function changelogHeadlines(changelog, version) {
+  const lines = String(changelog).split("\n");
+  const start = lines.findIndex(
+    (line) => line.startsWith(`## ${version} `) || line.trim() === `## ${version}`,
+  );
+  if (start < 0) return [];
+  const headlines = [];
+  for (const line of lines.slice(start + 1)) {
+    if (line.startsWith("## ")) break;
+    const match = /^- \*\*(.+?)\*\*/u.exec(line);
+    if (match?.[1]) headlines.push(match[1].replace(/[.:]$/u, ""));
+  }
+  return headlines;
+}
+
+/** Notes are kept within this many characters; the API documents no limit, Partner Center's text box is small. */
+export const EDGE_NOTES_MAX = 2000;
+
+/**
+ * The notes for certification sent with a submission: what changed in this version (its CHANGELOG headlines and a
+ * link to the whole changelog), then the testers' instructions (EDGE_CERTIFICATION_NOTES, with a test key) if set.
+ * Headlines are dropped from the end to stay within `max`; the instructions are never cut.
+ */
+export function edgeNotes({ version, changelog = "", instructions = "", max = EDGE_NOTES_MAX }) {
+  const headlines = changelogHeadlines(changelog, version);
+  const link = `Full changelog: ${REPO_URL}/src/tag/v${version}/CHANGELOG.md`;
+  const tail = [link, ...(instructions.trim() ? ["", instructions.trim()] : [])];
+  const build = (shown, more) => {
+    const changes = shown.length > 0 ? ["What changed:", ...shown.map((h) => `- ${h}`)] : [];
+    if (more)
+      changes.push(shown.length > 0 ? "- and more (see the changelog)" : "What changed: see the changelog.");
+    return [`Unfret ${version}.`, ...changes, ...tail].join("\n");
+  };
+  let shown = headlines;
+  let notes = build(shown, false);
+  while (notes.length > max && shown.length > 0) {
+    shown = shown.slice(0, -1);
+    notes = build(shown, true);
+  }
+  return notes;
+}
+
+/** What to do about an operation that failed, by its errorCode (the API reference's list). */
+const EDGE_HINTS = {
+  CreateNotAllowed:
+    "the product doesn't exist yet: submit the first version by hand in Partner Center (store/EDGE.md)",
+  InProgressSubmission:
+    "a submission is already in certification (perhaps this version, from an earlier run): wait for it to finish " +
+    "or cancel it in Partner Center, then run again with stores=edge",
+  UnpublishInProgress: "the extension is being unpublished in Partner Center",
+  ModuleStateUnPublishable: "Partner Center has invalid sections in the draft: fix them there",
+  SubmissionValidationError: "the submission failed validation: fix the errors in Partner Center",
+};
+
+/** One line for a finished operation: its status, error code, message and errors, and a hint when there is one. */
+function edgeOutcome(operation) {
+  const errors = (Array.isArray(operation.errors) ? operation.errors : [])
+    .map((e) => (typeof e === "string" ? e : (e?.message ?? JSON.stringify(e))))
+    .filter(Boolean);
+  const hint = EDGE_HINTS[operation.errorCode];
+  return (
+    `${operation.status ?? "no status"}` +
+    `${operation.errorCode ? ` (${operation.errorCode})` : ""}` +
+    `${operation.message ? `: ${operation.message}` : ""}` +
+    `${errors.length > 0 ? `\n  ${errors.join("\n  ")}` : ""}` +
+    `${hint ? `\n  ${hint}` : ""}`
+  );
+}
+
+/**
+ * Upload `zipPath` to the product's draft and submit the draft for certification with `notes`. Each step is an
+ * operation the API answers with 202 and a Location header; its status is asked every 5 seconds until it isn't
+ * InProgress (at most `tries` times). Returns what happened; throws with the store's message when a step fails.
+ */
+export async function publishEdge({
+  http,
+  credentials,
+  zipPath,
+  version,
+  notes,
+  wait = pause,
+  tries = 60,
+  dryRun = false,
+}) {
+  const { productId, clientId, apiKey } = credentials;
+  if (!dryRun) mask(apiKey);
+  const auth = edgeHeaders({ clientId, apiKey });
+  const urls = edgeUrls(productId);
+
+  /** A request that should start an operation; its ID. */
+  const start = async (what, request, dryId) => {
+    let response;
+    try {
+      response = await http.send({ ...request, dry: { status: 202, headers: { location: dryId } } });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const hint = / HTTP 401:/u.test(message)
+        ? "\n  EDGE_API_KEY or EDGE_CLIENT_ID is wrong or the key expired: Partner Center → Microsoft Edge → " +
+          "Publish API makes a new key (store/EDGE.md)"
+        : / HTTP 404:/u.test(message)
+          ? "\n  EDGE_PRODUCT_ID is not a product of this account (Partner Center → the extension's overview)"
+          : "";
+      throw new StoreApiError(`Microsoft Edge Add-ons: ${what}: ${message}${hint}`);
+    }
+    const id = edgeOperationId(response.headers.location);
+    if (!id) {
+      throw new StoreApiError(
+        `Microsoft Edge Add-ons: ${what} answered HTTP ${response.status} without an operation in Location`,
+      );
+    }
+    return id;
+  };
+  /** Ask an operation's status until it is done; the last answer. */
+  const follow = async (what, url) => {
+    for (let i = 0; i < tries; i++) {
+      if (i > 0) await wait(5000);
+      const { data } = await http.send({ url, headers: auth, dry: { data: { status: "Succeeded" } } });
+      if (data.status !== "InProgress") return data;
+    }
+    throw new StoreApiError(
+      `Microsoft Edge Add-ons: ${what} is still InProgress after ${(tries - 1) * 5} seconds: see Partner Center`,
+    );
+  };
+
+  const uploadId = await start(
+    "the package upload",
+    {
+      method: "POST",
+      url: urls.upload,
+      headers: { ...auth, "Content-Type": "application/zip" },
+      body: new Blob([readFileSync(zipPath)], { type: "application/zip" }),
+      file: basename(zipPath),
+    },
+    "<upload operation>",
+  );
+  const uploaded = await follow("the package upload", urls.uploadStatus(uploadId));
+  if (uploaded.status !== "Succeeded") {
+    throw new StoreApiError(`Microsoft Edge Add-ons: the package upload ended as ${edgeOutcome(uploaded)}`);
+  }
+
+  // The reference calls the body "notes for certification"; the guide sends them as JSON with a `notes` field.
+  // They may hold the testers' test key: only their length is printed.
+  const publishId = await start(
+    "the submission",
+    {
+      method: "POST",
+      url: urls.publish,
+      headers: { ...auth, "Content-Type": "application/json" },
+      body: JSON.stringify({ notes }),
+      shown: ` {"notes": <${notes.length} characters: the changelog headlines and EDGE_CERTIFICATION_NOTES>}`,
+    },
+    "<submission operation>",
+  );
+  const published = await follow("the submission", urls.publishStatus(publishId));
+  if (published.status === "Succeeded") {
+    return (
+      `Microsoft Edge Add-ons: ${version} uploaded and submitted for certification` +
+      `${published.message ? ` (${published.message})` : ""}; it is published when it passes`
+    );
+  }
+  if (published.errorCode === "NoModulesUpdated") {
+    return `Microsoft Edge Add-ons: the store already has this package (${version}); nothing new to submit`;
+  }
+  throw new StoreApiError(`Microsoft Edge Add-ons: the submission ended as ${edgeOutcome(published)}`);
+}
+
 // ── The command line ─────────────────────────────────────────────────────────────────────────────────────────────
 
 /** Which secrets of `names` are missing from `env`. */
@@ -542,8 +748,9 @@ export function missing(env, names) {
 /** Run everything the arguments ask for; returns the process exit code. */
 export async function main(argv = process.argv.slice(2), env = process.env, fetchFn = fetch) {
   const dryRun = argv.includes("--dry-run");
-  const only = ["chrome", "firefox"].filter((store) => argv.includes(`--${store}`));
-  const stores = only.length > 0 ? only : ["chrome", "firefox"];
+  const all = ["chrome", "firefox", "edge"];
+  const only = all.filter((store) => argv.includes(`--${store}`));
+  const stores = only.length > 0 ? only : all;
   const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
   const { version, minBackendVersion } = pkg;
   if (!minBackendVersion) throw new Error("package.json has no minBackendVersion");
@@ -571,7 +778,8 @@ export async function main(argv = process.argv.slice(2), env = process.env, fetc
     firefox: join(dir, `unfret-firefox-${version}.zip`),
     source: join(dir, `unfret-source-${version}.zip`),
   };
-  const needed = { chrome: [files.chrome], firefox: [files.firefox, files.source] };
+  // Edge Add-ons takes the Chrome package as it is (Chromium, Manifest V3, no `key` or `update_url`).
+  const needed = { chrome: [files.chrome], firefox: [files.firefox, files.source], edge: [files.chrome] };
   for (const store of stores) {
     for (const file of needed[store]) {
       if (!existsSync(file) || !statSync(file).isFile()) {
@@ -586,7 +794,9 @@ export async function main(argv = process.argv.slice(2), env = process.env, fetc
   const secrets = {
     chrome: [...(chromeOauth ? oauth : ["CWS_SERVICE_ACCOUNT_KEY"]), "CWS_PUBLISHER_ID"],
     firefox: ["AMO_JWT_ISSUER", "AMO_JWT_SECRET"],
+    edge: ["EDGE_PRODUCT_ID", "EDGE_CLIENT_ID", "EDGE_API_KEY"],
   };
+  const docs = { chrome: "store/SUBMIT.md", firefox: "store/SUBMIT.md", edge: "store/EDGE.md" };
   const http = httpClient({ fetch: fetchFn, dryRun });
   const results = [];
   let failed = false;
@@ -594,7 +804,7 @@ export async function main(argv = process.argv.slice(2), env = process.env, fetc
     const absent = missing(env, secrets[store]);
     if (absent.length > 0 && !dryRun) {
       console.log(
-        `::notice::${store}: skipped, the secret(s) ${absent.join(", ")} are not set (store/SUBMIT.md)`,
+        `::notice::${store}: skipped, the secret(s) ${absent.join(", ")} are not set (${docs[store]})`,
       );
       results.push(`${store}: skipped (no secrets)`);
       continue;
@@ -625,6 +835,24 @@ export async function main(argv = process.argv.slice(2), env = process.env, fetc
               clientSecret: value("CWS_CLIENT_SECRET"),
               refreshToken: value("CWS_REFRESH_TOKEN"),
               publisherId: value("CWS_PUBLISHER_ID"),
+            },
+          }),
+        );
+      } else if (store === "edge") {
+        const changelog = existsSync(join(root, "CHANGELOG.md"))
+          ? readFileSync(join(root, "CHANGELOG.md"), "utf8")
+          : "";
+        results.push(
+          await publishEdge({
+            http,
+            dryRun,
+            version,
+            zipPath: files.chrome,
+            notes: edgeNotes({ version, changelog, instructions: env.EDGE_CERTIFICATION_NOTES ?? "" }),
+            credentials: {
+              productId: value("EDGE_PRODUCT_ID"),
+              clientId: value("EDGE_CLIENT_ID"),
+              apiKey: value("EDGE_API_KEY"),
             },
           }),
         );

@@ -10,10 +10,13 @@ name: Release to the extension stores
 # `key` or `update_url`) and attaches them with their checksums to the Forgejo release v<version>: the Chrome zip,
 # the Firefox zip and the source zip addons.mozilla.org asks for. Then it submits them to the stores picked in
 # `stores` (scripts/store-publish.mjs): the Chrome zip to the Chrome Web Store item for review, the Firefox zip with
-# its source as a new listed version on addons.mozilla.org. Each store is its own step: one failing doesn't stop the
-# other, a store whose secrets aren't set is skipped with a notice, and a version a store already has is not uploaded
-# again, so a run can be repeated (on addons.mozilla.org a repeat finishes a version an earlier run created: the
-# reviewer notes it is missing are added; store/AMO.md).
+# its source as a new listed version on addons.mozilla.org, and the same Chrome zip to the Microsoft Edge Add-ons
+# product for certification. Each store is its own step: one failing doesn't stop the others, a store whose secrets
+# aren't set is skipped with a notice (the step passes), and a version the Chrome Web Store or addons.mozilla.org
+# already has is not uploaded again, so a run can be repeated (on addons.mozilla.org a repeat finishes a version an
+# earlier run created: the reviewer notes it is missing are added; store/AMO.md). Edge Add-ons can't be asked which
+# version it has: a repeat uploads again, and the store answers "nothing new" (passes) or "already in certification"
+# (fails, with what to do; store/EDGE.md).
 #
 # Order guard: nothing goes to a store unless production's backend (https://unfret.net/v1/health) runs at least
 # package.json's `minBackendVersion`: newer extensions send page data older backends refuse. Deploy the backend first.
@@ -25,7 +28,9 @@ name: Release to the extension stores
 # CWS_CLIENT_SECRET, CWS_REFRESH_TOKEN and CWS_PUBLISHER_ID for the Chrome Web Store (or, instead of the first three,
 # CWS_SERVICE_ACCOUNT_KEY, a service account's JSON key); AMO_JWT_ISSUER and
 # AMO_JWT_SECRET for addons.mozilla.org, and optionally AMO_APPROVAL_NOTES (the notes to the reviewer, with the test
-# key). They reach only the two submit steps, on the deploy runner.
+# key); EDGE_PRODUCT_ID, EDGE_CLIENT_ID and EDGE_API_KEY for Microsoft Edge Add-ons (store/EDGE.md), and optionally
+# EDGE_CERTIFICATION_NOTES (the testers' instructions, with the test key). They reach only the submit steps, on the
+# deploy runner.
 on:
   workflow_dispatch:
     inputs:
@@ -35,11 +40,11 @@ on:
         default: main
         type: string
       stores:
-        description: "Submit to: both, chrome, firefox, or none (only build and attach)"
+        description: "Submit to: all, chrome, firefox, edge, or none (only build and attach)"
         required: true
-        default: both
+        default: all
         type: choice
-        options: [both, chrome, firefox, none]
+        options: [all, chrome, firefox, edge, none]
       dry_run:
         description: "Dry run: build, check and show the store requests; attach and submit nothing"
         required: true
@@ -116,12 +121,23 @@ jobs:
           fi
           chrome=false
           firefox=false
-          [[ "$STORES" == both || "$STORES" == chrome ]] && chrome=true
-          [[ "$STORES" == both || "$STORES" == firefox ]] && firefox=true
+          edge=false
+          [[ "$STORES" == all || "$STORES" == chrome ]] && chrome=true
+          [[ "$STORES" == all || "$STORES" == firefox ]] && firefox=true
+          [[ "$STORES" == all || "$STORES" == edge ]] && edge=true
           if [[ "$STORES" != none && ! -f scripts/store-publish.mjs ]]; then
             echo "::error::$tag predates automated store submission: run with stores=none and upload by hand" \
               "(store/SUBMIT.md, store/AMO.md)"
             exit 1
+          fi
+          # An older store-publish.mjs doesn't know --edge and would submit to every store it knows instead.
+          if [[ "$edge" == true ]] && ! grep -q EDGE_PRODUCT_ID scripts/store-publish.mjs; then
+            if [[ "$STORES" == edge ]]; then
+              echo "::error::$tag predates Edge Add-ons submission: upload its Chrome zip in Partner Center (store/EDGE.md)"
+              exit 1
+            fi
+            echo "::warning::$tag predates Edge Add-ons submission: Edge is left out"
+            edge=false
           fi
           {
             echo "sha=$sha"
@@ -130,6 +146,7 @@ jobs:
             echo "dry_run=$dry"
             echo "chrome=$chrome"
             echo "firefox=$firefox"
+            echo "edge=$edge"
           } >> "$FORGEJO_OUTPUT"
           echo "Packaging $tag ($sha) for the extension stores (stores: $STORES, dry run: $dry)"
       # The order guard, before anything is tagged: the same check runs again right before each submission.
@@ -176,7 +193,8 @@ jobs:
               target_commitish: process.env.SHA,
               name: `Unfret ${process.env.VERSION}`,
               body: `The store packages of Unfret ${process.env.VERSION}: unfret-chrome-${process.env.VERSION}.zip ` +
-                `for the Chrome Web Store (store/SUBMIT.md), unfret-firefox-${process.env.VERSION}.zip and ` +
+                "for the Chrome Web Store and Microsoft Edge Add-ons (store/SUBMIT.md, store/EDGE.md), " +
+                `unfret-firefox-${process.env.VERSION}.zip and ` +
                 `unfret-source-${process.env.VERSION}.zip for addons.mozilla.org (store/AMO.md). SHA256SUMS ` +
                 "lists their checksums; `npm ci && npm run build` rebuilds them byte for byte from this tag.",
             })')"
@@ -226,3 +244,14 @@ jobs:
           AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
           AMO_APPROVAL_NOTES: ${{ secrets.AMO_APPROVAL_NOTES }}
         run: node scripts/store-publish.mjs --firefox $DRY
+      - name: Submit to Microsoft Edge Add-ons
+        if: >-
+          !cancelled() && steps.release.outputs.edge == 'true' && steps.package.outcome == 'success' &&
+          steps.attach.outcome != 'failure'
+        env:
+          DRY: ${{ steps.release.outputs.dry_run == 'true' && '--dry-run' || '' }}
+          EDGE_PRODUCT_ID: ${{ secrets.EDGE_PRODUCT_ID }}
+          EDGE_CLIENT_ID: ${{ secrets.EDGE_CLIENT_ID }}
+          EDGE_API_KEY: ${{ secrets.EDGE_API_KEY }}
+          EDGE_CERTIFICATION_NOTES: ${{ secrets.EDGE_CERTIFICATION_NOTES }}
+        run: node scripts/store-publish.mjs --edge $DRY

@@ -31,7 +31,7 @@ build-dev:  ## Unminified builds with source maps
 parity:  ## Regenerate parity expectations with the backend's Python extractors (BACKEND=path)
 	$(BACKEND)/.venv/bin/python scripts/gen_parity.py
 
-icons:  ## Render the icons and store promo images from brand/*.svg (needs `npx playwright install chromium`)
+icons:  ## Render the icons, store promo images and Edge logo from brand/*.svg (needs `npx playwright install chromium`)
 	node scripts/icons.mjs
 
 screenshots: build  ## Render the Chrome Web Store screenshots into store/screenshots (needs `npx playwright install chromium`)

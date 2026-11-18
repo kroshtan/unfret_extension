@@ -29,8 +29,8 @@ is one workflow run:
 2. **Backend first.** If the release needs a newer backend, raise `minBackendVersion` in `package.json` to the backend
    release that accepts its page data, and deploy that backend to production. The workflow reads `version` from
    https://unfret.net/v1/health and refuses to submit anything to a store while production is older.
-3. Actions → **Release to the extension stores** → Run workflow: `ref` `main`, `stores` `both` (or `chrome`,
-   `firefox`), **Dry run** ticked. Read the log: the order guard's result and every request a real run would send
+3. Actions → **Release to the extension stores** → Run workflow: `ref` `main`, `stores` `all` (or `chrome`,
+   `firefox`, `edge`), **Dry run** ticked. Read the log: the order guard's result and every request a real run would send
    (secrets shown as `<NAME>`). Nothing is attached, tagged or uploaded.
 4. Run it again with **Dry run** unticked. It attaches the packages to the release `v<version>`, then:
    - **Chrome Web Store** (API v2): gets an access token from the OAuth refresh token (or for a service account),
@@ -39,8 +39,9 @@ is one workflow run:
      published when approved, with the item's current visibility. A version the store already has (pending review
      or published) is skipped, so a run can be repeated. To hold a version back after approval, use the dashboard.
    - **addons.mozilla.org**: see [AMO.md](AMO.md#releasing-a-new-version-automated).
-     A store whose secrets aren't set is skipped with a notice; an API error fails that step (the other store still
-     runs) with the store's own message. Locally: `make store-package && node scripts/store-publish.mjs --dry-run`.
+   - **Microsoft Edge Add-ons**: the same Chrome zip, see [EDGE.md](EDGE.md#releasing-a-new-version-automated).
+     A store whose secrets aren't set is skipped with a notice; an API error fails that step (the other stores still
+     run) with the store's own message. Locally: `make store-package && node scripts/store-publish.mjs --dry-run`.
 
 Listing texts, images and privacy answers are not sent by the workflow: change them in the dashboard.
 
@@ -114,6 +115,11 @@ The API v2 also accepts a Google Cloud service account linked to the publisher
 3. Forgejo secrets: `AMO_JWT_ISSUER` = `jwt_issuer`, `AMO_JWT_SECRET` = `jwt_secret`. Optionally
    `AMO_APPROVAL_NOTES`: the "Notes to reviewer" block from [AMO.md](AMO.md) with the test key filled in; each new
    version then carries it (sent in a request of its own, and added on a re-run if it is missing).
+
+### Microsoft Edge Add-ons: an API key
+
+Partner Center's Publish API gives a client ID and an API key for the product; the steps, and the secrets
+`EDGE_PRODUCT_ID`, `EDGE_CLIENT_ID` and `EDGE_API_KEY`, are in [EDGE.md](EDGE.md#the-api-credentials-and-the-secrets-once).
 
 ## The first submission, in the developer dashboard (https://chrome.google.com/webstore/devconsole)
 

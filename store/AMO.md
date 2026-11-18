@@ -18,7 +18,7 @@ was tested in Firefox 158 on https://unfret.net/connect: it runs without an extr
 
 ## Releasing a new version (automated)
 
-After the first submission below, "Release to the extension stores" with `stores` `both` or `firefox` (store/SUBMIT.md,
+After the first submission below, "Release to the extension stores" with `stores` `all` or `firefox` (store/SUBMIT.md,
 "Releasing a new version") does steps 2 and 3 through AMO's API v5, authenticated with a JWT from `AMO_JWT_ISSUER` and
 `AMO_JWT_SECRET` (made once as in store/SUBMIT.md, "addons.mozilla.org: an API key"):
 

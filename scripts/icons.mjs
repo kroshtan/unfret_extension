@@ -1,6 +1,7 @@
 // Render the brand assets from the SVG sources in brand/: the toolbar and store icons (icons/icon-*.png), Unfret Dev's
 // grey icons with a DEV label (icons-dev/icon-*.png) and the
-// Chrome Web Store promo images (store/assets). Uses the Chromium that Playwright installs for the smoke tests
+// store images (store/assets: the promo tiles, which Chrome Web Store and Edge Add-ons take at the same sizes, and
+// Edge Add-ons' 300×300 extension logo). Uses the Chromium that Playwright installs for the smoke tests
 // (`npx playwright install chromium`); the PNGs are committed, so a normal build needs none of this.
 import { readFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -64,7 +65,14 @@ try {
     await page.screenshot({ path: join(root, "store", "assets", name) });
     await page.close();
   }
+  // Edge Add-ons' extension logo: 300×300 recommended (128×128 at least), the 128 px icon's proportions.
+  const logo = await browser.newPage({ viewport: { width: 300, height: 300 } });
+  await logo.setContent(
+    `<body style="margin:0;background:transparent"><img src="${MARK}" width="224" height="224" style="display:block;margin:38px"></body>`,
+  );
+  await logo.screenshot({ path: join(root, "store", "assets", "logo-300x300.png"), omitBackground: true });
+  await logo.close();
 } finally {
   await browser.close();
 }
-console.log("rendered icons/icon-{16,32,48,128}.png, icons-dev/ and store/assets/promo-*.png");
+console.log("rendered icons/icon-{16,32,48,128}.png, icons-dev/ and store/assets/{promo-*,logo-300x300}.png");

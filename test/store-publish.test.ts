@@ -21,17 +21,23 @@ import {
   amoJwt,
   checkBackend,
   compareVersions,
+  changelogHeadlines,
   CWS_ITEM_ID,
   cwsExistingState,
   cwsServiceAccountAssertion,
   cwsServiceAccountTokenRequest,
   cwsTokenRequest,
   cwsUrls,
+  edgeHeaders,
+  edgeNotes,
+  edgeOperationId,
+  edgeUrls,
   gateProblem,
   httpClient,
   main,
   packageManifest,
   publishChrome,
+  publishEdge,
   publishFirefox,
   readServiceAccount,
 } from "../scripts/store-publish.mjs";
@@ -44,7 +50,10 @@ interface Call {
   body: unknown;
 }
 
-/** A fake fetch answering from `routes` ("METHOD url-substring" → JSON or [status, JSON]); records every call. */
+/**
+ * A fake fetch answering from `routes` ("METHOD url-substring" → JSON, [status, JSON] or [status, JSON, headers]);
+ * records every call.
+ */
 function fakeFetch(routes: [string, unknown][]): { fetch: typeof fetch; calls: Call[] } {
   const calls: Call[] = [];
   const queue = [...routes];
@@ -58,8 +67,12 @@ function fakeFetch(routes: [string, unknown][]): { fetch: typeof fetch; calls: C
     });
     if (index < 0) return Promise.resolve(new Response("unexpected", { status: 599 }));
     const [, answer] = queue.splice(index, 1)[0] ?? [];
-    const [status, data] = Array.isArray(answer) ? (answer as [number, unknown]) : [200, answer];
-    return Promise.resolve(new Response(JSON.stringify(data), { status }));
+    const [status, data, headers = {}] = Array.isArray(answer)
+      ? (answer as [number, unknown, Record<string, string>?])
+      : [200, answer];
+    return Promise.resolve(
+      new Response(status === 202 && data === null ? null : JSON.stringify(data), { status, headers }),
+    );
   };
   return { fetch: fn, calls };
 }
@@ -559,6 +572,239 @@ describe("addons.mozilla.org", () => {
   });
 });
 
+describe("Microsoft Edge Add-ons", () => {
+  const credentials = {
+    productId: "d34f98f5-f9b7-42b1-bebb-98707202b21d",
+    clientId: "cid",
+    apiKey: "the-key",
+  };
+  const product =
+    "https://api.addons.microsoftedge.microsoft.com/v1/products/d34f98f5-f9b7-42b1-bebb-98707202b21d";
+  const accepted = (location: string): [number, null, Record<string, string>] => [
+    202,
+    null,
+    { Location: location },
+  ];
+
+  it("uses the API v1.1 endpoints and headers", () => {
+    const urls = edgeUrls(credentials.productId);
+    expect(urls.upload).toBe(`${product}/submissions/draft/package`);
+    expect(urls.uploadStatus("op1")).toBe(`${product}/submissions/draft/package/operations/op1`);
+    expect(urls.publish).toBe(`${product}/submissions`);
+    expect(urls.publishStatus("op2")).toBe(`${product}/submissions/operations/op2`);
+    expect(edgeHeaders(credentials)).toEqual({ Authorization: "ApiKey the-key", "X-ClientID": "cid" });
+  });
+
+  it("reads the operation ID from the Location header, bare or as a URL", () => {
+    expect(edgeOperationId("4d2a5f3e-0001")).toBe("4d2a5f3e-0001");
+    expect(edgeOperationId(`${product}/submissions/operations/4d2a5f3e-0002/`)).toBe("4d2a5f3e-0002");
+    expect(edgeOperationId("/v1/products/p/submissions/draft/package/operations/op?x=1")).toBe("op");
+    expect(edgeOperationId("")).toBeNull();
+    expect(edgeOperationId(undefined)).toBeNull();
+  });
+
+  it("writes notes for certification from the changelog, then the testers' instructions", () => {
+    const changelog = [
+      "# Changelog",
+      "",
+      "## 0.13.0 (unreleased)",
+      "",
+      "- **The result card**, as on the website.",
+      "  More text.",
+      "- **One gift code a month.** Details.",
+      "- A line without a headline.",
+      "",
+      "## 0.12.0",
+      "",
+      "- **Older.**",
+    ].join("\n");
+    expect(changelogHeadlines(changelog, "0.13.0")).toEqual(["The result card", "One gift code a month"]);
+    expect(changelogHeadlines(changelog, "0.12.0")).toEqual(["Older"]);
+    expect(changelogHeadlines(changelog, "0.1.0")).toEqual([]);
+    const notes = edgeNotes({ version: "0.13.0", changelog, instructions: "Test key: ufk_x\n" });
+    expect(notes).toBe(
+      [
+        "Unfret 0.13.0.",
+        "What changed:",
+        "- The result card",
+        "- One gift code a month",
+        "Full changelog: https://git.kroshtan.com/kroshtan/unfret_extension/src/tag/v0.13.0/CHANGELOG.md",
+        "",
+        "Test key: ufk_x",
+      ].join("\n"),
+    );
+    // Too long: headlines go from the end, the instructions stay whole.
+    const long = changelog.replace("a month.**", "a month, for each pass and each wallet.**");
+    const full = edgeNotes({ version: "0.13.0", changelog: long, instructions: "x".repeat(150) });
+    const short = edgeNotes({
+      version: "0.13.0",
+      changelog: long,
+      instructions: "x".repeat(150),
+      max: full.length - 1,
+    });
+    expect(short.length).toBeLessThan(full.length);
+    expect(short).toContain("- The result card\n- and more (see the changelog)");
+    expect(short).not.toContain("gift code");
+    expect(short.endsWith("x".repeat(150))).toBe(true);
+    const shortest = edgeNotes({ version: "0.13.0", changelog, instructions: "x".repeat(400) });
+    expect(edgeNotes({ version: "0.13.0", changelog, instructions: "x".repeat(400), max: 100 })).toBe(
+      shortest.replace(/What changed:\n.*\n.*\n/u, "What changed: see the changelog.\n"),
+    );
+    expect(edgeNotes({ version: "0.1.0" })).toBe(
+      "Unfret 0.1.0.\nFull changelog: https://git.kroshtan.com/kroshtan/unfret_extension/src/tag/v0.1.0/CHANGELOG.md",
+    );
+  });
+
+  it("uploads the Chrome zip, waits for it, submits with the notes and waits for that", async () => {
+    const zipPath = file("unfret-chrome-0.13.0.zip", "PK zip");
+    const { fetch, calls } = fakeFetch([
+      ["POST /submissions/draft/package", accepted("up-1")],
+      ["GET /package/operations/up-1", { id: "up-1", status: "InProgress" }],
+      [
+        "GET /package/operations/up-1",
+        { id: "up-1", status: "Succeeded", message: "Successfully updated package" },
+      ],
+      ["POST /submissions", accepted(`${product}/submissions/operations/pub-1`)],
+      ["GET /submissions/operations/pub-1", { status: "InProgress" }],
+      [
+        "GET /submissions/operations/pub-1",
+        { status: "Succeeded", message: "Successfully created submission with ID 7" },
+      ],
+    ]);
+    const http = httpClient({ fetch, log: quiet });
+    const result = await publishEdge({
+      http,
+      credentials,
+      zipPath,
+      version: "0.13.0",
+      notes: "Unfret 0.13.0.",
+      wait: noWait,
+    });
+    expect(result).toMatch(
+      /0\.13\.0 uploaded and submitted for certification \(Successfully created submission/u,
+    );
+    expect(calls.map((c) => `${c.method} ${c.url.replace(product, "")}`)).toEqual([
+      "POST /submissions/draft/package",
+      "GET /submissions/draft/package/operations/up-1",
+      "GET /submissions/draft/package/operations/up-1",
+      "POST /submissions",
+      "GET /submissions/operations/pub-1",
+      "GET /submissions/operations/pub-1",
+    ]);
+    for (const call of calls) {
+      expect(call.headers.Authorization).toBe("ApiKey the-key");
+      expect(call.headers["X-ClientID"]).toBe("cid");
+    }
+    expect(calls[0]?.headers["Content-Type"]).toBe("application/zip");
+    expect(Buffer.from(await (calls[0]?.body as Blob).arrayBuffer()).toString()).toBe("PK zip");
+    expect(calls[3]?.headers["Content-Type"]).toBe("application/json");
+    expect(JSON.parse(String(calls[3]?.body))).toEqual({ notes: "Unfret 0.13.0." });
+  });
+
+  it("fails with the store's message, and treats nothing new as already there", async () => {
+    const zipPath = file("unfret-chrome-0.13.0.zip", "PK");
+    const run = (routes: [string, unknown][]): Promise<string> =>
+      publishEdge({
+        http: httpClient({ fetch: fakeFetch(routes).fetch, log: quiet }),
+        credentials,
+        zipPath,
+        version: "0.13.0",
+        notes: "n",
+        wait: noWait,
+      });
+
+    await expect(
+      run([
+        ["POST /draft/package", accepted("u")],
+        [
+          "GET /operations/u",
+          {
+            status: "Failed",
+            errorCode: "InvalidPackage",
+            message: "Package isn't valid.",
+            errors: ["manifest.json: version must be higher", { message: "second" }],
+          },
+        ],
+      ]),
+    ).rejects.toThrow(
+      /upload ended as Failed \(InvalidPackage\): Package isn't valid\.\n {2}manifest\.json.*\n {2}second/u,
+    );
+
+    await expect(
+      run([
+        ["POST /draft/package", accepted("u")],
+        ["GET /operations/u", { status: "Succeeded" }],
+        ["POST /submissions", accepted("p")],
+        [
+          "GET /operations/p",
+          { status: "Failed", errorCode: "InProgressSubmission", message: "in progress" },
+        ],
+      ]),
+    ).rejects.toThrow(
+      /submission ended as Failed \(InProgressSubmission\): in progress\n.*wait for it to finish/u,
+    );
+
+    expect(
+      await run([
+        ["POST /draft/package", accepted("u")],
+        ["GET /operations/u", { status: "Succeeded" }],
+        ["POST /submissions", accepted("p")],
+        ["GET /operations/p", { status: "Failed", errorCode: "NoModulesUpdated" }],
+      ]),
+    ).toMatch(/already has this package \(0\.13\.0\); nothing new/u);
+
+    await expect(run([["POST /draft/package", [401, { message: "Unauthorized" }]]])).rejects.toThrow(
+      /the package upload: POST .*HTTP 401.*\n.*EDGE_API_KEY/u,
+    );
+    await expect(run([["POST /draft/package", [202, null]]])).rejects.toThrow(
+      /without an operation in Location/u,
+    );
+
+    // An operation that never finishes stops after `tries`.
+    const stuck = fakeFetch([
+      ["POST /draft/package", accepted("u")],
+      ["GET /operations/u", { status: "InProgress" }],
+      ["GET /operations/u", { status: "InProgress" }],
+    ]);
+    await expect(
+      publishEdge({
+        http: httpClient({ fetch: stuck.fetch, log: quiet }),
+        credentials,
+        zipPath,
+        version: "0.13.0",
+        notes: "n",
+        wait: noWait,
+        tries: 2,
+      }),
+    ).rejects.toThrow(/still InProgress after 5 seconds/u);
+  });
+
+  it("without its secrets, a real run skips Edge with a notice and passes", async () => {
+    const lines: string[] = [];
+    const log = console.log;
+    console.log = (line: string): void => {
+      lines.push(line);
+    };
+    const { minBackendVersion, version } = JSON.parse(
+      readFileSync(join(__dirname, "..", "package.json"), "utf8"),
+    ) as { minBackendVersion: string; version: string };
+    const { fetch, calls } = fakeFetch([["GET /v1/health", { version: minBackendVersion }]]);
+    const store = mkdtempSync(join(tmpdir(), "unfret-store-"));
+    temp.push(store);
+    writeFileSync(join(store, `unfret-chrome-${version}.zip`), "zip");
+    try {
+      expect(await main(["--edge"], { UNFRET_STORE_DIR: store, EDGE_PRODUCT_ID: "p" }, fetch)).toBe(0);
+    } finally {
+      console.log = log;
+    }
+    expect(calls).toHaveLength(1);
+    expect(lines).toContain(
+      "::notice::edge: skipped, the secret(s) EDGE_CLIENT_ID, EDGE_API_KEY are not set (store/EDGE.md)",
+    );
+    expect(lines).toContain("::notice::edge: skipped (no secrets)");
+  });
+});
+
 describe("the dry run", () => {
   it("calls only the health endpoint and lists the store requests without secrets", async () => {
     const lines: string[] = [];
@@ -584,6 +830,8 @@ describe("the dry run", () => {
           CWS_CLIENT_ID: "cid",
           AMO_JWT_SECRET: "must-not-appear",
           AMO_APPROVAL_NOTES: "key ufk_must-not-appear",
+          EDGE_API_KEY: "must-not-appear",
+          EDGE_CERTIFICATION_NOTES: "Test key: ufk_must-not-appear",
         },
         fetch,
       );
@@ -604,6 +852,15 @@ describe("the dry run", () => {
         '[Authorization: JWT …] {"approval_notes":"<AMO_APPROVAL_NOTES>"}',
     );
     expect(out).not.toContain("compatibility");
+    // Edge: the Chrome zip to the draft, then the submission with notes shown only by their length.
+    expect(out).toContain(
+      "[dry run] POST https://api.addons.microsoftedge.microsoft.com/v1/products/%3CEDGE_PRODUCT_ID%3E/submissions/" +
+        `draft/package [Authorization: ApiKey …] (application/zip, 3 bytes) (unfret-chrome-${pkg.version}.zip)`,
+    );
+    expect(out).toContain("/submissions/draft/package/operations/%3Cupload%20operation%3E");
+    expect(out).toMatch(/POST \S+\/submissions \[Authorization: ApiKey …\] \{"notes": <\d+ characters/u);
+    expect(out).toContain("/submissions/operations/%3Csubmission%20operation%3E");
+    expect(out).toMatch(/edge: EDGE_PRODUCT_ID, EDGE_CLIENT_ID not set: a real run would skip/u);
     // The OAuth refresh token is the primary path; its secrets show as placeholders.
     expect(out).toContain("<CWS_REFRESH_TOKEN>");
     expect(out).not.toContain("must-not-appear");
