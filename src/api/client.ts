@@ -144,6 +144,8 @@ export interface CheckItem {
   status: "checked" | "concern" | "not_checked";
   /** Why it wasn't checked, or the finding it's about; may be empty. */
   note?: string;
+  /** How many of `checks_run` looked at this area (they add up to it); absent from an older server. */
+  checks?: number | null;
 }
 
 /** The same product photo on another shop (Unfret's image index): shown first, with both photos. */
@@ -188,6 +190,8 @@ export interface ResultCard {
   next_step?: { type: string; text: string } | null;
   same_product?: SameProduct | null;
   deep_check?: DeepCheck | null;
+  /** Part of the check didn't finish (the assessment is degraded): one line to show under the headline. */
+  incomplete?: { steps: string[]; text: string } | null;
 }
 
 export type Band = "reliable" | "concerns" | "careful" | "junk_or_scam";
@@ -214,6 +218,8 @@ export interface AnalysisResult {
   tier?: "deep" | "quick";
   /** True when one of the pass's free checks paid for it. */
   free_check?: boolean;
+  /** What the check cost, as a sentence ("This check used one of your free checks; 4 are left."). */
+  charge_note?: string;
   verdict?: Verdict;
   /** Lets this account report the result as wrong (POST /v1/reports) within 7 days. */
   report_token?: string;

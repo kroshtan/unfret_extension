@@ -18,5 +18,5 @@ export function checksText(checks: number, free = 0): string {
 export const FREE_PAUSED = "Free deep checks are back tomorrow. Quick checks still work.";
 /** Under a quick check's result: what it is. */
 export const QUICK_NOTE =
-  "Quick check: Unfret read only this page, by its rules, without looking the shop up elsewhere. Free.";
+  "Quick check: Unfret read only this page, by its rules, without looking the shop up elsewhere.";
 export const CONSENT_HINT = "Read how Unfret works above and click I agree to start.";

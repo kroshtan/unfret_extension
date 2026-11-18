@@ -5,6 +5,14 @@ backend's changelog, which lists each one published at `/extension`.)
 
 ## Unreleased
 
+- **The result card, as on the website** (backend #261). When part of the check didn't finish (the AI read of the
+  page), a line under the headline says so: "Part of this check didn't finish (the AI read of the page), so this answer
+  may be milder than it should be. It still counted as a check. Checking again after an hour may help." "What we
+  checked" adds up: "What we checked: 16 checks in 5 areas", each area with its own count ("Who's behind the shop · 4
+  checks"); a clean area is read out as "nothing to note". What the check cost is a sentence, the server's
+  `charge_note` ("This check used one of your free checks; 4 are left.", "Quick checks are free.", "You checked this
+  page recently, so no new check was used."); a check that used one is now said too, at the end. With an older server,
+  the same words without the count.
 - **The free quick check, always on offer.** Under "Check this page" (a deep check, which uses a check, a free deep
   check first) the popup now has a plain "Quick check (free)" button, with "Reads this page only, by Unfret's rules."
   under it, before every check and not only once the checks run out. Without a pass it works too: the quick check goes
