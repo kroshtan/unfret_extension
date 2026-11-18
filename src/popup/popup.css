@@ -622,6 +622,37 @@ body[data-auth="expired"] #account-status {
   color: var(--muted);
 }
 
+/* Under a quick result: what a deep check would add here, its cost and one button. No colour of its own, no
+   timer; quieter still when the quick result looks fine. */
+.deep-hint {
+  margin-top: 0.6rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.deep-hint.quiet {
+  border-style: dashed;
+}
+
+.deep-hint p {
+  margin: 0 0 0.3rem;
+  font-size: 0.93rem;
+}
+
+.deep-hint.quiet .deep-hint-text {
+  color: var(--ink-2);
+}
+
+.deep-hint .cost {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.deep-hint button {
+  margin-top: 0.2rem;
+}
+
 .charge-note {
   margin: 0.6rem 0 0;
   font-weight: 600;

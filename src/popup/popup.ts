@@ -359,6 +359,18 @@ function announce(text: string): void {
   el("announce").textContent = text;
 }
 
+/** The button under a quick result: a deep check of the same page (charged as any), or the checkout. */
+function deepHintAction(action: "run_deep" | "get_checks"): void {
+  if (action === "get_checks") {
+    button("buy").click(); // the account's own "Buy checks": this pass's top-up
+    return;
+  }
+  if (busy || !consented || tabId === undefined) return; // as the main button: never two checks at once
+  busy = true;
+  renderAccount();
+  port?.postMessage({ type: "analyze", tabId } satisfies PopupRequest);
+}
+
 function render(state: TabState): void {
   busy = state.status === "extracting" || state.status === "analysing";
   document.body.dataset.phase = busy ? "busy" : state.status;
@@ -381,7 +393,7 @@ function render(state: TabState): void {
   if (state.status === "done") {
     el("result-note").textContent = state.note ?? "";
     show("result-note", state.note !== undefined);
-    renderResult(el("result-body"), state.result, apiOrigin());
+    renderResult(el("result-body"), state.result, apiOrigin(), deepHintAction);
     announce(`Result: ${el("result-body").querySelector(".verdict .label")?.textContent ?? ""}`);
     renderReport(state);
     renderShare(state);

@@ -2,13 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import { existsSync, readFileSync } from "node:fs";
 
-import type { AnalysisResult } from "../src/api/client.js";
+import type { AnalysisResult, DeepCheck } from "../src/api/client.js";
 import { manifest } from "../scripts/manifest.mjs";
 import { bandOf } from "../src/shared/bands.js";
 import {
   buildChecklist,
   CHECKLIST,
   checklistDone,
+  deepHintOf,
   renderResult,
   renderSharePreview,
   shownThumbnails,
@@ -367,6 +368,89 @@ describe("result card", () => {
   it("renders an older result (no card fields) as before", () => {
     const root = rendered(JUNK);
     expect(root.querySelector(".same-product, .next-step, .checked-list, .clean")).toBeNull();
+  });
+});
+
+describe("deep-check suggestion under a quick result", () => {
+  const OFFER: DeepCheck = {
+    suggested: true,
+    reason: "on_the_fence",
+    quiet: false,
+    adds: [
+      { key: "shop_age", area: "who", label: "how old this shop is" },
+      { key: "photo_elsewhere", area: "product", label: "whether its product photo appears on other shops" },
+    ],
+    text: "A deep check also looks at how old this shop is and whether its product photo appears on other shops.",
+    cost: "Deep checks come in packs, from $6 for 25.",
+    action: "get_checks",
+    action_label: "Get checks",
+  };
+  const VERDICT: NonNullable<AnalysisResult["verdict"]> = {
+    band: "concerns",
+    label: "Worth a look",
+    headline: "A big discount.",
+    reasons: [{ type: "big_discount", title: "Big discount", detail: "70% off.", severity: "medium" }],
+    positives: [],
+    deep_check: OFFER,
+  };
+  const QUICK: AnalysisResult = {
+    score: 45,
+    explanation: "",
+    charged: false,
+    tier: "quick",
+    verdict: VERDICT,
+  };
+
+  function withHint(result: AnalysisResult, actions: string[] = []): HTMLElement {
+    const root = document.createElement("div");
+    renderResult(root, result, undefined, (action) => actions.push(action));
+    return root;
+  }
+
+  it("shows the server's words once, last, with one real button that runs its action", () => {
+    const actions: string[] = [];
+    const root = withHint(QUICK, actions);
+    const hints = root.querySelectorAll(".deep-hint");
+    expect(hints).toHaveLength(1);
+    const hint = hints[0] as HTMLElement;
+    expect(root.lastElementChild).toBe(hint);
+    expect(hint.getAttribute("aria-labelledby")).toBe("deep-hint-text");
+    expect(hint.querySelector("#deep-hint-text")?.textContent).toBe(OFFER.text);
+    expect(hint.querySelector(".cost")?.textContent).toBe(OFFER.cost);
+    const button = hint.querySelector("button");
+    expect(button?.type).toBe("button");
+    expect(button?.textContent).toBe("Get checks");
+    button?.click();
+    expect(actions).toEqual(["get_checks"]);
+    expect(hint.classList.contains("quiet")).toBe(false);
+  });
+
+  it("is quiet for a result that looks fine, and runs a deep check when the caller has checks", () => {
+    const actions: string[] = [];
+    const offer = {
+      ...OFFER,
+      quiet: true,
+      action: "run_deep" as const,
+      action_label: null,
+      cost: "Uses 1 of your 3 free deep checks.",
+    };
+    const root = withHint({ ...QUICK, verdict: { ...VERDICT, deep_check: offer } }, actions);
+    expect(root.querySelector(".deep-hint.quiet button")?.textContent).toBe("Run a deep check");
+    root.querySelector<HTMLButtonElement>(".deep-hint button")?.click();
+    expect(actions).toEqual(["run_deep"]);
+    expect(deepHintOf({ ...QUICK, verdict: { ...VERDICT, deep_check: offer } })?.quiet).toBe(true);
+  });
+
+  it("shows nothing without a suggestion: not suggested, a deep result, an older server, the share preview", () => {
+    const none = { ...OFFER, suggested: false, reason: "serious_concerns", text: "" };
+    for (const result of [
+      { ...QUICK, verdict: { ...VERDICT, deep_check: none } },
+      { ...QUICK, tier: "deep" as const },
+      { ...QUICK, verdict: { ...VERDICT, deep_check: null } },
+    ]) {
+      expect(withHint(result).querySelector(".deep-hint")).toBeNull();
+    }
+    expect(rendered(QUICK).querySelector(".deep-hint")).toBeNull(); // no action to run: nothing to offer
   });
 });
 

@@ -303,12 +303,58 @@ function verdictNodes(view: VerdictView, apiOrigin: string | undefined): { nodes
   return { nodes, details };
 }
 
+/** What a quick result's suggestion of a deep check shows, or null (none suggested, a deep result, an older server). */
+export interface DeepHint {
+  text: string;
+  cost: string;
+  action: "run_deep" | "get_checks";
+  label: string;
+  quiet: boolean;
+}
+
+export function deepHintOf(result: AnalysisResult): DeepHint | null {
+  const offer = result.verdict?.deep_check;
+  if (result.tier !== "quick" || offer?.suggested !== true || !offer.text) return null;
+  const action = offer.action === "run_deep" ? "run_deep" : "get_checks";
+  return {
+    text: offer.text,
+    cost: offer.cost ?? "",
+    action,
+    label: offer.action_label || (action === "run_deep" ? "Run a deep check" : "Get checks"),
+    quiet: offer.quiet === true,
+  };
+}
+
+/** The suggestion, once, under the quick result: the server's words and one real button. */
+function deepHintNode(hint: DeepHint, onAction: (action: DeepHint["action"]) => void): HTMLElement {
+  const box = element("section", hint.quiet ? "deep-hint quiet" : "deep-hint");
+  const text = element("p", "deep-hint-text", hint.text);
+  text.id = "deep-hint-text";
+  box.setAttribute("aria-labelledby", text.id);
+  box.append(text);
+  if (hint.cost) box.append(element("p", "cost", hint.cost));
+  const button = element("button", undefined, hint.label);
+  button.type = "button";
+  button.id = "deep-hint-action";
+  button.addEventListener("click", () => {
+    onAction(hint.action);
+  });
+  box.append(button);
+  return box;
+}
+
 /**
  * Fill `root` with the result: verdict label and headline, reasons, positives, the charge note and details.
  * `apiOrigin` is the origin of the API in use; reasons' thumbnails are shown only from there. The verdict's text is
- * the server's, shown as it comes (it may quote the page in the page's own language).
+ * the server's, shown as it comes (it may quote the page in the page's own language). A quick result's suggestion of
+ * a deep check comes last, with one button; `onDeepHint` runs its action (without it, no suggestion is shown).
  */
-export function renderResult(root: HTMLElement, result: AnalysisResult, apiOrigin?: string): void {
+export function renderResult(
+  root: HTMLElement,
+  result: AnalysisResult,
+  apiOrigin?: string,
+  onDeepHint?: (action: DeepHint["action"]) => void,
+): void {
   const band = bandOf(result);
   const verdict = result.verdict;
   const assessment = result.assessment;
@@ -344,6 +390,8 @@ export function renderResult(root: HTMLElement, result: AnalysisResult, apiOrigi
       ),
     );
   }
+  const hint = onDeepHint ? deepHintOf(result) : null;
+  if (hint && onDeepHint) nodes.push(deepHintNode(hint, onDeepHint));
   // Details only with an assessment (an older server's result without one has none to show).
   if (assessment && details) nodes.push(details);
   root.replaceChildren(...nodes);
