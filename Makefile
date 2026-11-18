@@ -1,4 +1,4 @@
-.PHONY: help install lint typecheck test smoke build build-dev parity icons screenshots crx-key release store-package store-publish publish-dev verify-release clean
+.PHONY: help install lint typecheck test smoke build build-dev parity icons screenshots screenshots-capture crx-key release store-package store-publish publish-dev verify-release clean
 .DEFAULT_GOAL := help
 
 # The backend checkout, next to this one unless set (make parity BACKEND=…)
@@ -34,8 +34,11 @@ parity:  ## Regenerate parity expectations with the backend's Python extractors 
 icons:  ## Render the icons, store promo images and Edge logo from brand/*.svg (needs `npx playwright install chromium`)
 	node scripts/icons.mjs
 
-screenshots: build  ## Render the Chrome Web Store screenshots into store/screenshots (needs `npx playwright install chromium`)
+screenshots: build  ## Render the store screenshots into store/screenshots from store/screenshots/results (needs `npx playwright install chromium`)
 	node scripts/screenshots.mjs
+
+screenshots-capture: build  ## Check the screenshots' pages again on dev.unfret.net with Unfret Dev, into store/screenshots/results (UNFRET_DEV_PASS=…)
+	node scripts/screenshots-capture.mjs
 
 crx-key:  ## Create a CRX signing key once (production; DEV=1 for Unfret Dev). Keys live in ~/kroshtan_secrets
 	node scripts/crx-key.mjs $(if $(DEV),--dev)

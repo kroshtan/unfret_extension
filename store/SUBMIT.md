@@ -11,14 +11,35 @@ Everything Claude could prepare is in this folder. These are the steps only you 
       take "which you can also top up by card" and "a little more by card" out of both listing texts.
 - [ ] **Review the privacy statement** at https://unfret.net/privacy (the store links to it, and its wording on
       Scaleway still needs your check).
-- [x] **Approve the icon and images** (approved 2026-11-09): `icons/icon-128.png`, `store/assets/promo-small-440x280.png`,
-      `store/assets/promo-marquee-1400x560.png`, `store/screenshots/*.png`. Re-render with `make icons` and
-      `make screenshots` after changing `brand/*.svg` or the popup.
+- [x] **Approve the icon and promo images** (approved 2026-11-09): `icons/icon-128.png`,
+      `store/assets/promo-small-440x280.png`, `store/assets/promo-marquee-1400x560.png`. Re-render with `make icons`
+      after changing `brand/*.svg`.
+- [ ] **Approve the five screenshots** (new with the result card): `store/screenshots/*.png`, in the order listed at
+      the end of `listing.en.md`. See "The screenshots" below to make them again.
 - [ ] **Build the package**: Actions → **Release to the extension stores** → Run workflow (input `main`) checks the
       commit, builds and checks the store zip and attaches `unfret-chrome-<version>.zip` to the Forgejo release
       `v<version>` (locally, `make store-package` writes the same file to `dist/store/`). The store zip has no `key`
       and no `update_url`: the store gives the extension its own ID, different from the self-hosted one. With the
       store credentials set (below), the same run uploads it and submits it for review.
+
+## The screenshots
+
+Five 1280×800 screenshots, light theme, each the real popup of the store build with a caption. They show real
+results, checked on the dev deployment (never production): the Unfret test shop (`/test-shop`, Unfret's own made-up
+shop: every trick on it is fake on purpose, a banner on every view, and its sister shop `/test-shop/sister-shop`
+gives it the "same product, sold elsewhere" match) for the concerns, and a well-known shop's product page for the
+clean result. The fourth adds the four answers' names as the popup draws them, and the fifth shows the popup before a
+check, with a new pass's 5 free checks and with none left (the account is staged there, not a real pass). Captions
+never name a real shop, and no shop is called a scam.
+
+1. `make screenshots-capture` (only when the result card or the checks changed): Unfret Dev checks the pages listed
+   in `scripts/screenshots-capture.mjs` on dev.unfret.net as a user would, and writes each result to
+   `store/screenshots/results/<name>.json` (without its tokens; dev.unfret.net in the result's text and addresses
+   becomes unfret.net, as production shows it). The pass is the free one a new install gets; a network gets 2 a day,
+   so after that set `UNFRET_DEV_PASS` to a pass on dev with checks. Read the new results before committing them.
+2. `make screenshots`: renders `store/screenshots/*.png` from those results (the test shop page behind the first
+   one and the photo thumbnails come from dev.unfret.net). `node scripts/screenshots.mjs --dark --out <dir>` renders
+   the dark theme to compare.
 
 ## Releasing a new version (automated)
 
