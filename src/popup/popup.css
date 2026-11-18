@@ -259,6 +259,19 @@ body[data-auth="expired"] #account-status {
   font-size: 1.05rem;
 }
 
+/* The free quick check, always on offer under the main button: a plain button, its hint beside it. */
+.quick-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.6rem;
+  margin: 0.5rem 0 0;
+}
+
+.quick-row[hidden] {
+  display: none;
+}
+
 #hint {
   margin: 0.45rem 0 0;
   font-size: 0.9rem;

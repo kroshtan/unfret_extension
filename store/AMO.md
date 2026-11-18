@@ -118,7 +118,7 @@ Testing: no account or wallet is needed.
    test key under "Use an Unfret pass instead" and click "Use this pass"; it holds about 20 checks:
    ufk_<REPLACE WITH THE TEST KEY>
 5. Optional: under a result, "Wrong result?" lets you report a wrong result (it asks for consent first).
-Nothing is read or sent until "Check this page" is clicked.
+Nothing is read or sent until "Check this page" or "Quick check (free)" is clicked.
 
 Data: on "Check this page" the page address (without its fragment, tracking parameters, sessions or e-mail
 addresses), product facts and cleaned visible text of that one page go to the Unfret API (https://unfret.net), which

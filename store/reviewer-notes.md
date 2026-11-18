@@ -39,5 +39,6 @@ Unfret checks a product page when you click its toolbar button. No account or wa
    ufk_<REPLACE WITH THE TEST KEY>
 5. Optional: under a result, "Wrong result?" lets you report a wrong result (it asks for consent first).
 
-Nothing is read or sent until "Check this page" is clicked. Privacy statement: https://unfret.net/privacy
+Nothing is read or sent until "Check this page" or "Quick check (free)" is clicked.
+Privacy statement: https://unfret.net/privacy
 ```

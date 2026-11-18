@@ -61,11 +61,14 @@ toolbar click ─► popup ─► background ─► inject extract.js into the t
                                    └─► POST /v1/analyze/stream (Bearer session) ─► live steps ─► score, flags
 ```
 
-- **Nothing runs until you click "Analyse this page".** Each analysis costs one check. The extension has no standing
-  access to any website: it reads a page only through `activeTab`, which the browser grants for that one tab when you
-  click the toolbar button. On supported marketplace product pages (Amazon, all countries; bol.com) the toolbar icon
-  gets a small amber marker; in Chromium the browser sets it itself from the page address (`declarativeContent`),
-  without the extension seeing the page.
+- **Nothing runs until you click "Check this page" or "Quick check (free)".** "Check this page" is a deep check
+  and uses one check (a free deep check first). The quick check under it reads only the page, by Unfret's rules, and
+  is free for everyone, with or without a pass (without one it goes without a sign-in); out of checks, or with only
+  free deep checks left while they're paused for the day, the main button is the quick check itself. The extension
+  has no standing access to any website: it reads a page only through `activeTab`, which the browser grants for that
+  one tab when you click the toolbar button. On supported marketplace product pages (Amazon, all countries; bol.com)
+  the toolbar icon gets a small amber marker; in Chromium the browser sets it itself from the page address
+  (`declarativeContent`), without the extension seeing the page.
 - **Unfret's own site isn't checked**, nor browser and store pages, except the **test shop** (`/test-shop` on the
   API base: a made-up store with every trick Unfret catches, for demos and trying the extension out).
 - **Extraction happens in the browser.** `src/extract/` is a TypeScript port of the backend's PageFacts

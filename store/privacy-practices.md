@@ -5,14 +5,15 @@ manifest built by `scripts/manifest.mjs` (Chrome store build: `dist/chrome`).
 
 ## Single purpose
 
-Unfret has one purpose: when the user clicks "Check this page", it checks the product page in the current tab for
-signs of scams, dropshipped generic goods, fake discounts and manipulative sales tricks, and shows the result in plain
-words.
+Unfret has one purpose: when the user clicks "Check this page" (or the free "Quick check"), it checks the product
+page in the current tab for signs of scams, dropshipped generic goods, fake discounts and manipulative sales tricks,
+and shows the result in plain words.
 
 ## Permission justifications
 
-**activeTab**: The extension reads a page only after the user clicks its toolbar button and then "Check this page".
-activeTab gives access to that one tab for that one click, so the extension needs no standing access to any website.
+**activeTab**: The extension reads a page only after the user clicks its toolbar button and then "Check this page"
+or "Quick check (free)". activeTab gives access to that one tab for that one click, so the extension needs no
+standing access to any website.
 
 **scripting**: Used together with activeTab to run the page reader (`extract.js`) in the tab the user chose to check.
 It collects the product facts (title, brand, seller, price, ratings, review texts, shop policies), the contact details
