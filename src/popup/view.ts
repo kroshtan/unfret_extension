@@ -1,10 +1,40 @@
 /** Presentation for the popup: the result view and the progress checklist (pure DOM, tested in jsdom). */
 
-import type { AnalysisResult, Band, Flag, ResultCard, ShareBand, SharePreview } from "../api/client.js";
+import type {
+  AnalysisResult,
+  Band,
+  Flag,
+  Pricing,
+  ResultCard,
+  ShareBand,
+  SharePreview,
+} from "../api/client.js";
 import { BAND_SYMBOL, bandOf } from "../shared/bands.js";
 import { NO_CHECK_USED, QUICK_NOTE } from "../shared/text.js";
 
 export { checksText } from "../shared/text.js";
+
+// ── "Wrong result?" ───────────────────────────────────────────────────────────
+
+/** The reward line without numbers: no price list yet, or a server that doesn't say them. */
+export const REPORT_REWARD_FALLBACK = "If the result was wrong, you may get free checks.";
+
+/**
+ * The report's reward line, with the rewards the server pays (`/v1/pricing` → `reports`), worded as the site's
+ * report dialog. Empty when the server says it pays none; the fallback when it doesn't say.
+ */
+export function reportRewardLine(reports: Pricing["reports"]): string {
+  const count = (n: unknown): number | undefined =>
+    typeof n === "number" && Number.isInteger(n) && n >= 0 ? n : undefined;
+  const big = count(reports?.reward_checks);
+  if (big === undefined) return REPORT_REWARD_FALLBACK;
+  if (big === 0) return "";
+  const small = count(reports?.small_reward_checks);
+  const checks = (n: number): string => `${n} free check${n === 1 ? "" : "s"}`;
+  return small
+    ? `If Unfret was clearly wrong, you get ${checks(big)}; if it was somewhat off, ${checks(small)}.`
+    : `If Unfret was clearly wrong, you get ${checks(big)}.`;
+}
 
 // ── Progress ──────────────────────────────────────────────────────────────────
 // A fixed, friendly checklist instead of skill names: each item ticks off when one of its checks finishes.

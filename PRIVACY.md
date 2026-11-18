@@ -97,7 +97,8 @@ More requests go to the same API, each only when you ask for it:
   nothing is stored until you click **Share**. The page is then public at `unfret.net/r/…` for anyone with
   the link, for 90 days, and never says who checked. You get a delete code, shown once, to remove it sooner.
 - **Wrong result?** (reporting a result): that one check's product facts, page text and result, with your sign-in,
-  only after you chose a reason and clicked **Send report**.
+  only after you chose a reason and clicked **Send report**. An AI model hosted in the EU may read the stored report
+  once to suggest a label; a person decides.
 - **Have an invite or gift code?**: the code you enter, with your sign-in, to add its checks to your account. The
   server notes which pack's buyer a gift code came from only as a keyed one-way hash, so the buyer can't use their own;
   it doesn't note who redeemed it.
@@ -106,11 +107,12 @@ More requests go to the same API, each only when you ask for it:
   until your phone has signed in or you cancel.
 
 When you open the popup or the settings, they ask the API for your balance (with your sign-in) to show how many checks
-you have; signed out, the popup asks for the price list (without any sign-in) to say how many free checks a new pass
-gets. The pictures in a result (matching photos on other shops) are loaded from Unfret's own server only. The
-extension makes no other network requests: no analytics, no trackers, no third parties. Besides opening the popup or
-settings, the requests it makes without a click are the new pass when the welcome page opens after installing and,
-if an affiliate's link brought you, that one note to `unfret.net`, both above.
+you have; the popup asks for the price list (without any sign-in) when signed out, to say how many free checks a new
+pass gets, and with a result you can report, to say what a report may earn. The pictures in a result (matching photos
+on other shops) are loaded from Unfret's own server only. The extension makes no other network requests: no
+analytics, no trackers, no third parties. Besides opening the popup or settings, the requests it makes without a
+click are the new pass when the welcome page opens after installing and, if an affiliate's link brought you, that one
+note to `unfret.net`, both above.
 
 ## What is stored
 

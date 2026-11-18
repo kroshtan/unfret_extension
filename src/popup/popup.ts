@@ -49,6 +49,7 @@ import {
   checksText,
   renderResult,
   renderSharePreview,
+  reportRewardLine,
   updateChecklist,
 } from "./view.js";
 
@@ -449,14 +450,27 @@ function render(state: TabState): void {
 // ── "Wrong result?" ─────────────────────────────────────────────────────────
 
 const REPORT_OUTCOME = {
-  queued: "Thanks! We'll review this page. If we got it badly wrong, you get free checks.",
+  queued: "Thanks! We'll review this page. If we got it wrong, you get free checks.",
   already_reported: "Thanks! Someone reported this page first; your report counts as confirmation.",
   already_known: "Thanks! We reviewed this page recently.",
 } as const;
 
+let rewardLoading = false;
+/** The reward line from the price list, once per popup, when there is something to report (it holds nothing up). */
+async function loadReportReward(): Promise<void> {
+  if (rewardLoading) return;
+  rewardLoading = true;
+  try {
+    el("report-reward").textContent = reportRewardLine((await new UnfretApi(apiBase).pricing()).reports);
+  } catch {
+    // offline: the line without numbers stays
+  }
+}
+
 function renderReport(state: Extract<TabState, { status: "done" }>): void {
   const report = state.report;
   const reportable = Boolean(state.body && state.result.report_token && session);
+  if (reportable && report === undefined) void loadReportReward();
   show("report-open-row", reportable && report === undefined && el("report").hidden === true);
   if (report !== undefined) show("report", false);
   const status = el("report-status");

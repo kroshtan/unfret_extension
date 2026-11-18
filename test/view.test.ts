@@ -12,6 +12,8 @@ import {
   deepHintOf,
   renderResult,
   renderSharePreview,
+  REPORT_REWARD_FALLBACK,
+  reportRewardLine,
   shownThumbnails,
   updateChecklist,
 } from "../src/popup/view.js";
@@ -518,5 +520,44 @@ describe("English only", () => {
       expect(html, page).not.toMatch(/data-i18n|__MSG_/u);
       expect(html, page).toContain('<html lang="en">');
     }
+  });
+});
+
+describe("the report's reward line", () => {
+  it("says both rewards from the price list, worded as the site's report dialog", () => {
+    expect(
+      reportRewardLine({
+        per_month: 15,
+        reward_checks: 5,
+        reward_gap: 30,
+        small_reward_checks: 1,
+        small_reward_gap: 10,
+      }),
+    ).toBe("If Unfret was clearly wrong, you get 5 free checks; if it was somewhat off, 1 free check.");
+    expect(reportRewardLine({ reward_checks: 1, small_reward_checks: 2 })).toBe(
+      "If Unfret was clearly wrong, you get 1 free check; if it was somewhat off, 2 free checks.",
+    );
+  });
+
+  it("an older server with one reward: only that one", () => {
+    expect(reportRewardLine({ per_month: 5, reward_checks: 3 })).toBe(
+      "If Unfret was clearly wrong, you get 3 free checks.",
+    );
+    expect(reportRewardLine({ reward_checks: 5, small_reward_checks: 0 })).toBe(
+      "If Unfret was clearly wrong, you get 5 free checks.",
+    );
+  });
+
+  it("without the numbers (an older server, or none sent): the line without numbers", () => {
+    expect(REPORT_REWARD_FALLBACK).toBe("If the result was wrong, you may get free checks.");
+    expect(reportRewardLine(undefined)).toBe(REPORT_REWARD_FALLBACK);
+    expect(reportRewardLine({})).toBe(REPORT_REWARD_FALLBACK);
+    expect(reportRewardLine({ per_month: 15 })).toBe(REPORT_REWARD_FALLBACK);
+    expect(reportRewardLine({ reward_checks: "5" as unknown as number })).toBe(REPORT_REWARD_FALLBACK);
+    expect(reportRewardLine({ reward_checks: -1 })).toBe(REPORT_REWARD_FALLBACK);
+  });
+
+  it("a server that pays no reward: no reward line", () => {
+    expect(reportRewardLine({ reward_checks: 0, small_reward_checks: 0 })).toBe("");
   });
 });

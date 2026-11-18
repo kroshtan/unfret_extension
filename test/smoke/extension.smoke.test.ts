@@ -541,6 +541,10 @@ describe("reports and API keys", () => {
     expect(await page.textContent("#report")).toMatch(
       /this one check's product facts, page text and result/u,
     );
+    // The mock's price list has no reward numbers, as an older server's: the line without numbers.
+    expect(await page.textContent("#report-reward")).toBe(
+      "If the result was wrong, you may get free checks.",
+    );
     await page.check('#report input[value="real_brand"]');
     await page.click("#report-send");
     await page.waitForFunction(() =>
