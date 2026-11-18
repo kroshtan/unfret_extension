@@ -20,6 +20,10 @@
  "meta": {
   "og:image": "https://scontent.xx.fbcdn.net/v/t45.5328-4/4567_n.jpg"
  },
+ "markup_names": [
+  "data-testid"
+ ],
+ "external_refs": [],
  "hidden_text": [],
  "checkboxes": [],
  "timers": [],

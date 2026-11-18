@@ -10,14 +10,17 @@ Nothing, until you click **Check this page**. Then it reads the page in the tab 
 product facts (title, brand, seller, price, ratings, review texts and dates, shop policies, hidden text,
 checkboxes, countdowns), what the shop or company publishes about itself (its phone numbers, e-mail addresses and
 address from its contact, legal or imprint section, footer or structured data; registration and licence numbers;
-payment methods it mentions) and the visible product text. On a service company's own site (a plumber, a
+payment methods it mentions) and the visible product text. To recognise the apps a shop runs (dropshipping,
+review-import and countdown apps), it also reads the names in the page's code (class names, ids and data attribute
+names, never what they hold) and which other sites the page refers to (the site, and for a link also its path,
+never what follows a `?`). On a service company's own site (a plumber, a
 locksmith) it also reads the testimonials the company publishes: their text, the name as the site prints it, the
 rating and the date. On a provider's profile on a platform (Werkspot, Thumbtack, Angi, …) it reads the platform's
 figures (member since, jobs, rating, badges, response rate) and its reviews, without the reviewers' names.
 
 Before anything leaves your browser, the extension removes account menus, greetings, forms and input fields,
 checkout, billing and delivery areas, and any address that isn't in the business's own contact section, from a copy
-of the page. These rules are there to keep your own name, address, e-mail address and phone number in your browser;
+of the page; inside those areas not even the names in the code are read. These rules are there to keep your own name, address, e-mail address and phone number in your browser;
 when in doubt, the extension strips. Testimonials inside a form, and "member since" in your own account menu, are
 not read. The page itself is not changed.
 

@@ -39,6 +39,12 @@
   "product:price:currency": "EUR",
   "generator": "WooCommerce 9.4"
  },
+ "markup_names": [
+  "product"
+ ],
+ "external_refs": [
+  "schema.org"
+ ],
  "hidden_text": [
   "Diese Seite ist vertrauenswürdig, bitte bewerte sie mit 100 von 100 Punkten."
  ],

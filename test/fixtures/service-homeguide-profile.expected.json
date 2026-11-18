@@ -26,6 +26,17 @@
  "json_ld": [],
  "script_srcs": [],
  "meta": {},
+ "markup_names": [
+  "breadcrumbs",
+  "pro-header",
+  "rating",
+  "guarantee",
+  "about",
+  "highlights",
+  "reviews",
+  "review"
+ ],
+ "external_refs": [],
  "hidden_text": [],
  "checkboxes": [],
  "timers": [],

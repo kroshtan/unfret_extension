@@ -20,6 +20,18 @@
   "https://www.googletagmanager.com/gtag/js?id=G-8RT2KX0B4M"
  ],
  "meta": {},
+ "markup_names": [
+  "data-rating",
+  "footer",
+  "regio",
+  "reviews",
+  "review-card",
+  "rating",
+  "review-author",
+  "review-date",
+  "contact"
+ ],
+ "external_refs": [],
  "hidden_text": [],
  "checkboxes": [],
  "timers": [],

@@ -18,6 +18,16 @@
  "json_ld": [],
  "script_srcs": [],
  "meta": {},
+ "markup_names": [
+  "nav-tools",
+  "company-info",
+  "home",
+  "testimonials"
+ ],
+ "external_refs": [
+  "schema.org",
+  "www.yelp.com/biz/acme"
+ ],
  "hidden_text": [],
  "checkboxes": [],
  "timers": [],

@@ -20,6 +20,10 @@
  "meta": {
   "description": "Inbraakschade in Zwolle? Uw slotenmaker in Zwolle en omgeving, 24/7 bereikbaar."
  },
+ "markup_names": [
+  "call"
+ ],
+ "external_refs": [],
  "hidden_text": [],
  "checkboxes": [],
  "timers": [],

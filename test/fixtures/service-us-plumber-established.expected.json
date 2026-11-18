@@ -20,6 +20,11 @@
   "https://www.googletagmanager.com/gtag/js?id=G-B7LU3BNT9X"
  ],
  "meta": {},
+ "markup_names": [
+  "areas",
+  "contact"
+ ],
+ "external_refs": [],
  "hidden_text": [],
  "checkboxes": [],
  "timers": [],

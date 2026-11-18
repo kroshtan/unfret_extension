@@ -40,6 +40,16 @@
  "json_ld": [],
  "script_srcs": [],
  "meta": {},
+ "markup_names": [
+  "rating",
+  "badges",
+  "business-info",
+  "reviews",
+  "review-item",
+  "reviewer-name",
+  "review-date"
+ ],
+ "external_refs": [],
  "hidden_text": [],
  "checkboxes": [],
  "timers": [],

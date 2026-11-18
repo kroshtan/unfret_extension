@@ -26,6 +26,17 @@
  "json_ld": [],
  "script_srcs": [],
  "meta": {},
+ "markup_names": [
+  "account-nav",
+  "sp-profile-header",
+  "sp-rating",
+  "stars",
+  "sp-badges",
+  "sp-details",
+  "sp-reviews",
+  "review"
+ ],
+ "external_refs": [],
  "hidden_text": [],
  "checkboxes": [],
  "timers": [],

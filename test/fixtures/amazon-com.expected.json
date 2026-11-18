@@ -46,6 +46,32 @@
  "meta": {
   "description": "NOVAXEL Smart Watch for Men Women"
  },
+ "markup_names": [
+  "data-hook",
+  "navbar",
+  "nav-link-accountList",
+  "glow-ingress-block",
+  "dp",
+  "productTitle",
+  "bylineInfo",
+  "averageCustomerReviews",
+  "acrCustomerReviewText",
+  "priceblock_ourprice",
+  "merchant-info",
+  "variation_color_name",
+  "productDetails_detailBullets_sections1",
+  "histogramTable",
+  "landingImage",
+  "deal-timer",
+  "a-icon-alt",
+  "a-text-price",
+  "a-offscreen",
+  "a-section",
+  "countdown-timer"
+ ],
+ "external_refs": [
+  "m.media-amazon.com"
+ ],
  "hidden_text": [],
  "checkboxes": [],
  "timers": [

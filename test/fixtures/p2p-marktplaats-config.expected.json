@@ -20,6 +20,16 @@
  "meta": {
   "og:image": "https://images.marktplaats.com/api/v1/listing-mp-p/images/aa/aa000000-0000-4000-8000-000000000001?rule=ecg_mp_eps$_84.jpg"
  },
+ "markup_names": [
+  "data-collapsable",
+  "seller-sidebar-root",
+  "Listing-title",
+  "hz-Page-section",
+  "Description-module-root",
+  "Description-module-title",
+  "Description-module-description"
+ ],
+ "external_refs": [],
  "hidden_text": [],
  "checkboxes": [],
  "timers": [],

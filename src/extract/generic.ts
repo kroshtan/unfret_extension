@@ -21,6 +21,7 @@ import * as walmart from "./walmart.js";
 import { extractBusiness, organizations } from "./business.js";
 import { extractServiceProfile, SERVICE_PLATFORMS } from "./services.js";
 import { extractTestimonials } from "./testimonials.js";
+import { extractMarkup } from "./markup.js";
 import { attr, cut, dedupe, hostname, squash, tagName, text, urljoin } from "./dom.js";
 import { parseDate, parseNumber, parseRating } from "./parse.js";
 import { pyJsonLength } from "./pyjson.js";
@@ -179,6 +180,7 @@ export function extractFacts(doc: Document, html: string, url = ""): PageFacts {
     else if (facts.json_ld.length === 0 && facts.price === null)
       facts.testimonials = extractTestimonials(doc, orgs);
   }
+  extractMarkup(doc, url, facts);
   return facts;
 }
 

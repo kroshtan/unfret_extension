@@ -26,6 +26,18 @@
  "json_ld": [],
  "script_srcs": [],
  "meta": {},
+ "markup_names": [
+  "hz-header",
+  "hz-account-menu",
+  "hz-pro-header",
+  "hz-star-rate",
+  "hz-badges",
+  "business-details",
+  "reviews",
+  "review",
+  "hz-footer"
+ ],
+ "external_refs": [],
  "hidden_text": [],
  "checkboxes": [],
  "timers": [],
