@@ -16,15 +16,16 @@ export const INTRO_RE = /^[A-Z0-9]{3,24}$/u;
 /** The website's "I have a code" checkout (path on the API base): a new API key with the code redeemed onto it. */
 export const CODE_CHECKOUT = "/checkout?mode=code";
 
-export const NOT_AN_INVITE = "That isn't an invite (ufi_…) or an intro code.";
+export const NOT_AN_INVITE =
+  "That doesn't look like a gift code: they start with ufi_. Check it and try again.";
 
 /** The refusals the server explains itself (its `detail` is shown); the wording here is the fallback. */
 const REFUSED: Record<string, string> = {
   INVALID_INVITE: NOT_AN_INVITE,
-  UNKNOWN_INVITE: "Unknown invite code.",
-  INVITE_USED: "This invite has already been used.",
+  UNKNOWN_INVITE: "Unknown gift code.",
+  INVITE_USED: "This gift code has already been used.",
   INVITE_NOT_FOR_THIS_ACCOUNT:
-    "Invites and intro codes are for new accounts: this one has had checks before, or used one.",
+    "This code is for new accounts: this one has had checks before, or used a code.",
   INVITE_ENDED: "This code has ended.",
   INTRO_DAILY_CAP: "Today's free checks from codes are gone: they're back tomorrow.",
   INVITE_MONTHLY_LIMIT:
@@ -97,8 +98,8 @@ export async function redeemInvite(apiBase: string, token: string, value: string
       return { ok: false, message: detail || refused, signedOut: false };
     }
     const message = error.serviceOff
-      ? "Invites aren't available right now. Please try again later."
-      : "That invite didn't work. Please try again later.";
+      ? "Gift codes aren't available right now. Please try again later."
+      : "That gift code didn't work. Please try again later.";
     return { ok: false, message, signedOut: false };
   }
 }

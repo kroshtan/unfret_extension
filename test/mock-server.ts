@@ -86,13 +86,13 @@ const INVITE_REFUSALS: Record<
   [INVITE_USED_CODE]: {
     status: 409,
     error_code: "INVITE_USED",
-    detail: "This invite has already been used.",
+    detail: "This gift code has already been used.",
   },
-  [INVITE_UNKNOWN_CODE]: { status: 404, error_code: "UNKNOWN_INVITE", detail: "Unknown invite code." },
+  [INVITE_UNKNOWN_CODE]: { status: 404, error_code: "UNKNOWN_INVITE", detail: "Unknown gift code." },
   [INVITE_NOT_NEW_CODE]: {
     status: 403,
     error_code: "INVITE_NOT_FOR_THIS_ACCOUNT",
-    detail: "Invites and intro codes are for new accounts: this one has had checks before, or used one.",
+    detail: "Intro codes are for new accounts: this one has had checks before, or used a code.",
   },
   CAPPED: {
     status: 429,
@@ -291,7 +291,7 @@ export async function startMockApi(): Promise<MockApi> {
           });
         } else
           json(res, 400, {
-            detail: "That isn't an invite or intro code.",
+            detail: "That isn't a gift code.",
             error_code: "INVALID_INVITE",
           });
         return;

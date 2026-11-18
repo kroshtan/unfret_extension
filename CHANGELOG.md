@@ -81,6 +81,10 @@ backend's changelog, which lists each one published at `/extension`.)
   they said "API key" ("Sign in with an Unfret pass or wallet", "Paste your pass", "Use this pass"), and a pass's
   "backup code" where they said "recovery code". A pass is named by its ID as the site shows it: "Using Unfret pass
   ABCDE-FGHIJ". Only the words change: the key, how it is stored and what is sent stay the same.
+- **"Gift code"**, as on the website: the popup and the settings page say "Have a gift code?" and "Gift code" where
+  they said "Have an invite or intro code?" (placeholder "ufi_…"), and the messages after a code say "gift code"
+  where they said "invite". Only the words change: the field still takes a retired intro code, which the server
+  answers as ended.
 - **The popup and the settings page look like unfret.net**: its green, its calm verdict colours (each verdict with
   its own: "Think twice" is no longer the same red as "Serious concerns"), its typeface (Figtree, bundled with the
   extension under the SIL Open Font License: no fonts or anything else are loaded from elsewhere), drawn signs instead
