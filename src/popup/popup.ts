@@ -695,7 +695,7 @@ async function init(): Promise<void> {
     event.preventDefault();
     openTab("/checkout?for=key");
   });
-  // "Have a code?": the website makes a new API key and redeems the invite or intro code onto it, in one step.
+  // "Have a code?": the website makes a new API key and redeems the gift code onto it, in one step.
   for (const id of ["have-code", "key-code"]) {
     el(id).addEventListener("click", (event) => {
       event.preventDefault();

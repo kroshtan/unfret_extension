@@ -1,17 +1,15 @@
 /**
- * "Have an invite or intro code?": a code someone got with a pack of checks, or an intro code someone shared (FRIENDS),
- * redeemed onto the signed-in account (the wallet's
- * session or the API key). The server adds the checks only for a new account, one that never had any; its refusals
- * are shown as it words them. Shared by the popup and the options page. The code is sent once and never stored.
+ * "Have a gift code?": a code someone got with a pack of checks (`ufi_…`), redeemed onto the signed-in account (the
+ * wallet's session or the API key). Any account may redeem one, but not a code from its own pack, and one a calendar
+ * month; the server's refusals are shown as it words them. Anything that isn't a gift code is refused here, without
+ * asking the server. Shared by the popup and the options page. The code is sent once and never stored.
  */
 
 import { ApiError, UnfretApi } from "../api/client.js";
 import { OFFLINE, PASS_ENDED, SESSION_EXPIRED } from "./text.js";
 
-/** An invite code: `ufi_` and 32 lower-case base32 letters (the server ignores case and surrounding spaces). */
+/** A gift code: `ufi_` and 32 lower-case base32 letters (the server ignores case and surrounding spaces). */
 export const INVITE_RE = /^ufi_[a-z2-7]{32}$/u;
-/** An intro code someone shared, such as FRIENDS: 3 to 24 letters or digits, upper case. */
-export const INTRO_RE = /^[A-Z0-9]{3,24}$/u;
 
 /** The website's "I have a code" checkout (path on the API base): a new API key with the code redeemed onto it. */
 export const CODE_CHECKOUT = "/checkout?mode=code";
@@ -24,10 +22,7 @@ const REFUSED: Record<string, string> = {
   INVALID_INVITE: NOT_AN_INVITE,
   UNKNOWN_INVITE: "Unknown gift code.",
   INVITE_USED: "This gift code has already been used.",
-  INVITE_NOT_FOR_THIS_ACCOUNT:
-    "This code is for new accounts: this one has had checks before, or used a code.",
-  INVITE_ENDED: "This code has ended.",
-  INTRO_DAILY_CAP: "Today's free checks from codes are gone: they're back tomorrow.",
+  INVITE_OWN_PACK: "This gift code came with your own pack: give it to a friend.",
   INVITE_MONTHLY_LIMIT:
     "You've already used a gift code this month; this one still works next month, or give it to someone else.",
 };
@@ -65,11 +60,10 @@ export type InviteRedemption =
   /** `passEnded`: the server no longer knows the pass (`signedOut` too); otherwise a 401 is an expired sign-in. */
   | { ok: false; message: string; signedOut: boolean; passEnded?: boolean };
 
-/** The code as typed (an invite, or an intro code such as FRIENDS), or null when it isn't one. */
+/** The gift code as typed (spaces, any case), lower case, or null when it isn't one. */
 export function normaliseInvite(value: string): string | null {
-  const typed = value.trim();
-  if (INVITE_RE.test(typed.toLowerCase())) return typed.toLowerCase();
-  return INTRO_RE.test(typed.toUpperCase()) ? typed.toUpperCase() : null;
+  const code = value.trim().toLowerCase();
+  return INVITE_RE.test(code) ? code : null;
 }
 
 /** "3 checks added." */

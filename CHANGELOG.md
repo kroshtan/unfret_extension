@@ -16,6 +16,12 @@ backend's changelog, which lists each one published at `/extension`.)
   a minute (429) now say so instead of "The check failed". The hint under the buttons says "A deep check uses one
   check." instead of "One check per page.", and signed out "…or sign in for a deep check." The consent screen, the
   privacy statement and the store's privacy texts name the new button.
+- **No more intro codes** (backend: intro codes purged). The gift code field takes only gift codes (`ufi_…`): a former
+  intro code such as FRIENDS gets "That doesn't look like a gift code: they start with ufi_. Check it and try again.",
+  as on the website, without asking the server. The messages for `INVITE_NOT_FOR_THIS_ACCOUNT`, `INVITE_ENDED` and
+  `INTRO_DAILY_CAP`, which the server no longer sends, are gone. A code from your own pack (403 `INVITE_OWN_PACK`)
+  now says "This gift code came with your own pack: give it to a friend." instead of "That gift code didn't work";
+  the monthly limit, unknown and used codes are worded as before.
 
 ## 0.12.0 (unreleased)
 

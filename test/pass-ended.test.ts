@@ -185,13 +185,14 @@ describe("a pass the server no longer knows", () => {
         ),
       ),
     );
-    expect(await redeemInvite("https://unfret.net", KEY, "FRIENDS")).toEqual({
+    const code = `ufi_${"a".repeat(32)}`;
+    expect(await redeemInvite("https://unfret.net", KEY, code)).toEqual({
       ok: false,
       message: PASS_ENDED,
       signedOut: true,
       passEnded: true,
     });
-    expect(await redeemInvite("https://unfret.net", WALLET.token, "FRIENDS")).toEqual({
+    expect(await redeemInvite("https://unfret.net", WALLET.token, code)).toEqual({
       ok: false,
       message: SESSION_EXPIRED,
       signedOut: true,

@@ -403,9 +403,9 @@ export class UnfretApi {
   }
 
   /**
-   * Redeem an invite someone gave the user for this account (the wallet's session or the API key): only a new account
-   * that never had checks can. Refusals come back as ApiError with the server's reason (INVALID_INVITE,
-   * UNKNOWN_INVITE, INVITE_USED, INVITE_NOT_FOR_THIS_ACCOUNT).
+   * Redeem a gift code someone gave the user for this account (the wallet's session or the API key). Refusals come
+   * back as ApiError with the server's reason (INVALID_INVITE, UNKNOWN_INVITE, INVITE_USED, INVITE_OWN_PACK,
+   * INVITE_MONTHLY_LIMIT).
    */
   async redeemInvite(code: string): Promise<InviteRedeemed> {
     const response = await this.fetcher(`${this.base}/v1/invites/redeem`, {

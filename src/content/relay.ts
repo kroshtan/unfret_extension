@@ -67,7 +67,7 @@ export function acceptSessionMessage(
 }
 
 // ── A new API key from the checkout page ────────────────────────────────────────────────────────────────────────
-// /checkout posts `{type: "unfret-key", key}` to itself when it shows a key it just made (an intro code, a card
+// /checkout posts `{type: "unfret-key", key}` to itself when it shows a key it just made (a gift code, a card
 // payment, a recovery, "Make a new key"), and `replace: true` once the user agreed to switch accounts. The extension
 // answers `{type: "unfret-key-received", status}`; the answer never carries a key, an account or a balance. From
 // 0.12.0 also "needs-click" (no pass yet, and no click on the page came first: nothing kept), "confirm" (the extension
