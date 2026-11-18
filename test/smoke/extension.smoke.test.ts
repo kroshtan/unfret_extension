@@ -683,6 +683,36 @@ describe("sharing a result and redeeming an invite, in the popup", () => {
   });
 });
 
+describe("the free quick check, in the popup", () => {
+  it("runs without a pass: no sign-in sent, the deep check waits for one", async () => {
+    await granted.worker.evaluate(() =>
+      chrome.storage.local.remove(["session", "sessionExpired", "passEnded"]),
+    );
+    const shop = await granted.context.newPage();
+    await shop.goto(AMAZON_URL);
+    const tabId = await newestTabId(granted.worker);
+    const extensionId = new URL(granted.worker.url()).host;
+    const popup = await granted.context.newPage();
+    await popup.goto(`chrome-extension://${extensionId}/popup/popup.html?tab=${tabId}`);
+    await popup.waitForSelector("#quick-row:not([hidden])");
+    expect(await popup.isDisabled("#analyse")).toBe(true);
+    expect(await popup.textContent("#analyse")).toBe("Check this page");
+    expect(await popup.textContent("#quick")).toBe("Quick check (free)");
+    const before = api.requests.filter((r) => r.path === "/v1/analyze/stream").length;
+    await popup.click("#quick");
+    await popup.waitForFunction(() =>
+      document.querySelector("#result-body")?.textContent.includes("Quick check"),
+    );
+    const sent = api.requests.filter((r) => r.path === "/v1/analyze/stream").slice(before);
+    expect(sent).toHaveLength(1);
+    expect(sent[0]?.auth).toBe("");
+    expect(sent[0]?.body).toMatchObject({ tier: "quick" });
+    expect(await popup.isVisible("#quick-row")).toBe(false); // under a result, not offered again
+    await popup.close();
+    await shop.close();
+  });
+});
+
 describe("in a Dutch browser", () => {
   let dutch: { context: BrowserContext; worker: Worker };
 
@@ -824,6 +854,15 @@ describe("on a phone, 360×740 (Firefox for Android shows the popup as a full-wi
     await shop.close();
   });
 
+  it("renders the popup on a product page, with the quick check under the main button, the same way", async () => {
+    const shop = await phone.context.newPage();
+    await shop.goto(AMAZON_URL);
+    const tabId = await newestTabId(phone.worker);
+    const facts = await fit(`popup/popup.html?tab=${tabId}`, "#quick");
+    expect(facts).toEqual({ width: 360, overflow: false, small: [] });
+    await shop.close();
+  });
+
   it("renders the settings page the same way", async () => {
     expect(await fit("options/options.html")).toEqual({ width: 360, overflow: false, small: [] });
   });
@@ -880,6 +919,8 @@ describe("a new install (0.12.0): a free pass, then a check", () => {
       () => document.querySelector("#credits")?.textContent === "You have 5 free checks",
     );
     expect(await popup.textContent("#analyse")).toBe("Check this page");
+    expect(await popup.textContent("#quick")).toBe("Quick check (free)"); // always on offer, under the main button
+    expect(await popup.isVisible("#quick-row")).toBe(true);
 
     await popup.click("#analyse");
     await popup.waitForSelector("#result:not([hidden])");
@@ -901,6 +942,7 @@ describe("a new install (0.12.0): a free pass, then a check", () => {
     await popup.waitForFunction(
       () => document.querySelector("#analyse")?.textContent === "Quick check (free)",
     );
+    expect(await popup.isVisible("#quick-row")).toBe(false); // the main button is the quick check: not twice
     await popup.click("#analyse");
     await popup.waitForFunction(() =>
       document.querySelector("#result-body")?.textContent.includes("Quick check"),

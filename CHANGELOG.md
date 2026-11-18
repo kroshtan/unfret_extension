@@ -3,6 +3,20 @@
 Releases of the Unfret browser extension. (Earlier releases are described in their commit messages and in the
 backend's changelog, which lists each one published at `/extension`.)
 
+## Unreleased
+
+- **The free quick check, always on offer.** Under "Check this page" (a deep check, which uses a check, a free deep
+  check first) the popup now has a plain "Quick check (free)" button, with "Reads this page only, by Unfret's rules."
+  under it, before every check and not only once the checks run out. Without a pass it works too: the quick check goes
+  without a sign-in, as the server allows (backend 0.13.0), while "Check this page" waits for a pass. Out of checks,
+  or with only free deep checks left while they're paused for the day, the main button is the quick check as before,
+  and the second one isn't shown. Under a quick result the "A deep check also looks at…" suggestion still offers the
+  deep check; without a pass its "Get checks" leads to the free checks (or buying checks, in a browser that had them).
+  When a check finishes, the focus goes to that suggestion's button or to "Check this page". Too many quick checks in
+  a minute (429) now say so instead of "The check failed". The hint under the buttons says "A deep check uses one
+  check." instead of "One check per page.", and signed out "…or sign in for a deep check." The consent screen, the
+  privacy statement and the store's privacy texts name the new button.
+
 ## 0.12.0 (unreleased)
 
 - **The result card**, as on the website and the Android app (backend: the result card): the same product sold

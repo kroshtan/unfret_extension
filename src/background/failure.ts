@@ -25,9 +25,11 @@ export async function checkFailed(
         ? SESSION_EXPIRED
         : apiError?.needsCredits
           ? "You have no checks left."
-          : apiError
-            ? "The check failed. No check was used."
-            : OFFLINE;
+          : apiError?.code === "TOO_MANY_REQUESTS"
+            ? "Too many quick checks in a minute; wait a moment. No check was used."
+            : apiError
+              ? "The check failed. No check was used."
+              : OFFLINE;
   return {
     status: "error",
     message,

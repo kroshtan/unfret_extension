@@ -1,13 +1,13 @@
 # Unfret privacy policy (browser extension)
 
-_Last updated: 17 November 2026 (version 0.12.0: a free Unfret pass made on install, free quick checks, the extension asks in its own window before switching accounts, every request and stored item listed, the page address sent without its fragment, tracking parameters, sessions or e-mail addresses, the welcome page says whether this browser had its free checks, a pass the server no longer knows is forgotten and a new one offered; 0.11.0: a new key from the checkout page signs the extension in, welcome page after installing; earlier: photo lookup corrected, service providers and private sellers' ads added). Draft for the store listings; to be reviewed before publication._
+_Last updated: 18 November 2026 (next version: the free quick check always on offer, with or without a pass; version 0.12.0: a free Unfret pass made on install, free quick checks, the extension asks in its own window before switching accounts, every request and stored item listed, the page address sent without its fragment, tracking parameters, sessions or e-mail addresses, the welcome page says whether this browser had its free checks, a pass the server no longer knows is forgotten and a new one offered; 0.11.0: a new key from the checkout page signs the extension in, welcome page after installing; earlier: photo lookup corrected, service providers and private sellers' ads added). Draft for the store listings; to be reviewed before publication._
 
 Unfret is made by Kroshtan (Floris van Beers, the Netherlands).
 
 ## What the extension reads
 
-Nothing, until you click **Check this page**. Then it reads the page in the tab you are looking at:
-product facts (title, brand, seller, price, ratings, review texts and dates, shop policies, hidden text,
+Nothing, until you click **Check this page** or **Quick check (free)**. Then it reads the page in the tab you are
+looking at: product facts (title, brand, seller, price, ratings, review texts and dates, shop policies, hidden text,
 checkboxes, countdowns), what the shop or company publishes about itself (its phone numbers, e-mail addresses and
 address from its contact, legal or imprint section, footer or structured data; registration and licence numbers;
 payment methods it mentions) and the visible product text. To recognise the apps a shop runs (dropshipping,
@@ -77,7 +77,7 @@ see the page or its address.
 
 ## What is sent, and to whom
 
-Only to the Unfret API (`unfret.net`, hosted in the EU), when you click "Check this page":
+Only to the Unfret API (`unfret.net`, hosted in the EU), when you click "Check this page" or "Quick check (free)":
 
 - the page address, without what in it is about you rather than the product: the part after `#`, a user name or
   password, tracking and referral parameters (`utm_…`, `gclid`, `fbclid`, `msclkid`, `mc_eid`, `igshid`, `ref`,
@@ -85,9 +85,11 @@ Only to the Unfret API (`unfret.net`, hosted in the EU), when you click "Check t
   address. What picks the product or its variant (an ID, a size or colour) stays. The same address is used for the
   product facts, and is what a shared result links to;
 - the product facts and text described above;
-- your Unfret pass, or the session token of the Solana wallet you signed in with, to pay for the check;
-- for a **quick check** (free; offered when you have no checks left, or while today's free checks are used up),
-  the same page data, marked as a quick check: Unfret then reads only the page itself, by its rules.
+- your Unfret pass, or the session token of the Solana wallet you signed in with, to pay for the check (a quick
+  check without a pass or sign-in goes without one);
+- for a **quick check** (free, always on offer as "Quick check (free)" under the main button, and the main button
+  itself when you have no checks left or while today's free checks are used up), the same page data, marked as a
+  quick check: Unfret then reads only the page itself, by its rules.
 
 More requests go to the same API, each only when you ask for it:
 

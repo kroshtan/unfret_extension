@@ -234,7 +234,8 @@ async function runAnalysis(tabId: number, tier?: "quick"): Promise<void> {
     setState(tabId, { status: "error", message: CONSENT_HINT, needsSignIn: false, needsCredits: false });
     return;
   }
-  if (!session) {
+  // A quick check is free for everyone: without a pass it goes without a sign-in. A deep check needs one.
+  if (!session && tier !== "quick") {
     setState(tabId, {
       status: "error",
       message: "Sign in first.",
@@ -259,7 +260,7 @@ async function runAnalysis(tabId: number, tier?: "quick"): Promise<void> {
   setState(tabId, { status: "extracting" });
   try {
     const { facts, text } = await extractFromTab(tabId);
-    const api = new UnfretApi(apiBase, session.token);
+    const api = new UnfretApi(apiBase, session?.token);
     let state: Extract<TabState, { status: "analysing" }> = { status: "analysing", findings: [], steps: [] };
     setState(tabId, state);
     const upload = text.slice(0, MAX_UPLOAD_TEXT_CHARS);
