@@ -3,8 +3,8 @@
   "checked": "2026-11-18",
   "result": {
     "assessment": {
-      "confidence": 0.9891,
-      "degraded": false,
+      "confidence": 0.3,
+      "degraded": true,
       "flags": [
         {
           "evidence": "Price 39.99 against a 'was' price of 189.99 (79% off).",
@@ -12,60 +12,36 @@
           "label": "Size of the discount",
           "severity": "high",
           "type": "listing.discount_pct",
-          "weight": 2.239
+          "weight": 2.342
         },
         {
-          "evidence": "helps you fall asleep 87% faster",
+          "evidence": "Loox (reviews with AliExpress import)",
           "kind": "signal",
-          "label": "Hard-to-believe claims",
-          "severity": "medium",
-          "type": "content.implausible_claims",
-          "weight": 0.983
+          "label": "Imported reviews",
+          "severity": "high",
+          "type": "html_source_signals.review_import_app",
+          "weight": 2.164
         },
         {
-          "evidence": "",
+          "evidence": "Fake 'someone just bought' pop-ups",
           "kind": "signal",
-          "label": "Title full of search terms",
-          "severity": "medium",
-          "type": "content.title_word_soup",
-          "weight": 0.612
-        },
-        {
-          "evidence": "",
-          "kind": "signal",
-          "label": "Pushy sales talk",
-          "severity": "medium",
-          "type": "content.scam_copy",
-          "weight": 0.412
-        },
-        {
-          "evidence": "",
-          "kind": "signal",
-          "label": "Little shop information",
-          "severity": "low",
-          "type": "content.missing_trust_info",
-          "weight": 0.243
-        },
-        {
-          "evidence": "The page text addresses an AI or bot.",
-          "kind": "signal",
-          "label": "Text aimed at AI",
-          "severity": "low",
-          "type": "content.addresses_ai",
-          "weight": 0.1
+          "label": "Urgency tool",
+          "severity": "high",
+          "type": "html_source_signals.timer_app",
+          "weight": 1.194
         }
       ],
-      "model_version": "v1-20261109-222323-C",
+      "model_version": "v1-20261118-113117-C",
       "risk_score": 1
     },
     "charged": true,
-    "explanation": "Shop with caution: fake countdowns, pre-ticked extras, and unbelievable discounts raise serious concerns.",
+    "explanation": "This deal seems too good to be true, so be careful before buying.",
     "free_check": true,
     "page_type": "storefront",
     "score": 0,
     "tier": "deep",
     "verdict": {
-      "band": "junk_or_scam",
+      "band": "careful",
       "checklist": [
         {
           "key": "who",
@@ -76,7 +52,7 @@
         {
           "key": "product",
           "label": "The product and the brand",
-          "note": "Title full of search terms",
+          "note": "Same photo under other brand names",
           "status": "concern"
         },
         {
@@ -87,7 +63,7 @@
         },
         {
           "key": "prices",
-          "label": "Prices and discounts",
+          "label": "Prices, delivery and returns",
           "note": "Paid extra already ticked",
           "status": "concern"
         },
@@ -98,13 +74,26 @@
           "status": "concern"
         }
       ],
-      "checks_run": 16,
-      "headline": "Shop with caution: fake countdowns, pre-ticked extras, and unbelievable discounts raise serious concerns.",
-      "label": "Serious concerns",
+      "checks_run": 15,
+      "deep_check": {
+        "adds": [
+          {
+            "area": "prices",
+            "key": "price_history",
+            "label": "whether its 'was' price was ever really charged"
+          }
+        ],
+        "quiet": false,
+        "reason": "on_the_fence",
+        "suggested": true,
+        "text": "A deep check also looks at whether its 'was' price was ever really charged."
+      },
+      "headline": "This deal seems too good to be true, so be careful before buying.",
+      "label": "Think twice",
       "language": "en",
       "next_step": {
-        "text": "Better to buy this from a shop you know.",
-        "type": "junk_or_scam"
+        "text": "Ignore the pressure: take your time and compare the offer elsewhere.",
+        "type": "take_time"
       },
       "positives": [],
       "reasons": [
@@ -134,8 +123,11 @@
         }
       ],
       "same_product": {
+        "brands": [
+          "VELUNOX"
+        ],
         "currency": "USD",
-        "detail": "The main photo is the same photo as on unfret.net/test-shop/sister-shop. Unfret saw it there for $17.99 on 18 November 2026.",
+        "detail": "The main photo is the same photo as on unfret.net/test-shop/sister-shop, under another brand name (VELUNOX). Unfret saw it there for $17.99 on November 18, 2026.",
         "domain": "unfret.net/test-shop/sister-shop",
         "image": "https://unfret.net/v1/images/test-shop/sister-hero.jpg",
         "others": 0,

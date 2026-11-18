@@ -3,17 +3,17 @@
   "checked": "2026-11-18",
   "result": {
     "assessment": {
-      "confidence": 0.8743,
+      "confidence": 0.6894,
       "degraded": false,
       "flags": [],
-      "model_version": "v1-20261109-222323-C",
-      "risk_score": 0.058
+      "model_version": "v1-20261118-113117-C",
+      "risk_score": 0
     },
     "charged": true,
-    "explanation": "This offer is from a known brand and an established shop, with natural-looking reviews, so it seems reliable.",
+    "explanation": "This offer seems trustworthy, with a known brand, established shop, and natural-looking reviews.",
     "free_check": true,
     "page_type": "storefront",
-    "score": 94,
+    "score": 100,
     "tier": "deep",
     "verdict": {
       "band": "reliable",
@@ -38,7 +38,7 @@
         },
         {
           "key": "prices",
-          "label": "Prices and discounts",
+          "label": "Prices, delivery and returns",
           "note": "",
           "status": "checked"
         },
@@ -50,7 +50,14 @@
         }
       ],
       "checks_run": 15,
-      "headline": "This offer is from a known brand and an established shop, with natural-looking reviews, so it seems reliable.",
+      "deep_check": {
+        "adds": [],
+        "quiet": false,
+        "reason": "nothing_to_add",
+        "suggested": false,
+        "text": ""
+      },
+      "headline": "This offer seems trustworthy, with a known brand, established shop, and natural-looking reviews.",
       "label": "Looks fine",
       "language": "en",
       "next_step": {

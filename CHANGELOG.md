@@ -3,6 +3,14 @@
 Releases of the Unfret browser extension. (Earlier releases are described in their commit messages and in the
 backend's changelog, which lists each one published at `/extension`.)
 
+## Unreleased
+
+- **Store images for the next release** (not part of the extension package): the promo tiles say "Check before you
+  pay.", the website's tagline, instead of "Shop without the worry.", and the marquee's line names fake sellers on
+  marketplaces first. The screenshots' results were checked again on dev.unfret.net (dates as the server now writes
+  them, "November 18, 2026"; "Prices, delivery and returns" as the area's name) and the screenshots rendered from
+  them; they differ from the ones submitted with 0.12.0.
+
 ## 0.12.0 (unreleased)
 
 - **The result card**, as on the website and the Android app (backend: the result card): the same product sold
