@@ -343,6 +343,8 @@ describe("the popup's next step", () => {
   /** The price list's answer (none: it never answers), and the free checks a new pass gets. */
   let pricing: unknown;
   let freeGiven: number;
+  /** Hands the popup a background update, as the background's port does. */
+  let deliver: (update: unknown) => void;
 
   async function openPopup(
     credits: number | null,
@@ -371,7 +373,11 @@ describe("the popup's next step", () => {
     chromeStub.runtime = {
       id: "ext-id",
       connect: () => ({
-        onMessage: { addListener: () => undefined },
+        onMessage: {
+          addListener: (fn: (update: unknown) => void) => {
+            deliver = fn;
+          },
+        },
         postMessage: (message: unknown) => posted.push(message),
       }),
       openOptionsPage: () => Promise.resolve(),
@@ -567,6 +573,81 @@ describe("the popup's next step", () => {
     expect(document.getElementById("analyse")?.textContent).toBe("Check this page");
     document.getElementById("buy")?.click();
     expect(opened).toEqual(["https://unfret.net/checkout?mode=topup&key_id=abcdefghij"]);
+  });
+
+  /** A finished check that can be reported, as the background sends it. */
+  function reportableResult(): void {
+    deliver({
+      type: "state",
+      tabId: 1,
+      state: {
+        status: "done",
+        findings: [],
+        result: { score: 20, explanation: "Generic product.", report_token: "report-token.mac" },
+        body: { url: "https://shop.example/p/1" },
+      },
+    });
+  }
+  const rewardLine = (): string | null | undefined => document.getElementById("report-reward")?.textContent;
+
+  it("Wrong result?: the reward line says both rewards from the price list", async () => {
+    data.session = keySessionOf(KEY);
+    pricing = { hot_wallet: null, reports: { per_month: 15, reward_checks: 5, small_reward_checks: 1 } };
+    await openPopup(5);
+    reportableResult();
+    await vi.waitFor(() => {
+      expect(rewardLine()).toBe(
+        "If Unfret was clearly wrong, you get 5 free checks; if it was somewhat off, 1 free check.",
+      );
+    });
+    document.getElementById("report-open")?.click();
+    const consent = document.querySelector("#report p")?.textContent.replace(/\s+/gu, " ") ?? "";
+    expect(consent).toContain("an AI model may suggest a label, a person decides");
+    expect(consent).not.toMatch(/3 free checks|far off/u);
+    expect(fetched.filter((path) => path === "/v1/pricing")).toHaveLength(1);
+    reportableResult(); // a later update asks no more
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(fetched.filter((path) => path === "/v1/pricing")).toHaveLength(1);
+  });
+
+  it("Wrong result? with an older server's price list (no reward numbers): the line without numbers", async () => {
+    data.session = keySessionOf(KEY);
+    pricing = { hot_wallet: null };
+    await openPopup(5);
+    reportableResult();
+    await vi.waitFor(() => {
+      expect(fetched).toContain("/v1/pricing");
+    });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(rewardLine()).toBe("If the result was wrong, you may get free checks.");
+  });
+
+  it("Wrong result? while the price list doesn't answer: the line without numbers, and the report still opens", async () => {
+    data.session = keySessionOf(KEY);
+    await openPopup(5);
+    reportableResult();
+    expect(rewardLine()).toBe("If the result was wrong, you may get free checks.");
+    document.getElementById("report-open")?.click();
+    expect(visible("report")).toBe(true);
+  });
+
+  it("a sent report: the outcome line says free checks come if we got it wrong", async () => {
+    data.session = keySessionOf(KEY);
+    await openPopup(5);
+    deliver({
+      type: "state",
+      tabId: 1,
+      state: {
+        status: "done",
+        findings: [],
+        result: { score: 20, explanation: "Generic product.", report_token: "report-token.mac" },
+        body: { url: "https://shop.example/p/1" },
+        report: { status: "sent", outcome: "queued" },
+      },
+    });
+    expect(document.getElementById("report-status")?.textContent).toBe(
+      "Thanks! We'll review this page. If we got it wrong, you get free checks.",
+    );
   });
 
   it('shows "Buy checks" at once, without waiting for the price list (0.12.0: it came seconds late)', async () => {

@@ -39,6 +39,18 @@ export interface Pricing {
   network?: string;
   /** The free checks a new pass gets (0: none at the moment); absent on older servers. */
   free?: { checks_per_pass?: number };
+  /**
+   * "Wrong result?": reports per account per month and the rewards, paid once a person labelled the page:
+   * `reward_checks` when the score was at least `reward_gap` points off, `small_reward_checks` when at least
+   * `small_reward_gap`. Older servers have only `per_month` and `reward_checks`, or no `reports` at all.
+   */
+  reports?: {
+    per_month?: number;
+    reward_checks?: number;
+    reward_gap?: number;
+    small_reward_checks?: number;
+    small_reward_gap?: number;
+  };
 }
 
 export interface Credits {
