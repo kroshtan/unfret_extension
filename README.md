@@ -126,7 +126,7 @@ toolbar click ─► popup ─► background ─► inject extract.js into the t
   the popup makes a pass without them at once. A wallet's sign-in that expired is still "Sign in again". Versions
   before 0.12.0 took that 401 for an expired sign-in; updating from one of them turns that state (expired, nothing
   stored) into the ended pass's.
-- **"Have an invite?"** (popup and settings, when signed in) redeems a code onto the account in use
+- **"Have a gift code?"** (popup and settings, when signed in) redeems a code onto the account in use
   (`POST /v1/invites/redeem`, with its own sign-in); only a new wallet or a never-funded key can. The code isn't kept.
 - **"Share this result"** asks the API for a preview of the public page (`POST /v1/shares/preview`), and only on
   "Share" makes it (`POST /v1/shares`), both **without** the sign-in, so the page names no account. The link and its

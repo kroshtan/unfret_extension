@@ -651,7 +651,7 @@ describe("sharing a result and redeeming an invite, in the popup", () => {
     await page.fill("#invite-input", INVITE_USED_CODE);
     await page.click("#invite-use");
     await page.waitForFunction(() => document.querySelector("#invite-status")?.textContent !== "");
-    expect(await page.textContent("#invite-status")).toBe("This invite has already been used.");
+    expect(await page.textContent("#invite-status")).toBe("This gift code has already been used.");
 
     await page.fill("#invite-input", INVITE_OK);
     await page.click("#invite-use");

@@ -72,7 +72,7 @@ describe("invites", () => {
     const before = api.requests.length;
     expect(await redeemInvite(api.url, KEY, "not a code")).toEqual({
       ok: false,
-      message: "That isn't an invite (ufi_…) or an intro code.",
+      message: "That doesn't look like a gift code: they start with ufi_. Check it and try again.",
       signedOut: false,
     });
     expect(api.requests).toHaveLength(before);
@@ -90,11 +90,11 @@ describe("invites", () => {
   });
 
   it.each([
-    [INVITE_USED_CODE, "This invite has already been used."],
-    [INVITE_UNKNOWN_CODE, "Unknown invite code."],
+    [INVITE_USED_CODE, "This gift code has already been used."],
+    [INVITE_UNKNOWN_CODE, "Unknown gift code."],
     [
       INVITE_NOT_NEW_CODE,
-      "Invites and intro codes are for new accounts: this one has had checks before, or used one.",
+      "Intro codes are for new accounts: this one has had checks before, or used a code.",
     ],
   ])("shows the server's reason for a refused code (%s)", async (code, message) => {
     expect(await redeemInvite(api.url, KEY, code)).toEqual({ ok: false, message, signedOut: false });
@@ -126,7 +126,7 @@ describe("invites", () => {
     const off = await redeemInvite(api.url, "off", INVITE_OK);
     expect(off).toMatchObject({
       ok: false,
-      message: "Invites aren't available right now. Please try again later.",
+      message: "Gift codes aren't available right now. Please try again later.",
     });
     const offline = await redeemInvite("http://127.0.0.1:9", KEY, INVITE_OK);
     expect(offline).toMatchObject({ ok: false, message: "Couldn't reach Unfret. Check your connection." });

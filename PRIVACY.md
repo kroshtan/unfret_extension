@@ -99,7 +99,7 @@ More requests go to the same API, each only when you ask for it:
 - **Wrong result?** (reporting a result): that one check's product facts, page text and result, with your sign-in,
   only after you chose a reason and clicked **Send report**. An AI model hosted in the EU may read the stored report
   once to suggest a label; a person decides.
-- **Have an invite or gift code?**: the code you enter, with your sign-in, to add its checks to your account. The
+- **Have a gift code?**: the code you enter, with your sign-in, to add its checks to your account. The
   server notes which pack's buyer a gift code came from only as a keyed one-way hash, so the buyer can't use their own;
   it doesn't note who redeemed it.
 - **Signing in**: with a pass you paste, a request for its balance, to check that Unfret knows it; with a wallet on
