@@ -3,8 +3,9 @@
  * analysis that records the request it got. Behaviour per bearer token: "expired" → 401, "broke" → 402,
  * "off" → 503, "midway" → stream error event, anything else → a normal result.
  *
- * Invites (`POST /v1/invites/redeem`): INVITE_OK adds 3 checks; INVITE_USED_CODE, INVITE_UNKNOWN_CODE and
- * INVITE_NOT_NEW_CODE are refused with the server's codes and words; once INVITE_OK is redeemed by a token,
+ * Gift codes (`POST /v1/invites/redeem`): INVITE_OK adds 3 checks; INVITE_USED_CODE, INVITE_UNKNOWN_CODE,
+ * INVITE_OWN_CODE and INVITE_MONTHLY_CODE are refused with the server's codes and words, anything else with 400
+ * INVALID_INVITE; once INVITE_OK is redeemed by a token,
  * `/v1/credits` reports `invite_eligible: false` for it (before that the field is absent, like an older server). Shares (`/v1/shares/preview`, `/v1/shares`) refuse
  * a request with Authorization, like the server; share token "expired.mac" → 422, "busy.mac" → 429 on create.
  *
@@ -68,9 +69,11 @@ export const VERDICT = {
 export const INVITE_OK = `ufi_${"a".repeat(32)}`;
 export const INVITE_USED_CODE = `ufi_${"b".repeat(32)}`;
 export const INVITE_UNKNOWN_CODE = `ufi_${"c".repeat(32)}`;
-export const INVITE_NOT_NEW_CODE = `ufi_${"d".repeat(32)}`;
-/** Refused with 429 INVITE_MONTHLY_LIMIT (`metadata.next_month` 2026-12-01); MONTHLYBARE: the same without metadata. */
+/** A code from the redeeming account's own pack: 403 INVITE_OWN_PACK. */
+export const INVITE_OWN_CODE = `ufi_${"d".repeat(32)}`;
+/** Refused with 429 INVITE_MONTHLY_LIMIT (`metadata.next_month` 2026-12-01); the BARE one: the same without metadata. */
 export const INVITE_MONTHLY_CODE = `ufi_${"e".repeat(32)}`;
+export const INVITE_MONTHLY_BARE_CODE = `ufi_${"g".repeat(32)}`;
 
 const INVITE_REFUSALS: Record<
   string,
@@ -82,22 +85,17 @@ const INVITE_REFUSALS: Record<
     detail: "This pass already used a gift code this month.",
     metadata: { next_month: "2026-12-01" },
   },
-  MONTHLYBARE: { status: 429, error_code: "INVITE_MONTHLY_LIMIT", detail: "" },
+  [INVITE_MONTHLY_BARE_CODE]: { status: 429, error_code: "INVITE_MONTHLY_LIMIT", detail: "" },
   [INVITE_USED_CODE]: {
     status: 409,
     error_code: "INVITE_USED",
     detail: "This gift code has already been used.",
   },
   [INVITE_UNKNOWN_CODE]: { status: 404, error_code: "UNKNOWN_INVITE", detail: "Unknown gift code." },
-  [INVITE_NOT_NEW_CODE]: {
+  [INVITE_OWN_CODE]: {
     status: 403,
-    error_code: "INVITE_NOT_FOR_THIS_ACCOUNT",
-    detail: "Intro codes are for new accounts: this one has had checks before, or used a code.",
-  },
-  CAPPED: {
-    status: 429,
-    error_code: "INTRO_DAILY_CAP",
-    detail: "Today's free checks from codes are gone: they're back tomorrow (UTC).",
+    error_code: "INVITE_OWN_PACK",
+    detail: "This gift code came with your own pack: give it to a friend.",
   },
 };
 
@@ -273,13 +271,6 @@ export async function startMockApi(): Promise<MockApi> {
             detail: refusal.detail,
             error_code: refusal.error_code,
             ...(refusal.metadata ? { metadata: refusal.metadata } : {}),
-          });
-        else if (code === "FRIENDS")
-          json(res, 200, {
-            checks_added: 5,
-            usd_micros_added: 1_000_000,
-            balance_usd_micros: 1_000_000,
-            checks_remaining: 5,
           });
         else if (code === INVITE_OK) {
           invited.add(token);
