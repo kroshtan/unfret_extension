@@ -6,14 +6,18 @@
  */
 
 import type { PageFacts, Review } from "../shared/facts.js";
+import { cleanBrand } from "./brand.js";
 import { attr, cut, stripChars, text } from "./dom.js";
 import { parseCount, parseDate, parsePrice, parseRating } from "./parse.js";
 
-const BYLINE_RE =
-  /^(?:visit the|besuchen sie den|visitez la boutique|bezoek de|visita la tienda de|visita lo store di)\s+(.+?)(?:\s+store|-store|-shop|\s+boutique)?$|^(?:brand|marke|marque|merk|marca)\s*:\s*(.+)$/iu;
 const FIRST_AVAILABLE_RE =
   /date first available|im angebot von amazon|disponible depuis le|datum eerste beschikbaarheid|producto en amazon desde|disponibile su amazon/iu;
 const BRAND_KEY_RE = /^(?:brand|marke|marque|merk|marca|manufacturer|hersteller)/iu;
+// A row that names the brand itself, not its manufacturer.
+const BRAND_ONLY_RE = /^(?:brand|marke|marque|merk|marca|marka|märke|varumärke|marchio)$/iu;
+// The byline link's search filter by brand (`field-brandtextbin=Duracell`); a store link's path is the store's
+// name, which isn't always the brand's ("AmazonBasics" for Amazon Basics).
+const BYLINE_BRAND_PARAMS = ["field-brandtextbin", "field-brand"];
 const SHIPS_FROM_RE = /ships from|versand|expédié par|verzonden door|enviado desde|spedizione/iu;
 const SOLD_BY_RE = /sold by|verkäufer|vendu par|verkocht door|vendido por|venduto da/iu;
 const STAR_ROW_RE = /([1-5])\s*(?:star|stern|étoile|ster|estrella|stell)/iu;
@@ -53,11 +57,60 @@ export function extract(doc: Document, facts: PageFacts): void {
 
 function titleAndBrand(doc: Document, facts: PageFacts): void {
   facts.title = text(doc.getElementById("productTitle")) || facts.title;
-  const byline = text(doc.getElementById("bylineInfo")).replace(FORMAT_SUFFIX_RE, "");
-  if (byline) {
-    const m = BYLINE_RE.exec(byline);
-    facts.brand = cut((m ? (m[1] ?? m[2] ?? "") : byline).trim(), 300);
+  // Structured data first (the product's JSON-LD, the overview table's and the detail table's brand row, the
+  // byline link's brand filter), then the byline's text without the phrase around it; a manufacturer row is the
+  // last resort (in details).
+  const rows = detailRows(doc);
+  const byline = doc.getElementById("bylineInfo");
+  const brandRows = (from: Map<string, string>): string[] =>
+    Array.from(from)
+      .filter(([key]) => BRAND_ONLY_RE.test(key))
+      .map(([, value]) => value);
+  const candidates = [
+    facts.brand,
+    ...brandRows(overviewRows(doc)),
+    ...brandRows(rows),
+    bylineParam(byline),
+    text(byline).replace(FORMAT_SUFFIX_RE, ""),
+  ];
+  facts.brand = "";
+  for (const candidate of candidates) {
+    const brand = cleanBrand(candidate);
+    if (brand) {
+      facts.brand = brand;
+      break;
+    }
   }
+}
+
+function overviewRows(doc: Document): Map<string, string> {
+  const rows = new Map<string, string>();
+  for (const tr of Array.from(doc.querySelectorAll("#productOverview_feature_div tr"))) {
+    const cells = tr.querySelectorAll("td");
+    if (cells.length >= 2) {
+      const key = stripChars(text(cells[0]), MARKS);
+      if (!rows.has(key)) rows.set(key, stripChars(text(cells[1]), MARKS));
+    }
+  }
+  return rows;
+}
+
+function bylineParam(byline: Element | null): string {
+  if (!byline) return "";
+  const link = byline.tagName === "A" ? byline : byline.querySelector("a");
+  const href = link?.getAttribute("href");
+  if (href === null || href === undefined) return "";
+  let query: URLSearchParams;
+  try {
+    query = new URL(href, "https://www.amazon.com/").searchParams;
+  } catch {
+    return "";
+  }
+  for (const param of BYLINE_BRAND_PARAMS) {
+    const value = query.get(param);
+    if (value) return value;
+  }
+  return "";
 }
 
 function prices(doc: Document, facts: PageFacts): void {
@@ -86,7 +139,7 @@ function ratings(doc: Document, facts: PageFacts): void {
 function details(doc: Document, facts: PageFacts): void {
   for (const [key, value] of detailRows(doc)) {
     if (FIRST_AVAILABLE_RE.test(key)) facts.date_first_available = parseDate(value);
-    else if (!facts.brand && BRAND_KEY_RE.test(key)) facts.brand = cut(value, 300);
+    else if (!facts.brand && BRAND_KEY_RE.test(key)) facts.brand = cleanBrand(value);
   }
 }
 

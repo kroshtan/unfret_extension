@@ -5,6 +5,13 @@ backend's changelog, which lists each one published at `/extension`.)
 
 ## 0.12.0 (unreleased)
 
+- **The brand from Amazon's byline, in every language** (backend: the brand from a marketplace byline): the
+  byline's phrase is taken off ("Visit the X Store", "De X Store openen", "Besuche den X-Store", "Visiter la boutique
+  X", "Marca: X", in en, nl, de, fr, it, es, pt, pl, se, tr and ja), as is a store word hyphened on ("X-winkel");
+  the product's structured brand comes first (JSON-LD, the overview and detail tables' brand row, the byline link's
+  brand filter); and a name that reads like a sentence or a store link is sent as no brand. `src/extract/brand.ts`
+  is a line-for-line port of the backend's `facts/brand.py`; four new made-up parity fixtures (nl, fr, se) check
+  both give the same brand and seller.
 - **The result card**, as on the website and the Android app (backend: the result card): the same product sold
   elsewhere first, with both photos ("Looks like the same product, sold elsewhere for $X", from Unfret's image
   index, photos only through the API's own thumbnail proxy); each finding with its source ("Source: Domain registry

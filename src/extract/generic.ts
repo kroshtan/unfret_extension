@@ -22,6 +22,7 @@ import { extractBusiness, organizations } from "./business.js";
 import { extractServiceProfile, SERVICE_PLATFORMS } from "./services.js";
 import { extractTestimonials } from "./testimonials.js";
 import { extractMarkup } from "./markup.js";
+import { cleanBrand } from "./brand.js";
 import { attr, cut, dedupe, hostname, squash, tagName, text, urljoin } from "./dom.js";
 import { parseDate, parseNumber, parseRating } from "./parse.js";
 import { pyJsonLength } from "./pyjson.js";
@@ -162,6 +163,7 @@ export function extractFacts(doc: Document, html: string, url = ""): PageFacts {
   else if (facts.platform === "bol.com") bolcom.extract(doc, facts);
   else if (facts.platform === "walmart") walmart.extract(doc, facts);
   else if (facts.platform === "shopify") shopify(html, facts, url);
+  facts.brand = cleanBrand(facts.brand); // one brand string for every check: no byline phrase, no sentence
   if (!facts.title) facts.title = text(doc.querySelector("h1")) || meta(doc, "og:title");
   const ogImage = meta(doc, "og:image");
   if (facts.image_urls.length === 0 && ogImage) facts.image_urls = [urljoin(url, ogImage)];

@@ -1,0 +1,63 @@
+{
+ "platform": "amazon",
+ "url": "https://www.amazon.fr/dp/B0FAKEFR01",
+ "title": "Dilatateur nasal en silicone, lot de 4",
+ "brand": "Lumora Air",
+ "seller": "Nuit Calme SARL",
+ "seller_rating": null,
+ "ships_from": "Amazon",
+ "price": null,
+ "list_price": null,
+ "currency": "",
+ "date_first_available": null,
+ "rating": null,
+ "rating_count": null,
+ "rating_histogram": {},
+ "reviews": [],
+ "variations": [],
+ "json_ld": [],
+ "script_srcs": [],
+ "meta": {},
+ "markup_names": [
+  "dp",
+  "productTitle",
+  "bylineInfo",
+  "tabular-buybox"
+ ],
+ "external_refs": [],
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [],
+ "fee_mentions": [],
+ "vat_ids": [],
+ "legal_mentions": [],
+ "copyright_lines": [],
+ "policy_links": {},
+ "image_urls": [],
+ "product_ids": {
+  "asin": "B0FAKEFR01"
+ },
+ "payment_methods": [],
+ "phones": [],
+ "emails": [],
+ "addresses": [],
+ "founded_claims": [],
+ "business_name": "",
+ "legal_form": "",
+ "kvk_numbers": [],
+ "licences": [],
+ "certifications": [],
+ "cities_served": [],
+ "internal_links": [
+  {
+   "text": "Visiter la boutique Lumora",
+   "url": "https://www.amazon.fr/s/ref=bl_dp_s_web_0?ie=UTF8&node=0&field-brandtextbin=Lumora+Air"
+  }
+ ],
+ "pricing_terms": [],
+ "promises": [],
+ "testimonials": [],
+ "organization_ld": [],
+ "seller_profile": null,
+ "listing": null
+}
