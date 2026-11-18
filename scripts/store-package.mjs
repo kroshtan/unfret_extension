@@ -1,6 +1,6 @@
 // Check the store packages of a fresh production build (`npm run build` first) and put them, with their checksums,
 // in dist/store/:
-//   dist/store/unfret-chrome-<version>.zip    the Chrome Web Store upload
+//   dist/store/unfret-chrome-<version>.zip    the Chrome Web Store and Microsoft Edge Add-ons upload
 //   dist/store/unfret-firefox-<version>.zip   the addons.mozilla.org (AMO) upload
 //   dist/store/unfret-source-<version>.zip    the source AMO asks for with a bundled, minified add-on: `git archive`
 //                                             of the release commit, which `npm ci && npm run build` (store/AMO.md)

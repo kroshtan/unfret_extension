@@ -99,6 +99,24 @@ jobs:
       - name: Check the store package
         if: steps.gate.outputs.run == 'true'
         run: node scripts/store-package.mjs
+      # The release workflow's submit steps without store secrets (this runner has none): every store is skipped with a
+      # notice and the run passes, so a store whose secrets aren't set yet (Edge Add-ons, until Partner Center is
+      # set up) never fails a release. The order guard is tested in test/store-publish.test.ts; here a stand-in
+      # health answer lets the real run through it without asking production.
+      - name: Without store secrets, a release skips the stores
+        if: steps.gate.outputs.run == 'true'
+        env:
+          UNFRET_HEALTH_URL: 'data:application/json,{"version":"999.0.0"}'
+          CWS_CLIENT_ID: ""
+          CWS_SERVICE_ACCOUNT_KEY: ""
+          AMO_JWT_ISSUER: ""
+          EDGE_PRODUCT_ID: ""
+        run: |
+          set -euo pipefail
+          node scripts/store-publish.mjs | tee store-publish.log
+          for store in chrome firefox edge; do
+            grep -qx "::notice::$store: skipped (no secrets)" store-publish.log
+          done
 
   # Unfret Dev, on every push to main (and manual runs on main): build it as version <package.json>.<run number>,
   # sign it with the dev key, and propose it to the backend, which serves it at

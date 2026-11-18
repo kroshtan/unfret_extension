@@ -5,6 +5,8 @@ export const CWS_TOKEN_URL: string;
 export const CWS_API: string;
 export const AMO_API: string;
 export const AMO_SLUG: string;
+export const EDGE_API: string;
+export const REPO_URL: string;
 
 export function parseVersion(version: string): { core: number[]; pre: string };
 export function compareVersions(a: string, b: string): number;
@@ -24,11 +26,11 @@ export interface StoreRequest {
   body?: string | URLSearchParams | FormData | Blob;
   shown?: string;
   file?: string;
-  dry?: { status?: number; data?: unknown };
+  dry?: { status?: number; data?: unknown; headers?: Record<string, string> };
   accept?: number[];
 }
 export interface HttpClient {
-  send(request: StoreRequest): Promise<{ status: number; data: any }>; // eslint-disable-line @typescript-eslint/no-explicit-any
+  send(request: StoreRequest): Promise<{ status: number; data: any; headers: Record<string, string> }>; // eslint-disable-line @typescript-eslint/no-explicit-any
   sent: string[];
 }
 export function httpClient(options?: {
@@ -107,6 +109,36 @@ export function publishFirefox(options: {
   approvalNotes?: string;
   slug?: string;
   wait?: (ms: number) => Promise<unknown>;
+  dryRun?: boolean;
+}): Promise<string>;
+
+export function edgeUrls(
+  productId: string,
+  api?: string,
+): {
+  upload: string;
+  uploadStatus: (id: string) => string;
+  publish: string;
+  publishStatus: (id: string) => string;
+};
+export function edgeHeaders(credentials: { clientId: string; apiKey: string }): Record<string, string>;
+export function edgeOperationId(location: string | null | undefined): string | null;
+export function changelogHeadlines(changelog: string, version: string): string[];
+export const EDGE_NOTES_MAX: number;
+export function edgeNotes(options: {
+  version: string;
+  changelog?: string;
+  instructions?: string;
+  max?: number;
+}): string;
+export function publishEdge(options: {
+  http: HttpClient;
+  credentials: { productId: string; clientId: string; apiKey: string };
+  zipPath: string;
+  version: string;
+  notes: string;
+  wait?: (ms: number) => Promise<unknown>;
+  tries?: number;
   dryRun?: boolean;
 }): Promise<string>;
 

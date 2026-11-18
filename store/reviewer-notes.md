@@ -1,6 +1,7 @@
 # Chrome Web Store: test instructions for the reviewer
 
-Paste the block below into the dashboard's "Test instructions" field, with a real test key filled in.
+Paste the block below into the dashboard's "Test instructions" field, with a real test key filled in. Microsoft Edge
+Add-ons takes the same block as its "Notes for certification" ([EDGE.md](EDGE.md)).
 
 ## Creating the reviewer's test key (operator, once per review)
 

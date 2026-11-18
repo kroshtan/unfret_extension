@@ -11,7 +11,8 @@ third-party requests: the extension talks to the Unfret API and nothing else.
 
 **Install:** from the [Chrome Web Store](https://chromewebstore.google.com/detail/unfret/giiengbpechhnphignbicmlcbklmcpjo)
 (Chrome, Brave, Edge and other Chromium browsers); Firefox is being submitted to addons.mozilla.org
-([store/AMO.md](store/AMO.md)). Both are built byte for byte from this repository. The older self-hosted install is
+([store/AMO.md](store/AMO.md)) and Edge to Microsoft Edge Add-ons ([store/EDGE.md](store/EDGE.md)). All are built
+byte for byte from this repository. The older self-hosted install is
 described in [INSTALL.md](INSTALL.md), but no longer offered.
 
 - Website: [unfret.net](https://unfret.net) · [check a link](https://unfret.net/check) ·
@@ -205,9 +206,10 @@ newest commit's run checks and publishes it.
   checks the store packages (Chrome, Firefox and the source zip addons.mozilla.org asks for), attaches them to the
   release `v<version>` and submits them (`scripts/store-publish.mjs`): the Chrome zip to the Chrome Web Store for
   review (API v2, OAuth refresh token or a service account), the Firefox zip with its source as a new listed version on addons.mozilla.org
-  (API v5). Inputs pick the stores (both, chrome, firefox, none) and a dry run (the default) that only shows the
-  requests. A store without its secrets is skipped. See [store/SUBMIT.md](store/SUBMIT.md) and
-  [store/AMO.md](store/AMO.md).
+  (API v5), and the Chrome zip to Microsoft Edge Add-ons for certification (API v1.1, API key). Inputs pick the
+  stores (all, chrome, firefox, edge, none) and a dry run (the default) that only shows the requests. A store
+  without its secrets is skipped, and the step passes (CI checks this on every pull request). See
+  [store/SUBMIT.md](store/SUBMIT.md), [store/AMO.md](store/AMO.md) and [store/EDGE.md](store/EDGE.md).
 - **Backend first.** `minBackendVersion` in `package.json` is the oldest backend release that accepts this
   extension's page data (newer extensions send fields and platform values older backends refuse with 422). The store
   workflow refuses to submit while https://unfret.net/v1/health reports an older `version`. Raise it whenever the

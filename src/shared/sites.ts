@@ -46,7 +46,9 @@ export function isAnalysable(url: string | undefined, apiBase: string): boolean 
   }
   if (!["http:", "https:"].includes(parsed.protocol)) return false;
   const host = parsed.hostname;
-  if (host === "chromewebstore.google.com" || host === "addons.mozilla.org") return false;
+  // The extension stores: browsers don't let extensions script them (Edge Add-ons included).
+  if (["chromewebstore.google.com", "addons.mozilla.org", "microsoftedge.microsoft.com"].includes(host))
+    return false;
   if (host === "chrome.google.com" && parsed.pathname.startsWith("/webstore")) return false;
   return parsed.origin !== new URL(apiBase).origin || isTestShop(parsed.pathname);
 }
