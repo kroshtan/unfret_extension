@@ -42,5 +42,9 @@
   "amazon-nl-store-byline": "https://www.amazon.nl/dp/B0FAKENL01",
   "amazon-nl-overview-brand": "https://www.amazon.nl/dp/B0FAKENL02",
   "amazon-fr-boutique": "https://www.amazon.fr/dp/B0FAKEFR01",
-  "amazon-se-sentence-byline": "https://www.amazon.se/dp/B0FAKESE01"
+  "amazon-se-sentence-byline": "https://www.amazon.se/dp/B0FAKESE01",
+  "amazon-nl-shipper-seller": "https://www.amazon.nl/dp/B0FAKENL03",
+  "amazon-com-shipper-seller": "https://www.amazon.com/dp/B0FAKEUS02",
+  "amazon-se-seller": "https://www.amazon.se/dp/B0FAKESE02",
+  "amazon-fr-expediteur-vendeur": "https://www.amazon.fr/dp/B0FAKEFR02"
 }
