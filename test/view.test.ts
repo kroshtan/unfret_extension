@@ -125,7 +125,7 @@ describe("result view", () => {
       "What looks good",
       "What we noticed",
     ]);
-    expect(root.textContent).toContain("Checked recently: no check was used.");
+    expect(root.textContent).toContain("You checked this page recently, so no new check was used.");
   });
 
   it("keeps details behind a disclosure, with server labels and neutral context", () => {
@@ -140,7 +140,7 @@ describe("result view", () => {
   it("explains an unassessable page and a refund", () => {
     const root = rendered({ score: -1, explanation: "There's no product on this page", charged: false });
     expect(root.querySelector(".verdict .label")?.textContent).toBe("Not assessed");
-    expect(root.textContent).toContain("No check was used.");
+    expect(root.textContent).toContain("This page couldn't be assessed, so no check was used.");
     expect(root.querySelector("details")).toBeNull();
   });
 
@@ -354,6 +354,88 @@ describe("result card", () => {
     };
     renderResult(root, clean, API);
     expect(root.querySelector(".clean")?.textContent).toBe("Nothing worrying in 14 checks.");
+  });
+
+  it("adds up what was checked: the heading's number is the areas' counts", () => {
+    const root = document.createElement("div");
+    const counted = structuredClone(CARD);
+    if (counted.verdict) {
+      counted.verdict.checklist = [
+        {
+          key: "who",
+          label: "Who's behind the shop",
+          status: "concern",
+          note: "Brand-new web shop",
+          checks: 4,
+        },
+        {
+          key: "reviews",
+          label: "Reviews",
+          status: "not_checked",
+          note: "The page shows no reviews.",
+          checks: 0,
+        },
+        { key: "tricks", label: "Hidden tricks", status: "checked", note: "", checks: 3 },
+      ];
+      counted.verdict.checks_run = 7;
+    }
+    renderResult(root, counted, API);
+    expect([...root.querySelectorAll("h2")].at(-1)?.textContent).toBe("What we checked: 7 checks in 2 areas");
+    const items = [...root.querySelectorAll(".checked-list li")].map((li) => li.textContent);
+    expect(items).toEqual([
+      "Who's behind the shop · 4 checks: something to noteBrand-new web shop",
+      "Reviews: not checkedThe page shows no reviews.",
+      "Hidden tricks · 3 checks: nothing to note",
+    ]);
+  });
+
+  it("says, under the headline, when part of the check didn't finish", () => {
+    const root = document.createElement("div");
+    const text =
+      "Part of this check didn't finish (the AI read of the page), so this answer may be milder than it should be.";
+    const partial = structuredClone(CARD);
+    if (partial.verdict) partial.verdict.incomplete = { steps: ["content"], text };
+    renderResult(root, partial, API);
+    const next = root.querySelector(".headline")?.nextElementSibling;
+    expect(next?.className).toBe("incomplete");
+    expect(next?.textContent).toBe(text);
+    renderResult(root, CARD, API);
+    expect(root.querySelector(".incomplete")).toBeNull();
+  });
+
+  it("says what the check cost as a sentence, with the server's count", () => {
+    const cases: [Partial<AnalysisResult>, string][] = [
+      [
+        {
+          charged: true,
+          free_check: true,
+          charge_note: "This check used one of your free checks; 4 are left.",
+        },
+        "This check used one of your free checks; 4 are left.",
+      ],
+      [
+        { charged: true, charge_note: "This check used one of your checks; 23 are left." },
+        "This check used one of your checks; 23 are left.",
+      ],
+      [{ charged: true, free_check: true }, "This check used one of your free checks."], // an older server
+      [{ charged: true }, "This check used one of your checks."],
+      [{ charged: false }, "You checked this page recently, so no new check was used."],
+    ];
+    for (const [fields, sentence] of cases) {
+      const root = document.createElement("div");
+      renderResult(root, { ...CARD, ...fields }, API);
+      expect([...root.querySelectorAll(".charge-note")].map((n) => n.textContent)).toEqual([sentence]);
+    }
+    const quick = document.createElement("div");
+    renderResult(
+      quick,
+      { ...CARD, tier: "quick", charged: false, charge_note: "Quick checks are free." },
+      API,
+    );
+    expect(quick.querySelector(".charge-note")?.textContent).toBe(
+      "Quick check: Unfret read only this page, by its rules, without looking the shop up elsewhere. " +
+        "Quick checks are free.",
+    );
   });
 
   it("leaves the same product out without an API origin or from another origin", () => {
