@@ -18,8 +18,13 @@ const BRAND_ONLY_RE = /^(?:brand|marke|marque|merk|marca|marka|märke|varumärke
 // The byline link's search filter by brand (`field-brandtextbin=Duracell`); a store link's path is the store's
 // name, which isn't always the brand's ("AmazonBasics" for Amazon Basics).
 const BYLINE_BRAND_PARAMS = ["field-brandtextbin", "field-brand"];
-const SHIPS_FROM_RE = /ships from|versand|expédié par|verzonden door|enviado desde|spedizione/iu;
-const SOLD_BY_RE = /sold by|verkäufer|vendu par|verkocht door|vendido por|venduto da/iu;
+// The buybox's labels for who ships and who sells, in Amazon's languages. The current offer box names both in one
+// label when one company does both ("Shipper / Seller", "Verzender / Verkoper", "Versender / Verkäufer",
+// "Expéditeur / Vendeur"): such a row fills both facts.
+const SHIPS_FROM_RE =
+  /ships from|shipper|dispatches from|versand|versender|expédié par|expéditeur|verzonden door|verzender|enviado desde|enviado por|remitente|spedizion|spedito da|mittente|wysyłka|nadawca|skickas från|avsändare|gönderici/iu;
+const SOLD_BY_RE =
+  /sold by|seller|verkäufer|verkauf durch|vendu par|vendeur|verkocht door|verkoper|vendido por|vendedor|venduto da|venditore|sprzedawca|sprzedawane przez|säljs av|säljare|satıcı/iu;
 const STAR_ROW_RE = /([1-5])\s*(?:star|stern|étoile|ster|estrella|stell)/iu;
 const PERCENT_RE = /(\d{1,3})\s*%/u;
 const ARIA_HISTOGRAM_RE =
@@ -146,7 +151,7 @@ function details(doc: Document, facts: PageFacts): void {
 function seller(doc: Document, facts: PageFacts): void {
   for (const [key, value] of buyboxRows(doc)) {
     if (SHIPS_FROM_RE.test(key)) facts.ships_from = cut(value, 300);
-    else if (SOLD_BY_RE.test(key)) facts.seller = cut(value, 300);
+    if (SOLD_BY_RE.test(key)) facts.seller = cut(value, 300);
   }
   if (!facts.seller) {
     facts.seller = cut(

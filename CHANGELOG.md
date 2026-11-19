@@ -33,6 +33,10 @@ backend's changelog, which lists each one published at `/extension`.)
 
 ## 0.12.0 (unreleased)
 
+- **The seller on Amazon's current offer box, in every language** (backend: the same fix): a combined label
+  ("Verzender / Verkoper", "Shipper / Seller", "Expéditeur / Vendeur") fills both the seller and where it ships
+  from, and the seller and shipper labels of de, fr, it, es, pl, se and tr are known. Four new made-up parity
+  fixtures (nl, en, se, fr) and `test/seller-labels.test.ts`.
 - **The brand from Amazon's byline, in every language** (backend: the brand from a marketplace byline): the
   byline's phrase is taken off ("Visit the X Store", "De X Store openen", "Besuche den X-Store", "Visiter la boutique
   X", "Marca: X", in en, nl, de, fr, it, es, pt, pl, se, tr and ja), as is a store word hyphened on ("X-winkel");
