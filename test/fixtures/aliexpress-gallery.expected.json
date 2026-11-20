@@ -1,0 +1,62 @@
+{
+ "platform": "generic",
+ "url": "https://www.aliexpress.com/item/1005000000000001.html",
+ "title": "",
+ "brand": "",
+ "seller": "",
+ "seller_rating": null,
+ "ships_from": "",
+ "price": null,
+ "list_price": null,
+ "currency": "",
+ "date_first_available": null,
+ "rating": null,
+ "rating_count": null,
+ "rating_histogram": {},
+ "reviews": [],
+ "variations": [],
+ "json_ld": [],
+ "script_srcs": [],
+ "meta": {
+  "og:image": "https://ae01.alicdn.com/kf/S0aaaaaaaaaaaaaaaa.jpg"
+ },
+ "markup_names": [
+  "root"
+ ],
+ "external_refs": [
+  "ae01.alicdn.com"
+ ],
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [],
+ "fee_mentions": [],
+ "vat_ids": [],
+ "legal_mentions": [],
+ "copyright_lines": [],
+ "policy_links": {},
+ "image_urls": [
+  "https://ae01.alicdn.com/kf/S0aaaaaaaaaaaaaaaa.jpg",
+  "https://ae01.alicdn.com/kf/S1bbbbbbbbbbbbbbbb.jpg",
+  "https://ae01.alicdn.com/kf/S2cccccccccccccccc.png",
+  "https://ae01.alicdn.com/kf/Recommended9999999.jpg_220x220.jpg"
+ ],
+ "product_ids": {},
+ "payment_methods": [],
+ "phones": [],
+ "emails": [],
+ "addresses": [],
+ "founded_claims": [],
+ "business_name": "",
+ "legal_form": "",
+ "kvk_numbers": [],
+ "licences": [],
+ "certifications": [],
+ "cities_served": [],
+ "internal_links": [],
+ "pricing_terms": [],
+ "promises": [],
+ "testimonials": [],
+ "organization_ld": [],
+ "seller_profile": null,
+ "listing": null
+}
