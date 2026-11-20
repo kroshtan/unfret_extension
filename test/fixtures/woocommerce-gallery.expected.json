@@ -1,0 +1,104 @@
+{
+ "platform": "woocommerce",
+ "url": "https://atelierduin.example/product/canvas-30x40/",
+ "title": "Canvas schilderij 30x40cm",
+ "brand": "",
+ "seller": "",
+ "seller_rating": null,
+ "ships_from": "",
+ "price": 24.95,
+ "list_price": null,
+ "currency": "EUR",
+ "date_first_available": null,
+ "rating": null,
+ "rating_count": null,
+ "rating_histogram": {},
+ "reviews": [],
+ "variations": [],
+ "json_ld": [
+  {
+   "@type": "Product",
+   "name": "Canvas schilderij 30x40cm",
+   "offers": {
+    "@type": "Offer",
+    "price": "24.95",
+    "priceCurrency": "EUR"
+   }
+  }
+ ],
+ "script_srcs": [],
+ "meta": {},
+ "markup_names": [
+  "data-columns",
+  "data-thumb",
+  "data-src",
+  "data-large_image",
+  "masthead",
+  "single-product",
+  "woocommerce",
+  "site-header",
+  "custom-logo",
+  "woocommerce-product-gallery",
+  "woocommerce-product-gallery--with-images",
+  "images",
+  "woocommerce-product-gallery__wrapper",
+  "woocommerce-product-gallery__image",
+  "wp-post-image",
+  "product_title",
+  "entry-title",
+  "related",
+  "products",
+  "site-footer"
+ ],
+ "external_refs": [],
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [],
+ "fee_mentions": [],
+ "vat_ids": [],
+ "legal_mentions": [],
+ "copyright_lines": [],
+ "policy_links": {},
+ "image_urls": [
+  "https://atelierduin.example/wp-content/uploads/2026/03/duin-canvas.jpg",
+  "https://atelierduin.example/wp-content/uploads/2026/03/duin-canvas-woonkamer-scaled.jpg",
+  "https://atelierduin.example/wp-content/uploads/2026/03/duin-canvas-maten.png",
+  "https://atelierduin.example/wp-content/uploads/2026/01/logo.png",
+  "https://atelierduin.example/wp-content/uploads/2026/02/zee-canvas-300x300.jpg",
+  "https://atelierduin.example/wp-content/uploads/2026/01/ideal.png"
+ ],
+ "product_ids": {},
+ "payment_methods": [
+  "ideal"
+ ],
+ "phones": [],
+ "emails": [],
+ "addresses": [],
+ "founded_claims": [],
+ "business_name": "",
+ "legal_form": "",
+ "kvk_numbers": [],
+ "licences": [],
+ "certifications": [],
+ "cities_served": [],
+ "internal_links": [
+  {
+   "text": "",
+   "url": "https://atelierduin.example/wp-content/uploads/2026/03/duin-canvas.jpg"
+  },
+  {
+   "text": "",
+   "url": "https://atelierduin.example/wp-content/uploads/2026/03/duin-canvas-woonkamer-scaled.jpg"
+  },
+  {
+   "text": "",
+   "url": "https://atelierduin.example/wp-content/uploads/2026/03/duin-canvas-maten.png"
+  }
+ ],
+ "pricing_terms": [],
+ "promises": [],
+ "testimonials": [],
+ "organization_ld": [],
+ "seller_profile": null,
+ "listing": null
+}

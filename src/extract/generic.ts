@@ -15,6 +15,7 @@ import {
   type Platform,
 } from "../shared/facts.js";
 import * as amazon from "./amazon.js";
+import * as gallery from "./gallery.js";
 import * as p2p from "./p2p.js";
 import * as bolcom from "./bolcom.js";
 import * as walmart from "./walmart.js";
@@ -158,7 +159,9 @@ export function extractFacts(doc: Document, html: string, url = ""): PageFacts {
   textSignals(doc, facts);
   policyLinks(doc, url, facts);
   images(doc, url, facts);
-  structuredData(doc, facts);
+  const structured = structuredData(doc, facts);
+  const main = structured.length > 0 ? structured : mainPhotoFirst(doc, url, facts);
+  gallery.extract(doc, url, facts, main);
   if (facts.platform === "amazon") amazon.extract(doc, facts);
   else if (facts.platform === "bol.com") bolcom.extract(doc, facts);
   else if (facts.platform === "walmart") walmart.extract(doc, facts);
@@ -400,8 +403,26 @@ function trim(node: Json): Json {
   return small;
 }
 
-function structuredData(doc: Document, facts: PageFacts): void {
+// A product page's Open Graph types (the backend's _main_photo_first).
+const PRODUCT_OG_TYPES = new Set(["product", "product.item", "product.group", "og:product"]);
+
+/**
+ * Without photos in the structured data, a product page's Open Graph image is its main photo and goes first (the
+ * page's markup starts with its logo). Pages that don't say they are about a product keep their order.
+ */
+function mainPhotoFirst(doc: Document, url: string, facts: PageFacts): string[] {
+  const image = meta(doc, "og:image:secure_url") || meta(doc, "og:image");
+  if (!image || image.startsWith("data:")) return [];
+  if (!PRODUCT_OG_TYPES.has(meta(doc, "og:type").trim().toLowerCase()) && facts.json_ld.length === 0)
+    return [];
+  facts.image_urls = dedupe([urljoin(url, image), ...facts.image_urls]).slice(0, 50);
+  return [urljoin(url, image)];
+}
+
+/** The product's facts from its JSON-LD; returns the photos it named (then first in `image_urls`). */
+function structuredData(doc: Document, facts: PageFacts): string[] {
   const products = jsonLdProducts(doc);
+  let photos: string[] = [];
   facts.json_ld = products.slice(0, 20).map(trim);
   const product = products[0];
   if (product) {
@@ -411,13 +432,14 @@ function structuredData(doc: Document, facts: PageFacts): void {
     applyOffer(product.offers, facts);
     applyRating(product.aggregateRating, facts);
     applyReviews(product.review, facts);
-    applyImages(product.image, facts);
+    photos = applyImages(product.image, facts);
   }
   if (facts.price === null) {
     facts.price = num(meta(doc, "product:price:amount") || meta(doc, "og:price:amount"));
     facts.currency = facts.currency || meta(doc, "product:price:currency") || meta(doc, "og:price:currency");
   }
   if (facts.reviews.length === 0) microdataReviews(doc, facts);
+  return product ? photos : [];
 }
 
 function applyOffer(offers: unknown, facts: PageFacts): void {
@@ -454,12 +476,15 @@ function applyReviews(reviews: unknown, facts: PageFacts): void {
   }
 }
 
-function applyImages(imgs: unknown, facts: PageFacts): void {
+function applyImages(imgs: unknown, facts: PageFacts): string[] {
   const items: unknown[] = Array.isArray(imgs) ? imgs : truthy(imgs) ? [imgs] : [];
+  // An ImageObject names its file as `url` or as `contentUrl`.
   const urls = items
-    .map((i) => (isObject(i) ? i.url : i))
-    .filter((u): u is string => typeof u === "string" && u.length > 0);
+    .map((i) => (isObject(i) ? or(i.url, i.contentUrl) : i))
+    .filter((u): u is string => typeof u === "string" && u.length > 0 && !u.startsWith("data:"))
+    .map((u) => urljoin(facts.url, u));
   facts.image_urls = dedupe([...urls, ...facts.image_urls]).slice(0, 50);
+  return urls;
 }
 
 function microdataReviews(doc: Document, facts: PageFacts): void {

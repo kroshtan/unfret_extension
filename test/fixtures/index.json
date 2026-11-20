@@ -50,5 +50,11 @@
   "amazon-nl-gallery": "https://www.amazon.nl/dp/B0GALLERY1",
   "amazon-com-gallery-json": "https://www.amazon.com/dp/B0GALLERY2",
   "amazon-nl-gallery-mobile": "https://www.amazon.nl/dp/B0GALLERY1",
-  "amazon-de-gallery-thumbnails": "https://www.amazon.de/dp/B0GALLERY3"
+  "amazon-de-gallery-thumbnails": "https://www.amazon.de/dp/B0GALLERY3",
+  "shopify-gallery": "https://fernhouse.example/products/linen-pillow",
+  "woocommerce-gallery": "https://atelierduin.example/product/canvas-30x40/",
+  "ebay-item-gallery": "https://www.ebay.com/itm/100000000001",
+  "bolcom-gallery": "https://www.bol.com/nl/nl/p/opbergboxen-set-van-12/9300000000000001/",
+  "aliexpress-gallery": "https://www.aliexpress.com/item/1005000000000001.html",
+  "temu-gallery": "https://www.temu.com/goods.html?goods_id=601000000000001"
 }

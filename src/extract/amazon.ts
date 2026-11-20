@@ -7,6 +7,7 @@
 
 import type { PageFacts, Review } from "../shared/facts.js";
 import { cleanBrand } from "./brand.js";
+import { GALLERY_MAX } from "./gallery.js";
 import { attr, cut, rawDecode, stripChars, text } from "./dom.js";
 import { parseCount, parseDate, parsePrice, parseRating } from "./parse.js";
 
@@ -41,7 +42,6 @@ const MARKS = " :‎‏";
 // as a JSON string to `parseJSON`); the mobile page puts each photo's large copy on its carousel slide
 // (`data-a-hires`); the desktop thumbnails (`#altImages`) are the last resort, made large. Only Amazon's product
 // images (`/images/I/`): no banners, sprites or pixels (`/images/G/`), no video thumbnails or badges.
-export const GALLERY_MAX = 12;
 const GALLERY_INITIAL_RE =
   /['"]colorImages['"]\s*:\s*\{\s*['"]initial['"]\s*:\s*(?:[\w$.]*parseJSON\(\s*')?/u;
 const GALLERY_MOBILE_SELECTORS = "#image-block .media-block-image-tag[data-a-hires]";
