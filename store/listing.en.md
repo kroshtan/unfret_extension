@@ -36,8 +36,6 @@ Everywhere else, Unfret is a fake shop checker and a fake discount checker in on
 Four plain answers, not a score
 Every check ends in one of four answers: Looks fine, Worth a look, Think twice or Serious concerns. Under it: what Unfret found and where it found it (the page itself, the domain registry, the brand's own website), what it checked, and what you can do next. Unfret never calls a shop a scam. It shows what it found, and you decide. When a page looks fine, Unfret says so too, and shows what looked good: a known brand, sold by the brand itself, natural-looking reviews, an established shop.
 
-Looking for a Fakespot alternative? Unfret looks at more than the reviews: the seller and the shop behind the listing, the price history, the product itself and the tricks on the page.
-
 How accurate is it? The numbers for each answer, tested on real pages: https://unfret.net/accuracy
 
 Unfret also checks ads on second-hand marketplaces and the websites of tradespeople and other local services.

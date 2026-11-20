@@ -5,6 +5,12 @@ backend's changelog, which lists each one published at `/extension`.)
 
 ## Unreleased
 
+- **The store summary, from the listing.** `package.json`'s `description`, which the build puts in the manifest and
+  the Chrome Web Store and Edge show as the summary, is now the summary in `store/listing.en.md`: "Is this shop legit?
+  Catch fake sellers on marketplaces, fake shops, fake discounts and dropshipping before you buy." (115 characters),
+  instead of "Spot junk, dropshipping and scams on product pages before you buy." `store/EDGE.md` shows the new text,
+  and `store/SUBMIT.md` says the Chrome summary comes from the package. The listing's description no longer names
+  another product ("Looking for a Fakespot alternative?…"), which a store may reject as keyword spam.
 - **The result card, as on the website** (backend #261). When part of the check didn't finish (the AI read of the
   page), a line under the headline says so: "Part of this check didn't finish (the AI read of the page), so this answer
   may be milder than it should be. It still counted as a check. Checking again after an hour may help." "What we
