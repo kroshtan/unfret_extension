@@ -34,7 +34,8 @@ backend's changelog, which lists each one published at `/extension`.)
   pay.", the website's tagline, instead of "Shop without the worry.", and the marquee's line names fake sellers on
   marketplaces first. The screenshots' results were checked again on dev.unfret.net (dates as the server now writes
   them, "November 18, 2026"; "Prices, delivery and returns" as the area's name) and the screenshots rendered from
-  them; they differ from the ones submitted with 0.12.0.
+  them, with the popup as it now is (the "Quick check (free)" button, what the check cost); they differ from the ones
+  submitted with 0.12.0.
 
 ## 0.12.0 (unreleased)
 
