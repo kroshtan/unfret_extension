@@ -3,6 +3,14 @@
 Releases of the Unfret browser extension. (Earlier releases are described in their commit messages and in the
 backend's changelog, which lists each one published at `/extension`.)
 
+## Unreleased
+
+- **Amazon pages send the product's whole gallery** (backend's `facts/amazon.py`, same rules). The page facts' photos
+  were the main image followed by the page's other images (40 px thumbnails, banners, sprites, tracking pixels), so the
+  deep check's photo steps saw one product photo. Now an Amazon page on any locale sends its gallery, large and in its
+  order: from the image block's data (`colorImages`), else the mobile page's carousel (`data-a-hires`), else the
+  thumbnails made large; Amazon's product images only, one per photo, at most 12. Other platforms are as before.
+
 ## 0.13.0 (2026-11-20)
 
 - **The store summary, from the listing.** `package.json`'s `description`, which the build puts in the manifest and

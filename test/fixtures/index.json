@@ -46,5 +46,9 @@
   "amazon-nl-shipper-seller": "https://www.amazon.nl/dp/B0FAKENL03",
   "amazon-com-shipper-seller": "https://www.amazon.com/dp/B0FAKEUS02",
   "amazon-se-seller": "https://www.amazon.se/dp/B0FAKESE02",
-  "amazon-fr-expediteur-vendeur": "https://www.amazon.fr/dp/B0FAKEFR02"
+  "amazon-fr-expediteur-vendeur": "https://www.amazon.fr/dp/B0FAKEFR02",
+  "amazon-nl-gallery": "https://www.amazon.nl/dp/B0GALLERY1",
+  "amazon-com-gallery-json": "https://www.amazon.com/dp/B0GALLERY2",
+  "amazon-nl-gallery-mobile": "https://www.amazon.nl/dp/B0GALLERY1",
+  "amazon-de-gallery-thumbnails": "https://www.amazon.de/dp/B0GALLERY3"
 }

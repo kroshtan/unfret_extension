@@ -94,3 +94,30 @@ export function cut(value: string, n: number): string {
   if (value.length <= n) return value;
   return Array.from(value).slice(0, n).join("");
 }
+
+/** One JSON value starting at `start` (Python's `raw_decode`): the text up to its matching close. */
+export function rawDecode(value: string, start: number): unknown {
+  const open = value[start];
+  if (open !== "{" && open !== "[") return undefined;
+  let depth = 0;
+  let inString = false;
+  for (let i = start; i < value.length; i++) {
+    const c = value[i];
+    if (inString) {
+      if (c === "\\") i++;
+      else if (c === '"') inString = false;
+    } else if (c === '"') inString = true;
+    else if (c === "{" || c === "[") depth++;
+    else if (c === "}" || c === "]") {
+      depth--;
+      if (depth === 0) {
+        try {
+          return JSON.parse(value.slice(start, i + 1)) as unknown;
+        } catch {
+          return undefined;
+        }
+      }
+    }
+  }
+  return undefined;
+}

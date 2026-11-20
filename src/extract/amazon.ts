@@ -7,7 +7,7 @@
 
 import type { PageFacts, Review } from "../shared/facts.js";
 import { cleanBrand } from "./brand.js";
-import { attr, cut, stripChars, text } from "./dom.js";
+import { attr, cut, rawDecode, stripChars, text } from "./dom.js";
 import { parseCount, parseDate, parsePrice, parseRating } from "./parse.js";
 
 const FIRST_AVAILABLE_RE =
@@ -35,6 +35,20 @@ const MERCHANT_SAME_RE = /ships from and sold by (.+?)\./iu;
 const FORMAT_SUFFIX_RE = /\s+(?:format|formaat|formato)\s*:.*$/iu;
 // Amazon wraps detail-table cells in left-to-right / right-to-left marks.
 const MARKS = " :‎‏";
+
+// The product gallery, in its order. The desktop page names it in its image block's script
+// (`'colorImages': { 'initial': [{"hiRes": …, "large": …, "main": {url: [w, h]}, "variant": "MAIN"}, …] }`, as JSON or
+// as a JSON string to `parseJSON`); the mobile page puts each photo's large copy on its carousel slide
+// (`data-a-hires`); the desktop thumbnails (`#altImages`) are the last resort, made large. Only Amazon's product
+// images (`/images/I/`): no banners, sprites or pixels (`/images/G/`), no video thumbnails or badges.
+export const GALLERY_MAX = 12;
+const GALLERY_INITIAL_RE =
+  /['"]colorImages['"]\s*:\s*\{\s*['"]initial['"]\s*:\s*(?:[\w$.]*parseJSON\(\s*')?/u;
+const GALLERY_MOBILE_SELECTORS = "#image-block .media-block-image-tag[data-a-hires]";
+const GALLERY_THUMB_SELECTORS = "#altImages li.imageThumbnail img";
+const PRODUCT_IMAGE_RE =
+  /^https:\/\/[A-Za-z0-9.-]*(?:media-amazon\.com|images-amazon\.com)\/images\/I\/([A-Za-z0-9_%+-]+)\.(?:[^/?#]*\.)?(?:jpe?g|png|webp)$/iu;
+const SIZE_MODIFIER_RE = /\._[^/]*_\.(jpe?g|png|webp)$/iu;
 
 const PRICE_SELECTORS =
   "#corePrice_feature_div .a-offscreen, #corePriceDisplay_desktop_feature_div .a-offscreen, #priceblock_ourprice, #priceblock_dealprice, .a-price .a-offscreen";
@@ -184,11 +198,76 @@ function variationsAndImages(doc: Document, facts: PageFacts): void {
     .map((v) => cut(v, 200))
     .slice(0, 100);
   if (kept.length > 0) facts.variations = kept;
+  const photos = gallery(doc);
+  if (photos.length > 0) {
+    facts.image_urls = photos; // the product's own photos, not the page's banners and pixels
+    return;
+  }
   const image = doc.getElementById("landingImage");
   if (image) {
     const src = attr(image, "data-old-hires") || attr(image, "src");
     if (src) facts.image_urls = [src, ...facts.image_urls.filter((u) => u !== src)].slice(0, 50);
   }
+}
+
+/** The product gallery's photos, large, in order: the first of the page's three ways of naming them that does. */
+function gallery(doc: Document): string[] {
+  for (const found of [galleryScript(doc), galleryMobile(doc), galleryThumbnails(doc)]) {
+    const photos = new Map<string, string>();
+    for (const url of found) {
+      const m = PRODUCT_IMAGE_RE.exec(url);
+      if (m?.[1] && !photos.has(m[1])) photos.set(m[1], url);
+    }
+    if (photos.size > 0) return [...photos.values()].slice(0, GALLERY_MAX);
+  }
+  return [];
+}
+
+function galleryScript(doc: Document): string[] {
+  for (const script of Array.from(doc.querySelectorAll("script"))) {
+    const body = script.textContent;
+    if (!body.includes("colorImages")) continue;
+    const m = GALLERY_INITIAL_RE.exec(body);
+    if (!m) continue;
+    const items = rawDecode(body, m.index + m[0].length);
+    if (!Array.isArray(items)) return [];
+    return items.filter(isRecord).map(galleryUrl);
+  }
+  return [];
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+// The high-resolution copy, else the large one, else the largest the page shows.
+function galleryUrl(item: Record<string, unknown>): string {
+  for (const key of ["hiRes", "large"]) {
+    const value = item[key];
+    if (typeof value === "string" && value) return value;
+  }
+  let best = "";
+  let width = -1;
+  const main = item["main"];
+  for (const [url, size] of Object.entries(isRecord(main) ? main : {})) {
+    const first: unknown = Array.isArray(size) ? size[0] : undefined;
+    const digits = typeof first === "number" ? String(first) : typeof first === "string" ? first : "";
+    if (/^\d+$/u.test(digits) && Number(digits) > width) {
+      best = url;
+      width = Number(digits);
+    }
+  }
+  return best;
+}
+
+function galleryMobile(doc: Document): string[] {
+  return Array.from(doc.querySelectorAll(GALLERY_MOBILE_SELECTORS)).map((el) => attr(el, "data-a-hires"));
+}
+
+function galleryThumbnails(doc: Document): string[] {
+  return Array.from(doc.querySelectorAll(GALLERY_THUMB_SELECTORS))
+    .filter((img) => img.hasAttribute("src"))
+    .map((img) => attr(img, "src").replace(SIZE_MODIFIER_RE, "._AC_SL1500_.$1"));
 }
 
 function histogram(doc: Document): Record<string, number> {

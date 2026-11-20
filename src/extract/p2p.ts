@@ -17,7 +17,7 @@
  */
 
 import type { Delivery, ListingDetails, PageFacts, SellerProfile, SellerType } from "../shared/facts.js";
-import { cut, squash, stripChars, text } from "./dom.js";
+import { cut, rawDecode, squash, stripChars, text } from "./dom.js";
 import { parseCount, parseDate, parseNumber, parsePrice, parseSince } from "./parse.js";
 
 interface Areas {
@@ -396,33 +396,6 @@ export interface AdevintaListing {
   sellerType: SellerType;
   memberSince: string | null;
   imageUrls: string[];
-}
-
-/** One JSON value starting at `start` (Python's `raw_decode`): the text up to its matching close. */
-function rawDecode(value: string, start: number): unknown {
-  const open = value[start];
-  if (open !== "{" && open !== "[") return undefined;
-  let depth = 0;
-  let inString = false;
-  for (let i = start; i < value.length; i++) {
-    const c = value[i];
-    if (inString) {
-      if (c === "\\") i++;
-      else if (c === '"') inString = false;
-    } else if (c === '"') inString = true;
-    else if (c === "{" || c === "[") depth++;
-    else if (c === "}" || c === "]") {
-      depth--;
-      if (depth === 0) {
-        try {
-          return JSON.parse(value.slice(start, i + 1)) as unknown;
-        } catch {
-          return undefined;
-        }
-      }
-    }
-  }
-  return undefined;
 }
 
 function config(doc: Document): Json | null {
