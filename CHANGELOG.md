@@ -5,6 +5,31 @@ backend's changelog, which lists each one published at `/extension`.)
 
 ## Unreleased
 
+- **The result card, as on the website** (backend #261). When part of the check didn't finish (the AI read of the
+  page), a line under the headline says so: "Part of this check didn't finish (the AI read of the page), so this answer
+  may be milder than it should be. It still counted as a check. Checking again after an hour may help." "What we
+  checked" adds up: "What we checked: 16 checks in 5 areas", each area with its own count ("Who's behind the shop · 4
+  checks"); a clean area is read out as "nothing to note". What the check cost is a sentence, the server's
+  `charge_note` ("This check used one of your free checks; 4 are left.", "Quick checks are free.", "You checked this
+  page recently, so no new check was used."); a check that used one is now said too, at the end. With an older server,
+  the same words without the count.
+- **The free quick check, always on offer.** Under "Check this page" (a deep check, which uses a check, a free deep
+  check first) the popup now has a plain "Quick check (free)" button, with "Reads this page only, by Unfret's rules."
+  under it, before every check and not only once the checks run out. Without a pass it works too: the quick check goes
+  without a sign-in, as the server allows (backend 0.13.0), while "Check this page" waits for a pass. Out of checks,
+  or with only free deep checks left while they're paused for the day, the main button is the quick check as before,
+  and the second one isn't shown. Under a quick result the "A deep check also looks at…" suggestion still offers the
+  deep check; without a pass its "Get checks" leads to the free checks (or buying checks, in a browser that had them).
+  When a check finishes, the focus goes to that suggestion's button or to "Check this page". Too many quick checks in
+  a minute (429) now say so instead of "The check failed". The hint under the buttons says "A deep check uses one
+  check." instead of "One check per page.", and signed out "…or sign in for a deep check." The consent screen, the
+  privacy statement and the store's privacy texts name the new button.
+- **No more intro codes** (backend: intro codes purged). The gift code field takes only gift codes (`ufi_…`): a former
+  intro code such as FRIENDS gets "That doesn't look like a gift code: they start with ufi_. Check it and try again.",
+  as on the website, without asking the server. The messages for `INVITE_NOT_FOR_THIS_ACCOUNT`, `INVITE_ENDED` and
+  `INTRO_DAILY_CAP`, which the server no longer sends, are gone. A code from your own pack (403 `INVITE_OWN_PACK`)
+  now says "This gift code came with your own pack: give it to a friend." instead of "That gift code didn't work";
+  the monthly limit, unknown and used codes are worded as before.
 - **Store images for the next release** (not part of the extension package): the promo tiles say "Check before you
   pay.", the website's tagline, instead of "Shop without the worry.", and the marquee's line names fake sellers on
   marketplaces first. The screenshots' results were checked again on dev.unfret.net (dates as the server now writes
@@ -13,6 +38,17 @@ backend's changelog, which lists each one published at `/extension`.)
 
 ## 0.12.0 (unreleased)
 
+- **The seller on Amazon's current offer box, in every language** (backend: the same fix): a combined label
+  ("Verzender / Verkoper", "Shipper / Seller", "Expéditeur / Vendeur") fills both the seller and where it ships
+  from, and the seller and shipper labels of de, fr, it, es, pl, se and tr are known. Four new made-up parity
+  fixtures (nl, en, se, fr) and `test/seller-labels.test.ts`.
+- **The brand from Amazon's byline, in every language** (backend: the brand from a marketplace byline): the
+  byline's phrase is taken off ("Visit the X Store", "De X Store openen", "Besuche den X-Store", "Visiter la boutique
+  X", "Marca: X", in en, nl, de, fr, it, es, pt, pl, se, tr and ja), as is a store word hyphened on ("X-winkel");
+  the product's structured brand comes first (JSON-LD, the overview and detail tables' brand row, the byline link's
+  brand filter); and a name that reads like a sentence or a store link is sent as no brand. `src/extract/brand.ts`
+  is a line-for-line port of the backend's `facts/brand.py`; four new made-up parity fixtures (nl, fr, se) check
+  both give the same brand and seller.
 - **The result card**, as on the website and the Android app (backend: the result card): the same product sold
   elsewhere first, with both photos ("Looks like the same product, sold elsewhere for $X", from Unfret's image
   index, photos only through the API's own thumbnail proxy); each finding with its source ("Source: Domain registry

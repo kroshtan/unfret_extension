@@ -259,6 +259,19 @@ body[data-auth="expired"] #account-status {
   font-size: 1.05rem;
 }
 
+/* The free quick check, always on offer under the main button: a plain button, its hint beside it. */
+.quick-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.6rem;
+  margin: 0.5rem 0 0;
+}
+
+.quick-row[hidden] {
+  display: none;
+}
+
 #hint {
   margin: 0.45rem 0 0;
   font-size: 0.9rem;
@@ -666,6 +679,28 @@ body[data-auth="expired"] #account-status {
   margin: 0.6rem 0 0;
   font-weight: 600;
   color: var(--good);
+}
+
+/* A check was used: plain, not good news. */
+.charge-note.paid {
+  font-weight: 400;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+/* Part of the check didn't finish: a plain note under the headline, not a warning of its own. */
+.incomplete {
+  margin: 0.6rem 0 0;
+  padding: 0.45rem 0.65rem;
+  border-left: 3px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-size: 0.9rem;
+}
+
+.checked-list .count {
+  color: var(--muted);
+  font-size: 0.9em;
 }
 
 .details {

@@ -164,7 +164,49 @@ function list(
 // ── The result card: the same product elsewhere, the next step, what was checked (as on the website) ─────────
 
 /** The checklist's marks as words for screen readers (the marks themselves are drawn by the stylesheet). */
-const CHECK_WORD = { checked: "checked", concern: "something to note", not_checked: "not checked" } as const;
+const CHECK_WORD = {
+  checked: "nothing to note",
+  concern: "something to note",
+  not_checked: "not checked",
+} as const;
+
+/** "1 check", "16 checks". */
+function countOf(n: number, one: string, many: string): string {
+  return `${String(n)} ${n === 1 ? one : many}`;
+}
+
+/**
+ * The checklist's heading, as on the website: "What we checked: 16 checks in 5 areas", the areas being those with a
+ * check (their counts add up to the number). An older server's result without per-area counts keeps "What we checked
+ * · 16 checks".
+ */
+export function checklistHeading(
+  checks: number | null,
+  items: NonNullable<ResultCard["checklist"]>,
+): { title: string; count: string } {
+  if (!checks) return { title: "What we checked", count: "" };
+  if (items.length > 0 && items.every((i) => typeof i.checks === "number")) {
+    const areas = items.filter((i) => (i.checks ?? 0) > 0).length;
+    return {
+      title: `What we checked: ${countOf(checks, "check", "checks")} in ${countOf(areas, "area", "areas")}`,
+      count: "",
+    };
+  }
+  return { title: "What we checked", count: ` · ${countOf(checks, "check", "checks")}` };
+}
+
+/**
+ * What the check cost, as one sentence (as on the website): the server's `charge_note`, with the checks left, or the
+ * same words without the count from an older server's fields.
+ */
+export function chargeNoteOf(result: AnalysisResult): string | null {
+  if (result.charge_note) return result.charge_note;
+  if (result.tier === "quick") return "Quick checks are free.";
+  if (result.score < 0) return "This page couldn't be assessed, so no check was used.";
+  if (result.charged === false) return "You checked this page recently, so no new check was used.";
+  if (result.free_check) return "This check used one of your free checks.";
+  return result.charged ? "This check used one of your checks." : null;
+}
 
 function sameProductNode(
   same: NonNullable<ResultCard["same_product"]>,
@@ -207,10 +249,9 @@ function checklistNode(items: NonNullable<ResultCard["checklist"]>): HTMLElement
     const mark = element("span", "mark");
     mark.setAttribute("aria-hidden", "true");
     const what = element("span", "what");
-    what.append(
-      element("span", "area", item.label),
-      element("span", "visually-hidden", `: ${CHECK_WORD[status]}`),
-    );
+    what.append(element("span", "area", item.label));
+    if (item.checks) what.append(element("span", "count", ` · ${countOf(item.checks, "check", "checks")}`));
+    what.append(element("span", "visually-hidden", `: ${CHECK_WORD[status]}`));
     if (item.note) what.append(element("span", "why", item.note));
     li.append(mark, what);
     ul.append(li);
@@ -271,6 +312,8 @@ function verdictNodes(view: VerdictView, apiOrigin: string | undefined): { nodes
   head.append(symbol, label);
   const nodes: Node[] = [head, element("p", "headline", view.headline)];
   const card = view.card ?? {};
+  // Right under the headline: part of the check didn't finish, so the verdict may be milder than it should be.
+  if (card.incomplete?.text) nodes.push(element("p", "incomplete", card.incomplete.text));
   const same = card.same_product ? sameProductNode(card.same_product, apiOrigin) : null;
   if (same) nodes.push(same);
   const checks = typeof card.checks_run === "number" ? card.checks_run : null;
@@ -309,8 +352,9 @@ function verdictNodes(view: VerdictView, apiOrigin: string | undefined): { nodes
     nodes.push(step);
   }
   if (card.checklist?.length) {
-    const heading = element("h2", undefined, "What we checked");
-    if (checks) heading.append(element("span", "count", ` · ${String(checks)} checks`));
+    const { title, count } = checklistHeading(checks, card.checklist);
+    const heading = element("h2", undefined, title);
+    if (count) heading.append(element("span", "count", count));
     nodes.push(heading, checklistNode(card.checklist));
   }
 
@@ -403,22 +447,14 @@ export function renderResult(
     },
     apiOrigin,
   );
-  // Right under the headline: no check used is good news, and easy to miss under the reasons; a quick check says
-  // what it is.
+  // What the check cost, as a sentence. Right under the headline when no check was used (good news, and easy to miss
+  // under the reasons; a quick check also says what it is); at the end when one was.
+  const charge = chargeNoteOf(result);
   if (result.tier === "quick" || result.score < 0 || result.charged === false) {
-    nodes.splice(
-      2,
-      0,
-      element(
-        "p",
-        "charge-note",
-        result.tier === "quick"
-          ? QUICK_NOTE
-          : result.score < 0
-            ? NO_CHECK_USED
-            : "Checked recently: no check was used.",
-      ),
-    );
+    const text = result.tier === "quick" ? `${QUICK_NOTE} ${charge ?? ""}`.trim() : (charge ?? NO_CHECK_USED);
+    nodes.splice(2, 0, element("p", "charge-note", text));
+  } else if (charge) {
+    nodes.push(element("p", "charge-note paid", charge));
   }
   const hint = onDeepHint ? deepHintOf(result) : null;
   if (hint && onDeepHint) nodes.push(deepHintNode(hint, onDeepHint));

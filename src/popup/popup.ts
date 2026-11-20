@@ -86,6 +86,8 @@ let inviteEligible: boolean | undefined;
 let tabId: number | undefined;
 let analysable = false;
 let busy = false;
+/** A result is on screen: the quick check isn't offered under it (a quick result offers the deep check itself). */
+let resultShown = false;
 let port: chrome.runtime.Port | undefined;
 let consented = false;
 /** Not signed in: the sign-in choices are behind "Sign in with an Unfret pass or wallet" until asked for. */
@@ -309,6 +311,10 @@ function renderAccount(): void {
   const analyse = button("analyse");
   analyse.textContent = busy ? "Checking…" : quickOnly ? "Quick check (free)" : "Check this page";
   analyse.disabled = busy || !consented || !session || !analysable;
+  // The free quick check, under the main button before a check, with a pass or without one (the server runs it for
+  // anyone). Once only quick checks can run, the main button is the quick check, so it isn't offered twice.
+  show("quick-row", consented && analysable && !busy && !resultShown && !quickOnly);
+  button("quick").disabled = busy || !consented || !analysable;
   el("hint").textContent = !consented
     ? CONSENT_HINT
     : busy
@@ -319,13 +325,13 @@ function renderAccount(): void {
           ? gettingPass
             ? "Getting your free checks…"
             : freeUsed
-              ? "Buy checks or sign in to check this page."
-              : "Get your free checks or sign in to check this page."
+              ? "Buy checks or sign in for a deep check."
+              : "Get your free checks or sign in for a deep check."
           : checks === 0
             ? "You have no checks left. Quick checks are free: they read this page only."
             : quickOnly
               ? FREE_PAUSED
-              : "One check per page. Nothing is sent until you click.";
+              : "A deep check uses one check. Nothing is sent until you click.";
 }
 
 /** No checks left, or only free ones while today's are all used: only a quick check can run. */
@@ -400,20 +406,47 @@ function announce(text: string): void {
   el("announce").textContent = text;
 }
 
-/** The button under a quick result: a deep check of the same page (charged as any), or the checkout. */
-function deepHintAction(action: "run_deep" | "get_checks"): void {
-  if (action === "get_checks") {
-    button("buy").click(); // the account's own "Buy checks": this pass's top-up
-    return;
-  }
-  if (busy || !consented || tabId === undefined) return; // as the main button: never two checks at once
+/**
+ * Start a check of this tab: a deep one (charged, a free deep check first), or the free quick one. Never two at once:
+ * `busy` is set synchronously, so the buttons are disabled before any message round trip.
+ */
+function startCheck(quick: boolean): void {
+  if (busy || !consented || tabId === undefined) return;
   busy = true;
   renderAccount();
-  port?.postMessage({ type: "analyze", tabId } satisfies PopupRequest);
+  port?.postMessage(
+    (quick ? { type: "analyze", tabId, tier: "quick" } : { type: "analyze", tabId }) satisfies PopupRequest,
+  );
+}
+
+/**
+ * A check this popup started has its result: the button that started it was disabled or hidden meanwhile, so the focus
+ * went to the page. It goes to what comes next: the deep check a quick result offers, or checking the page again.
+ */
+function refocus(): void {
+  if (document.activeElement !== null && document.activeElement !== document.body) return;
+  const next = document.getElementById("deep-hint-action") ?? button("analyse");
+  if (next instanceof HTMLButtonElement && !next.disabled) next.focus();
+}
+
+/**
+ * The button under a quick result: a deep check of the same page (charged as any), or the checkout. Without a pass
+ * (a quick check needs none), getting checks is the popup's own next step: the free checks, or buying checks.
+ */
+function deepHintAction(action: "run_deep" | "get_checks"): void {
+  if (action === "get_checks") {
+    // The account's own "Buy checks" (this pass's top-up); without a pass, "Get your free checks" (or "Buy checks").
+    if (session) button("buy").click();
+    else getFreeChecks();
+    return;
+  }
+  startCheck(false);
 }
 
 function render(state: TabState): void {
+  const wasBusy = busy;
   busy = state.status === "extracting" || state.status === "analysing";
+  resultShown = state.status === "done";
   document.body.dataset.phase = busy ? "busy" : state.status;
   show("progress", busy);
   show("result", state.status === "done");
@@ -438,6 +471,7 @@ function render(state: TabState): void {
     announce(`Result: ${el("result-body").querySelector(".verdict .label")?.textContent ?? ""}`);
     renderReport(state);
     renderShare(state);
+    if (wasBusy) refocus();
     if (state.result.balance_lamports !== undefined) void refreshCredits();
   } else if (state.status === "error") {
     el("error-message").textContent = state.message;
@@ -661,7 +695,7 @@ async function init(): Promise<void> {
     event.preventDefault();
     openTab("/checkout?for=key");
   });
-  // "Have a code?": the website makes a new API key and redeems the invite or intro code onto it, in one step.
+  // "Have a code?": the website makes a new API key and redeems the gift code onto it, in one step.
   for (const id of ["have-code", "key-code"]) {
     el(id).addEventListener("click", (event) => {
       event.preventDefault();
@@ -757,15 +791,12 @@ async function init(): Promise<void> {
     button("report-send").disabled = true;
     port?.postMessage({ type: "report", tabId, reason } satisfies PopupRequest);
   });
+  // A second click before the first one's state arrives must not charge twice: startCheck checks `busy`.
   el("analyse").addEventListener("click", () => {
-    if (busy || !consented) return; // a second click before the first one's state arrives must not charge twice
-    if (tabId === undefined) return;
-    const quick = quickChecksOnly();
-    busy = true; // synchronously: the button is disabled before any message round trip
-    renderAccount();
-    port?.postMessage(
-      (quick ? { type: "analyze", tabId, tier: "quick" } : { type: "analyze", tabId }) satisfies PopupRequest,
-    );
+    startCheck(quickChecksOnly());
+  });
+  el("quick").addEventListener("click", () => {
+    startCheck(true);
   });
 }
 

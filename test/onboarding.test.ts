@@ -523,6 +523,7 @@ describe("the popup's next step", () => {
     expect(document.getElementById("hint")?.textContent).toContain("Quick checks are free");
     expect(visible("buy")).toBe(true);
     expect(visible("get-free-row")).toBe(false);
+    expect(visible("quick-row")).toBe(false); // the main button is the quick check: not offered twice
     analyse.click();
     expect(posted).toEqual([
       { type: "watch", tabId: 1 },
@@ -544,6 +545,134 @@ describe("the popup's next step", () => {
     expect(posted.at(-1)).toEqual({ type: "analyze", tabId: 1 });
   });
 
+  it("with checks: the free quick check under Check this page, a real button with its hint", async () => {
+    data.session = keySessionOf(KEY);
+    await openPopup(5, { free_checks_remaining: 5 });
+    await vi.waitFor(() => {
+      expect(document.getElementById("credits")?.textContent).toBe("You have 5 free checks");
+    });
+    expect(document.getElementById("analyse")?.textContent).toBe("Check this page");
+    expect(visible("quick-row")).toBe(true);
+    const quick = document.getElementById("quick") as HTMLButtonElement;
+    expect(quick.tagName).toBe("BUTTON");
+    expect(quick.type).toBe("button");
+    expect(quick.textContent).toBe("Quick check (free)");
+    expect(quick.disabled).toBe(false);
+    expect(quick.classList.contains("primary")).toBe(false);
+    expect(document.getElementById("hint")?.textContent).toBe(
+      "A deep check uses one check. Nothing is sent until you click.",
+    );
+    expect(document.getElementById(quick.getAttribute("aria-describedby") ?? "")?.textContent).toBe(
+      "Reads this page only, by Unfret's rules.",
+    );
+    // In the focus order right after the main button.
+    const buttons = [...document.querySelectorAll("#check button")].map((b) => b.id);
+    expect(buttons).toEqual(["analyse", "quick"]);
+    quick.click();
+    expect(posted.at(-1)).toEqual({ type: "analyze", tabId: 1, tier: "quick" });
+    expect(visible("quick-row")).toBe(false); // checking: one thing at a time
+    expect((document.getElementById("analyse") as HTMLButtonElement).disabled).toBe(true);
+    quick.click(); // a second click before the state arrives starts nothing
+    expect(posted.filter((m) => (m as { type: string }).type === "analyze")).toHaveLength(1);
+  });
+
+  it("signed out: the quick check runs without a pass; the deep check waits for one", async () => {
+    await openPopup(null);
+    expect(visible("get-free-row")).toBe(true);
+    expect((document.getElementById("analyse") as HTMLButtonElement).disabled).toBe(true);
+    expect(visible("quick-row")).toBe(true);
+    expect(document.getElementById("hint")?.textContent).toBe(
+      "Get your free checks or sign in for a deep check.",
+    );
+    document.getElementById("quick")?.click();
+    expect(posted.at(-1)).toEqual({ type: "analyze", tabId: 1, tier: "quick" });
+  });
+
+  it("a quick result without a pass: its Get checks leads to the free checks, and the quick check steps aside", async () => {
+    await openPopup(null);
+    deliver({
+      type: "state",
+      tabId: 1,
+      state: {
+        status: "done",
+        findings: [],
+        body: { url: "https://shop.example/p/1", tier: "quick" },
+        result: {
+          score: 40,
+          explanation: "",
+          tier: "quick",
+          charged: false,
+          verdict: {
+            band: "careful",
+            label: "Think twice",
+            headline: "An inflated discount.",
+            reasons: [],
+            positives: [],
+            deep_check: {
+              suggested: true,
+              text: "A deep check also looks at how old this shop is.",
+              cost: "Deep checks come in packs, from $6 for 25.",
+              action: "get_checks",
+              action_label: "Get checks",
+            },
+          },
+        },
+      },
+    });
+    expect(visible("quick-row")).toBe(false);
+    document.getElementById("deep-hint-action")?.click();
+    expect(opened).toEqual(["https://unfret.net/welcome?setup=1"]);
+  });
+
+  it("a quick result with checks: Run a deep check from the hint, as before", async () => {
+    data.session = keySessionOf(KEY);
+    await openPopup(5);
+    document.getElementById("quick")?.click();
+    deliver({
+      type: "state",
+      tabId: 1,
+      state: {
+        status: "done",
+        findings: [],
+        body: { url: "https://shop.example/p/1", tier: "quick" },
+        result: {
+          score: 40,
+          explanation: "",
+          tier: "quick",
+          charged: false,
+          verdict: {
+            band: "careful",
+            label: "Think twice",
+            headline: "An inflated discount.",
+            reasons: [],
+            positives: [],
+            deep_check: {
+              suggested: true,
+              text: "A deep check also looks at how old this shop is.",
+              cost: "Uses 1 check (you have 5).",
+              action: "run_deep",
+              action_label: "Run a deep check",
+            },
+          },
+        },
+      },
+    });
+    expect(visible("quick-row")).toBe(false);
+    const deep = document.getElementById("deep-hint-action") as HTMLButtonElement;
+    expect(document.activeElement).toBe(deep); // the check finished: the focus goes to what comes next
+    deep.click();
+    expect(posted.at(-1)).toEqual({ type: "analyze", tabId: 1 });
+  });
+
+  it("on a page that can't be checked, no quick check is offered", async () => {
+    data.session = keySessionOf(KEY);
+    await openPopup(5, {}, "chrome://newtab/");
+    await vi.waitFor(() => {
+      expect(document.getElementById("credits")?.textContent).toBe("5 checks left");
+    });
+    expect(visible("quick-row")).toBe(false);
+  });
+
   it("free checks paused for the day: back tomorrow, and a quick check meanwhile", async () => {
     data.session = keySessionOf(KEY);
     await openPopup(3, { free_checks_remaining: 3, free_checks_paused: true });
@@ -553,6 +682,7 @@ describe("the popup's next step", () => {
     expect(document.getElementById("hint")?.textContent).toBe(
       "Free deep checks are back tomorrow. Quick checks still work.",
     );
+    expect(visible("quick-row")).toBe(false);
   });
 
   it("bought checks still run deep checks while the free ones are paused", async () => {
@@ -562,6 +692,7 @@ describe("the popup's next step", () => {
       expect(document.getElementById("credits")?.textContent).toBe("8 checks left");
     });
     expect(document.getElementById("analyse")?.textContent).toBe("Check this page");
+    expect(visible("quick-row")).toBe(true);
   });
 
   it("signed in with checks: Check this page, and Buy checks tops up the key", async () => {

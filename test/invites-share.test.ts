@@ -7,9 +7,10 @@ import { type AnalysisResult, ApiError, UnfretApi } from "../src/api/client.js";
 import { INVITE_RE, monthlyLimitMessage, normaliseInvite, redeemInvite } from "../src/shared/invites.js";
 import { createShare, previewShare, shareError, shareRequest } from "../src/shared/share.js";
 import {
+  INVITE_MONTHLY_BARE_CODE,
   INVITE_MONTHLY_CODE,
-  INVITE_NOT_NEW_CODE,
   INVITE_OK,
+  INVITE_OWN_CODE,
   INVITE_UNKNOWN_CODE,
   INVITE_USED_CODE,
   type MockApi,
@@ -50,31 +51,16 @@ describe("invites", () => {
     expect(INVITE_RE.test(INVITE_OK)).toBe(true);
   });
 
-  it("recognises intro codes such as FRIENDS, in any case", () => {
-    expect(normaliseInvite(" friends ")).toBe("FRIENDS");
-    expect(normaliseInvite("DEV")).toBe("DEV");
-    expect(normaliseInvite("ab")).toBeNull(); // too short
-    expect(normaliseInvite("free checks")).toBeNull();
-  });
-
-  it("redeems an intro code, and words the daily cap as the server does", async () => {
-    expect(await redeemInvite(api.url, KEY, "friends")).toEqual({ ok: true, checksAdded: 5, checks: 5 });
-    expect(api.requests.at(-1)).toMatchObject({ path: "/v1/invites/redeem", body: { code: "FRIENDS" } });
-    const capped = await redeemInvite(api.url, KEY, "CAPPED");
-    expect(capped).toEqual({
-      ok: false,
-      message: "Today's free checks from codes are gone: they're back tomorrow (UTC).",
-      signedOut: false,
-    });
-  });
-
-  it("refuses something that isn't a code without asking the server", async () => {
+  it("refuses something that isn't a gift code without asking the server, a former intro code too", async () => {
     const before = api.requests.length;
-    expect(await redeemInvite(api.url, KEY, "not a code")).toEqual({
-      ok: false,
-      message: "That doesn't look like a gift code: they start with ufi_. Check it and try again.",
-      signedOut: false,
-    });
+    for (const typed of ["not a code", "FRIENDS", " friends ", "DEV"]) {
+      expect(normaliseInvite(typed)).toBeNull();
+      expect(await redeemInvite(api.url, KEY, typed)).toEqual({
+        ok: false,
+        message: "That doesn't look like a gift code: they start with ufi_. Check it and try again.",
+        signedOut: false,
+      });
+    }
     expect(api.requests).toHaveLength(before);
   });
 
@@ -92,10 +78,7 @@ describe("invites", () => {
   it.each([
     [INVITE_USED_CODE, "This gift code has already been used."],
     [INVITE_UNKNOWN_CODE, "Unknown gift code."],
-    [
-      INVITE_NOT_NEW_CODE,
-      "Intro codes are for new accounts: this one has had checks before, or used a code.",
-    ],
+    [INVITE_OWN_CODE, "This gift code came with your own pack: give it to a friend."],
   ])("shows the server's reason for a refused code (%s)", async (code, message) => {
     expect(await redeemInvite(api.url, KEY, code)).toEqual({ ok: false, message, signedOut: false });
   });
@@ -107,7 +90,7 @@ describe("invites", () => {
         "You've already used a gift code this month; this one still works from December, or give it to someone else.",
       signedOut: false,
     });
-    expect(await redeemInvite(api.url, KEY, "MONTHLYBARE")).toEqual({
+    expect(await redeemInvite(api.url, KEY, INVITE_MONTHLY_BARE_CODE)).toEqual({
       ok: false,
       message:
         "You've already used a gift code this month; this one still works next month, or give it to someone else.",
