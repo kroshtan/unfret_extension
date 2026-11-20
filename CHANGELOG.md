@@ -30,6 +30,12 @@ backend's changelog, which lists each one published at `/extension`.)
   `INTRO_DAILY_CAP`, which the server no longer sends, are gone. A code from your own pack (403 `INVITE_OWN_PACK`)
   now says "This gift code came with your own pack: give it to a friend." instead of "That gift code didn't work";
   the monthly limit, unknown and used codes are worded as before.
+- **Store images for the next release** (not part of the extension package): the promo tiles say "Check before you
+  pay.", the website's tagline, instead of "Shop without the worry.", and the marquee's line names fake sellers on
+  marketplaces first. The screenshots' results were checked again on dev.unfret.net (dates as the server now writes
+  them, "November 18, 2026"; "Prices, delivery and returns" as the area's name) and the screenshots rendered from
+  them, with the popup as it now is (the "Quick check (free)" button, what the check cost); they differ from the ones
+  submitted with 0.12.0.
 
 ## 0.12.0 (unreleased)
 

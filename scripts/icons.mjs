@@ -30,8 +30,8 @@ function promo(width, height, { mark, title, line, sub }) {
     gap:${Math.round(height * 0.09)}px;background:linear-gradient(135deg,#f3faf7,#dff1ea);font-family:${FONT};color:#123b32">
     <img src="${MARK}" width="${mark}" height="${mark}">
     <div><div style="font-size:${title}px;font-weight:700;letter-spacing:-0.02em;line-height:1">Unfret</div>
-    <div style="font-size:${line}px;margin-top:${Math.round(line * 0.5)}px;color:#1f5f50">Shop without the worry.</div>
-    ${sub ? `<div style="font-size:${sub}px;margin-top:${Math.round(sub * 0.6)}px;color:#3d6e62;max-width:${Math.round(width * 0.5)}px">Fake discounts, made-up brands, dropshipped goods and pushy tricks, spotted before you buy.</div>` : ""}
+    <div style="font-size:${line}px;margin-top:${Math.round(line * 0.5)}px;color:#1f5f50">Check before you pay.</div>
+    ${sub ? `<div style="font-size:${sub}px;margin-top:${Math.round(sub * 0.6)}px;color:#3d6e62;max-width:${Math.round(width * 0.5)}px">Fake sellers on marketplaces, fake shops, fake discounts and dropshipping, spotted before you buy.</div>` : ""}
     </div></body>`;
 }
 
