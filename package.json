@@ -1,6 +1,6 @@
 {
   "name": "unfret-extension",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "minBackendVersion": "0.13.0",
   "description": "Is this shop legit? Catch fake sellers on marketplaces, fake shops, fake discounts and dropshipping before you buy.",
   "private": true,
