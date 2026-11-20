@@ -116,15 +116,15 @@ store's message; fix them in Partner Center and run again.
 
 **Extension name**: Unfret (from the manifest; read-only in Partner Center).
 
-**Short description** (from the manifest's `description`, i.e. `package.json`'s; read-only in Partner Center, 66
+**Short description** (from the manifest's `description`, i.e. `package.json`'s; read-only in Partner Center, 115
 characters):
 
 ```
-Spot junk, dropshipping and scams on product pages before you buy.
+Is this shop legit? Catch fake sellers on marketplaces, fake shops, fake discounts and dropshipping before you buy.
 ```
 
 **Description** (250 to 10,000 characters): the Chrome description in [listing.en.md](listing.en.md), unchanged
-(3,444 characters; plain text with blank lines between paragraphs and "•" bullets).
+(3,862 characters; plain text with blank lines between paragraphs and "•" bullets).
 
 **Category**: Shopping.
 

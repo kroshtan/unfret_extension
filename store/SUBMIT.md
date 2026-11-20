@@ -150,9 +150,11 @@ The API can't create an item or fill in its listing: the first version goes thro
    name, address (use the KvK business address), e-mail and phone publicly in the EU.
 2. **New item** (later releases: the workflow does this, see above) → upload `unfret-chrome-<version>.zip` from the
    release.
-3. **Store listing**: copy from `store/listing.en.md` (name, summary, description, category Shopping, language
-   English; the extension is English-only, so there is no localized listing). Upload the icon,
-   screenshots and promo images listed at the end of `listing.en.md`. Homepage and support URLs are there too.
+3. **Store listing**: copy from `store/listing.en.md` (name, description, category Shopping, language English; the
+   extension is English-only, so there is no localized listing). The summary isn't typed in: the store takes it from
+   the manifest's `description`, which the build fills from `package.json`'s `description`, so it changes only with a
+   new upload. Keep that field and the summary in `listing.en.md` the same text (at most 132 characters). Upload the
+   icon, screenshots and promo images listed at the end of `listing.en.md`. Homepage and support URLs are there too.
 4. **Privacy practices**: copy from `store/privacy-practices.md` (single purpose, one justification per permission,
    remote code "No", the data usage ticks and certifications, privacy policy URL).
 5. **Distribution**: public, all regions (or start with the EU and US).

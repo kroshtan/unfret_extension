@@ -2,7 +2,7 @@
   "name": "unfret-extension",
   "version": "0.12.0",
   "minBackendVersion": "0.13.0",
-  "description": "Spot junk, dropshipping and scams on product pages before you buy.",
+  "description": "Is this shop legit? Catch fake sellers on marketplaces, fake shops, fake discounts and dropshipping before you buy.",
   "private": true,
   "license": "MIT",
   "type": "module",
