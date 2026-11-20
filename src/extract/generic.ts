@@ -18,13 +18,14 @@ import * as amazon from "./amazon.js";
 import * as p2p from "./p2p.js";
 import * as bolcom from "./bolcom.js";
 import * as walmart from "./walmart.js";
+import * as widgets from "./widgets.js";
 import { extractBusiness, organizations } from "./business.js";
 import { extractServiceProfile, SERVICE_PLATFORMS } from "./services.js";
 import { extractTestimonials } from "./testimonials.js";
 import { extractMarkup } from "./markup.js";
 import { cleanBrand } from "./brand.js";
 import { attr, cut, dedupe, hostname, squash, tagName, text, urljoin } from "./dom.js";
-import { parseDate, parseNumber, parseRating } from "./parse.js";
+import { parseCount, parseDate, parseNumber, parseRating } from "./parse.js";
 import { pyJsonLength } from "./pyjson.js";
 
 const HIDDEN_STYLE_RE =
@@ -158,7 +159,7 @@ export function extractFacts(doc: Document, html: string, url = ""): PageFacts {
   textSignals(doc, facts);
   policyLinks(doc, url, facts);
   images(doc, url, facts);
-  structuredData(doc, facts);
+  mainPhotoFirst(doc, url, facts, structuredData(doc, facts));
   if (facts.platform === "amazon") amazon.extract(doc, facts);
   else if (facts.platform === "bol.com") bolcom.extract(doc, facts);
   else if (facts.platform === "walmart") walmart.extract(doc, facts);
@@ -168,6 +169,7 @@ export function extractFacts(doc: Document, html: string, url = ""): PageFacts {
   const ogImage = meta(doc, "og:image");
   if (facts.image_urls.length === 0 && ogImage) facts.image_urls = [urljoin(url, ogImage)];
   if (PRIVATE_SELLER_PLATFORMS.has(facts.platform)) p2p.extract(doc, facts); // the ad and the account, never the name
+  widgets.extract(doc, facts); // reviews and a "was" price the structured data left out
   if (P2P_PLATFORMS.has(facts.platform)) {
     // A private seller's name is never kept.
     facts.seller = "";
@@ -369,14 +371,40 @@ function images(doc: Document, url: string, facts: PageFacts): void {
   facts.image_urls = dedupe(found).slice(0, 50);
 }
 
-function jsonLdProducts(doc: Document): Json[] {
+// A product with variants is a schema.org ProductGroup (Google's variant markup, which Shopify themes emit) whose
+// offers sit on its variants (`hasVariant`); a product page may also state its rating in a separate block whose
+// `itemReviewed` is the product.
+const PRODUCT_TYPES = new Set(["Product", "ProductGroup"]);
+
+function kinds(node: Json): Set<string> {
+  const kind = node["@type"] ?? "";
+  const list: unknown[] = Array.isArray(kind) ? kind : [kind];
+  return new Set(list.filter((k): k is string => typeof k === "string" && k.length > 0));
+}
+
+function aboutAProduct(item: unknown): boolean {
+  return isObject(item) && [...kinds(item)].some((k) => PRODUCT_TYPES.has(k));
+}
+
+// An AggregateRating of a product, on its own or wrapped in an untyped block; never a shop's own rating.
+function productRating(node: Json): Json | null {
+  const found = kinds(node);
+  const rating = found.has("AggregateRating") ? node : found.size === 0 ? node.aggregateRating : null;
+  return isObject(rating) && aboutAProduct(rating.itemReviewed) ? rating : null;
+}
+
+function jsonLd(doc: Document): [Json[], Json[]] {
   const products: Json[] = [];
+  const ratings: Json[] = [];
   const walk = (node: unknown): void => {
     if (Array.isArray(node)) {
       for (const item of node) walk(item);
     } else if (isObject(node)) {
-      const kind = node["@type"] ?? "";
-      if (kind === "Product" || (Array.isArray(kind) && kind.includes("Product"))) products.push(node);
+      if ([...kinds(node)].some((k) => PRODUCT_TYPES.has(k))) products.push(node);
+      else {
+        const rating = productRating(node);
+        if (rating) ratings.push(rating);
+      }
       for (const key of ["@graph", "mainEntity", "itemListElement"]) if (key in node) walk(node[key]);
     }
   };
@@ -388,7 +416,32 @@ function jsonLdProducts(doc: Document): Json[] {
       continue;
     }
   }
-  return products;
+  return [products, ratings];
+}
+
+function variantField(product: Json, key: string): unknown {
+  const variants = product.hasVariant;
+  for (const variant of Array.isArray(variants) ? variants : [variants]) {
+    if (isObject(variant) && truthy(variant[key])) return variant[key];
+  }
+  return null;
+}
+
+/**
+ * The photo checks take a product page's first image as its main photo. Without one in the structured data, the
+ * page's own markup comes first in document order: on most shops the header's logo. A product page's Open Graph
+ * image is its product photo, so it goes first; pages that don't say they are about a product keep their order.
+ */
+function mainPhotoFirst(doc: Document, url: string, facts: PageFacts, structured: boolean): void {
+  const image = meta(doc, "og:image:secure_url") || meta(doc, "og:image");
+  if (structured || !image || image.startsWith("data:")) return;
+  const ogType = meta(doc, "og:type").trim().toLowerCase();
+  if (
+    !["product", "product.item", "product.group", "og:product"].includes(ogType) &&
+    !facts.json_ld.some((p) => aboutAProduct(p))
+  )
+    return;
+  facts.image_urls = dedupe([urljoin(url, image), ...facts.image_urls]).slice(0, 50);
 }
 
 function trim(node: Json): Json {
@@ -400,9 +453,11 @@ function trim(node: Json): Json {
   return small;
 }
 
-function structuredData(doc: Document, facts: PageFacts): void {
-  const products = jsonLdProducts(doc);
+/** Read the product, its offer, rating, reviews and photos from the JSON-LD; whether it named the photos. */
+function structuredData(doc: Document, facts: PageFacts): boolean {
+  const [products, ratings] = jsonLd(doc);
   facts.json_ld = products.slice(0, 20).map(trim);
+  let photos = false;
   const product = products[0];
   if (product) {
     facts.title = facts.title || cut(str(or(product.name, "")), 2000);
@@ -411,13 +466,49 @@ function structuredData(doc: Document, facts: PageFacts): void {
     applyOffer(product.offers, facts);
     applyRating(product.aggregateRating, facts);
     applyReviews(product.review, facts);
-    applyImages(product.image, facts);
+    // A ProductGroup (Shopify's, among others) may name its photos on its variants only.
+    photos = applyImages(or(product.image, variantField(product, "image")), facts);
   }
+  if (ratings[0]) applyRating(ratings[0], facts);
   if (facts.price === null) {
     facts.price = num(meta(doc, "product:price:amount") || meta(doc, "og:price:amount"));
     facts.currency = facts.currency || meta(doc, "product:price:currency") || meta(doc, "og:price:currency");
   }
+  // A ProductGroup's own price is its variants' (the page's Open Graph price, read above, is the one on show).
+  if (facts.price === null && product) applyOffer(variantField(product, "offers"), facts);
+  if (product && facts.list_price === null && facts.price !== null)
+    facts.list_price = referencePrice(product.offers, facts.price);
+  if (facts.rating === null || facts.rating_count === null) microdataRating(doc, facts);
   if (facts.reviews.length === 0) microdataReviews(doc, facts);
+  return products.length > 0 && photos;
+}
+
+// A priceSpecification's priceType for a reference price ("https://schema.org/ListPrice", "StrikethroughPrice").
+const REFERENCE_TYPE_RE = /(?:ListPrice|StrikethroughPrice|MSRP|SRP)$/iu;
+
+/**
+ * The offer's reference price in its structured data: a `priceSpecification` whose `priceType` is a list or
+ * strike-through price (Google's markup for a "was" price), above the price on offer.
+ */
+export function referencePrice(offers: unknown, price: number): number | null {
+  const offer = Array.isArray(offers) && offers.length > 0 ? (offers[0] as unknown) : offers;
+  const specs = isObject(offer) ? offer.priceSpecification : null;
+  for (const spec of Array.isArray(specs) ? specs : [specs]) {
+    if (!isObject(spec) || !REFERENCE_TYPE_RE.test(str(or(spec.priceType, "")))) continue;
+    const was = num(spec.price);
+    if (was !== null && was > price) return was;
+  }
+  return null;
+}
+
+function microdataRating(doc: Document, facts: PageFacts): void {
+  const rating = doc.querySelector('[itemprop="aggregateRating"]');
+  if (!rating) return;
+  const value = rating.querySelector('[itemprop="ratingValue"]');
+  const count = rating.querySelector('[itemprop="reviewCount"], [itemprop="ratingCount"]');
+  if (facts.rating === null && value) facts.rating = parseRating(attr(value, "content") || text(value));
+  if (facts.rating_count === null && count)
+    facts.rating_count = parseCount(attr(count, "content") || text(count));
 }
 
 function applyOffer(offers: unknown, facts: PageFacts): void {
@@ -454,12 +545,15 @@ function applyReviews(reviews: unknown, facts: PageFacts): void {
   }
 }
 
-function applyImages(imgs: unknown, facts: PageFacts): void {
+function applyImages(imgs: unknown, facts: PageFacts): boolean {
   const items: unknown[] = Array.isArray(imgs) ? imgs : truthy(imgs) ? [imgs] : [];
+  // An ImageObject names its file as `url` or as `contentUrl` (IKEA's, among others).
   const urls = items
-    .map((i) => (isObject(i) ? i.url : i))
-    .filter((u): u is string => typeof u === "string" && u.length > 0);
+    .map((i) => (isObject(i) ? or(i.url, i.contentUrl) : i))
+    .filter((u): u is string => typeof u === "string" && u.length > 0 && !u.startsWith("data:"))
+    .map((u) => urljoin(facts.url, u));
   facts.image_urls = dedupe([...urls, ...facts.image_urls]).slice(0, 50);
+  return urls.length > 0;
 }
 
 function microdataReviews(doc: Document, facts: PageFacts): void {

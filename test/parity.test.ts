@@ -48,4 +48,45 @@ describe("parity with the backend's extractors", () => {
     expect(facts).toEqual(expected);
     expect(validate(facts), JSON.stringify(validate.errors)).toBe(true);
   });
+
+  // The facts the scorer and the shopper's reasons read (price and reference price, rating and reviews, seller,
+  // brand): named one by one, so a mismatch says which reading differs.
+  it.each(Object.keys(index))("%s: the scorer's fields", (name) => {
+    const { html, expected, url } = load(name);
+    const facts = extractFacts(
+      new DOMParser().parseFromString(html, "text/html"),
+      html,
+      url,
+    ) as unknown as Record<string, unknown>;
+    const want = expected as Record<string, unknown>;
+    const differing = SCORER_FIELDS.filter(
+      (field) => JSON.stringify(facts[field]) !== JSON.stringify(want[field]),
+    );
+    expect(
+      differing,
+      differing.map((f) => `${f}: ${JSON.stringify(facts[f])} ≠ ${JSON.stringify(want[f])}`).join("; "),
+    ).toEqual([]);
+  });
 });
+
+const SCORER_FIELDS = [
+  "platform",
+  "title",
+  "brand",
+  "seller",
+  "seller_rating",
+  "ships_from",
+  "price",
+  "list_price",
+  "currency",
+  "date_first_available",
+  "rating",
+  "rating_count",
+  "rating_histogram",
+  "reviews",
+  "variations",
+  "image_urls",
+  "json_ld",
+  "seller_profile",
+  "listing",
+];

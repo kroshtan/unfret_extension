@@ -270,9 +270,6 @@
   "contact": "https://unfret.net/test-shop#contact"
  },
  "image_urls": [
-  "/static/v-0.12.0/test-shop/projector-hero.jpg",
-  "/static/v-0.12.0/test-shop/projector-ceiling.jpg",
-  "/static/v-0.12.0/test-shop/projector-remote.jpg",
   "https://unfret.net/static/v-0.12.0/test-shop/projector-hero.jpg",
   "https://unfret.net/static/v-0.12.0/test-shop/projector-ceiling.jpg",
   "https://unfret.net/static/v-0.12.0/test-shop/projector-remote.jpg"

@@ -50,5 +50,14 @@
   "amazon-nl-gallery": "https://www.amazon.nl/dp/B0GALLERY1",
   "amazon-com-gallery-json": "https://www.amazon.com/dp/B0GALLERY2",
   "amazon-nl-gallery-mobile": "https://www.amazon.nl/dp/B0GALLERY1",
-  "amazon-de-gallery-thumbnails": "https://www.amazon.de/dp/B0GALLERY3"
+  "amazon-de-gallery-thumbnails": "https://www.amazon.de/dp/B0GALLERY3",
+  "amazon-nl-mobile-reference": "https://www.amazon.nl/dp/B0MOBREF01",
+  "amazon-de-mobile-uvp": "https://www.amazon.de/dp/B0MOBUVP01",
+  "amazon-com-typical-price-reviews": "https://www.amazon.com/dp/B0TYPICAL1",
+  "bolcom-reviews-partner": "https://www.bol.com/nl/nl/p/bouwset-politieboot/9300000000001/",
+  "woocommerce-sale-reviews": "https://gadgetwinkel.example/product/massagepistool-pro/",
+  "shopify-judgeme-reviews": "https://lumora.example/products/glow-desk-lamp",
+  "generic-jsonld-strikethrough": "https://bergzeit-outdoor.example/rucksack-30",
+  "generic-microdata-rating": "https://maison-the.example/theiere-fonte",
+  "ebay-was-price": "https://www.ebay.com/itm/100000000001"
 }

@@ -90,6 +90,21 @@ jobs:
       - name: Test
         if: steps.gate.outputs.run == 'true'
         run: npm test
+      # The parity expectations (test/fixtures/*.expected.json) are the backend's own extractors' facts for each
+      # fixture page. `npm test` checks the extension against the committed copy; this regenerates them with the
+      # backend's main and fails when they differ, so a change on either side can't leave the two reading a page
+      # differently while the committed copy goes stale. A backend change to the facts merges first.
+      - name: Parity with the backend's extractors (main)
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          set -euo pipefail
+          git clone -q --depth 1 --branch main "${{ forgejo.server_url }}/kroshtan/unfret_backend.git" "$RUNNER_TEMP/backend"
+          (cd "$RUNNER_TEMP/backend" && uv sync --frozen --no-dev -q)
+          make parity BACKEND="$RUNNER_TEMP/backend"
+          git diff --exit-code -- test/fixtures || {
+            echo "::error::the backend's extractors read these fixtures differently: run make parity and port the change"
+            exit 1
+          }
       - name: Build
         if: steps.gate.outputs.run == 'true'
         run: npm run build
