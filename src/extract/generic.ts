@@ -54,6 +54,11 @@ const POLICY_KINDS: [string, RegExp][] = [
   ["terms", /terms|conditions|voorwaarden|\bagb\b|cgv|condiciones|termini/iu],
   ["privacy", /privacy|datenschutz|confidentialit|privacidad/iu],
   ["contact", /contact|kontakt|contacto|contatti/iu],
+  // The shop's own story ("About us", /pages/about, "Over ons"): where it says who it is and where it makes things.
+  [
+    "about",
+    /about[ -]us|\/about(?![\p{L}\p{N}_])|\/pages\/about|our[ -]story|over[ -]ons|über[ -]uns|ueber-uns|qui[ -]sommes|chi[ -]siamo|qui[eé]nes[ -]somos/iu,
+  ],
   [
     "imprint",
     /impressum|imprint|legal notice|mentions légales|colofon|aviso legal|bedrijfsgegevens|company details/iu,

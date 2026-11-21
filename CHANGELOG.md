@@ -43,6 +43,8 @@ backend's changelog, which lists each one published at `/extension`.)
   product's rating in a separate `AggregateRating` block, an `ImageObject`'s `contentUrl`, photos resolved against
   the page's address, and the Open Graph photo first on a product page. The committed parity expectations had gone
   stale (`test-shop`, `test-shop-sister`: relative photo URLs), so the test passed while the two differed.
+- **The shop's "About us" page among its policy links** (backend: the claim audit reads the shop's pages), which
+  the new CI parity check found missing here.
 - **Parity, checked against the backend's main in CI**: CI regenerates the parity expectations with the backend's
   extractors and fails when they differ from the committed ones; `test/parity.test.ts` also names, per fixture, each
   of the fields the scorer and the shopper's reasons read that differs. Nine new made-up fixture pages (Amazon mobile
