@@ -1,0 +1,104 @@
+{
+ "platform": "generic",
+ "url": "https://oakmere.example/duvet-cover",
+ "title": "Oakmere Linen Duvet Cover",
+ "brand": "",
+ "seller": "",
+ "seller_rating": null,
+ "ships_from": "",
+ "price": 89.0,
+ "list_price": null,
+ "currency": "EUR",
+ "date_first_available": null,
+ "rating": null,
+ "rating_count": null,
+ "rating_histogram": {},
+ "reviews": [],
+ "variations": [],
+ "variants": {
+  "source": "picker",
+  "dimensions": [
+   {
+    "name": "Size",
+    "kind": "size",
+    "values": [
+     "Single 140 x 200 cm",
+     "Double 200 x 200 cm",
+     "King 240 x 220 cm"
+    ]
+   }
+  ],
+  "options": [
+   {
+    "label": "Single 140 x 200 cm",
+    "values": [
+     "Single 140 x 200 cm"
+    ],
+    "price": 89.0,
+    "available": null,
+    "selected": false
+   },
+   {
+    "label": "Double 200 x 200 cm",
+    "values": [
+     "Double 200 x 200 cm"
+    ],
+    "price": 119.0,
+    "available": null,
+    "selected": true
+   },
+   {
+    "label": "King 240 x 220 cm",
+    "values": [
+     "King 240 x 220 cm"
+    ],
+    "price": 139.0,
+    "available": null,
+    "selected": false
+   }
+  ],
+  "headline": 0,
+  "headline_basis": "price",
+  "from_price": false
+ },
+ "json_ld": [],
+ "script_srcs": [],
+ "meta": {
+  "og:type": "product",
+  "og:price:amount": "89.00",
+  "og:price:currency": "EUR"
+ },
+ "markup_names": [
+  "price",
+  "product-form"
+ ],
+ "external_refs": [],
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [],
+ "fee_mentions": [],
+ "vat_ids": [],
+ "legal_mentions": [],
+ "copyright_lines": [],
+ "policy_links": {},
+ "image_urls": [],
+ "product_ids": {},
+ "payment_methods": [],
+ "phones": [],
+ "emails": [],
+ "addresses": [],
+ "founded_claims": [],
+ "business_name": "",
+ "legal_form": "",
+ "kvk_numbers": [],
+ "licences": [],
+ "certifications": [],
+ "cities_served": [],
+ "internal_links": [],
+ "pricing_terms": [],
+ "promises": [],
+ "testimonials": [],
+ "organization_ld": [],
+ "seller_profile": null,
+ "listing": null
+}

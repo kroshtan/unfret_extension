@@ -15,6 +15,7 @@
  "rating_histogram": {},
  "reviews": [],
  "variations": [],
+ "variants": null,
  "json_ld": [],
  "script_srcs": [
   "https://www.googletagmanager.com/gtm.js?id=GTM-K7Q2ZP4"

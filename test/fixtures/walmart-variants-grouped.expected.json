@@ -1,0 +1,97 @@
+{
+ "platform": "walmart",
+ "url": "https://www.walmart.com/ip/Harbor-Pine-Patio-Dining-Set/9900000001",
+ "title": "Harbor & Pine 5-Piece Outdoor Patio Dining Set, Table and 4 Chairs",
+ "brand": "Harbor & Pine",
+ "seller": "Harbor and Pine Outdoor",
+ "seller_rating": null,
+ "ships_from": "",
+ "price": 329.0,
+ "list_price": null,
+ "currency": "USD",
+ "date_first_available": null,
+ "rating": 4.4,
+ "rating_count": 512,
+ "rating_histogram": {},
+ "reviews": [],
+ "variations": [],
+ "variants": {
+  "source": "walmart",
+  "dimensions": [
+   {
+    "name": "Size",
+    "kind": "size",
+    "values": [
+     "5-Piece Set",
+     "Single Chair",
+     "Seat Cushion"
+    ]
+   }
+  ],
+  "options": [
+   {
+    "label": "5-Piece Set",
+    "values": [
+     "5-Piece Set"
+    ],
+    "price": 329.0,
+    "available": true,
+    "selected": true
+   },
+   {
+    "label": "Single Chair",
+    "values": [
+     "Single Chair"
+    ],
+    "price": 69.0,
+    "available": true,
+    "selected": false
+   },
+   {
+    "label": "Seat Cushion",
+    "values": [
+     "Seat Cushion"
+    ],
+    "price": 19.0,
+    "available": false,
+    "selected": false
+   }
+  ],
+  "headline": 0,
+  "headline_basis": "selected",
+  "from_price": false
+ },
+ "json_ld": [],
+ "script_srcs": [],
+ "meta": {},
+ "markup_names": [],
+ "external_refs": [],
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [],
+ "fee_mentions": [],
+ "vat_ids": [],
+ "legal_mentions": [],
+ "copyright_lines": [],
+ "policy_links": {},
+ "image_urls": [],
+ "product_ids": {},
+ "payment_methods": [],
+ "phones": [],
+ "emails": [],
+ "addresses": [],
+ "founded_claims": [],
+ "business_name": "",
+ "legal_form": "",
+ "kvk_numbers": [],
+ "licences": [],
+ "certifications": [],
+ "cities_served": [],
+ "internal_links": [],
+ "pricing_terms": [],
+ "promises": [],
+ "testimonials": [],
+ "organization_ld": [],
+ "seller_profile": null,
+ "listing": null
+}

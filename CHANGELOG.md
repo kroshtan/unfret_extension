@@ -5,6 +5,14 @@ backend's changelog, which lists each one published at `/extension`.)
 
 ## Unreleased
 
+- **Variant options on any platform** (backend's `facts/variants.py`, same rules, new `src/extract/variants.ts`). The
+  page facts gain `variants`: the variant picker's dimensions as the page names them, with what each varies (size,
+  colour, count, pattern, material, flavour, style), every option with its price when the page gives it, whether it
+  is available and selected, and which option the price shown belongs to (the selected one, the cheapest under a
+  "from" price or range, or the one whose price it is). Read from Amazon's twister data (every locale; swatch prices),
+  Walmart's `variantCriteria`, Shopify's product JSON, WooCommerce's variations form, a schema.org `ProductGroup`,
+  else the page's own size, colour or style picker. The backend's deep check uses them to see different products
+  grouped as one listing's sizes, and a price shown for one of them (#67).
 - **Every product page sends its gallery first, not only Amazon's** (backend's `facts/gallery.py`, same rules, new
   `src/extract/gallery.ts`). The product's photos lead the page facts' `image_urls`, large and in order: the
   structured data's photos or a product's Open Graph image (now first, as on the server), AliExpress's

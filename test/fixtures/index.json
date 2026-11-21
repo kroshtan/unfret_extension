@@ -56,5 +56,12 @@
   "ebay-item-gallery": "https://www.ebay.com/itm/100000000001",
   "bolcom-gallery": "https://www.bol.com/nl/nl/p/opbergboxen-set-van-12/9300000000000001/",
   "aliexpress-gallery": "https://www.aliexpress.com/item/1005000000000001.html",
-  "temu-gallery": "https://www.temu.com/goods.html?goods_id=601000000000001"
+  "temu-gallery": "https://www.temu.com/goods.html?goods_id=601000000000001",
+  "amazon-de-variants-bait": "https://www.amazon.de/dp/B0VARDE001",
+  "amazon-com-variants-counts": "https://www.amazon.com/dp/B0VARUS016",
+  "shopify-variants-refill": "https://brightwell.example/products/sonicle-pro",
+  "woocommerce-variants-sizes": "https://wolhuis.example/product/merino-t-shirt/",
+  "generic-productgroup-colours": "https://fernhill.example/products/trail-bottle",
+  "walmart-variants-grouped": "https://www.walmart.com/ip/Harbor-Pine-Patio-Dining-Set/9900000001",
+  "generic-select-picker": "https://oakmere.example/duvet-cover"
 }
