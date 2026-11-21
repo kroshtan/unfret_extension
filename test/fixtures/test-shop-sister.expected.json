@@ -100,7 +100,6 @@
   "shipping": "https://unfret.net/test-shop/sister-shop#shipping"
  },
  "image_urls": [
-  "/static/v-0.12.0/test-shop/sister-hero.jpg",
   "https://unfret.net/static/v-0.12.0/test-shop/sister-hero.jpg"
  ],
  "product_ids": {},
