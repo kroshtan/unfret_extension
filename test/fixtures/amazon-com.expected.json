@@ -39,6 +39,42 @@
   "Black",
   "Pink"
  ],
+ "variants": {
+  "source": "amazon",
+  "dimensions": [
+   {
+    "name": "color_name",
+    "kind": "colour",
+    "values": [
+     "Black",
+     "Pink"
+    ]
+   }
+  ],
+  "options": [
+   {
+    "label": "Black",
+    "values": [
+     "Black"
+    ],
+    "price": null,
+    "available": null,
+    "selected": false
+   },
+   {
+    "label": "Pink",
+    "values": [
+     "Pink"
+    ],
+    "price": null,
+    "available": null,
+    "selected": false
+   }
+  ],
+  "headline": null,
+  "headline_basis": "",
+  "from_price": false
+ },
  "json_ld": [],
  "script_srcs": [
   "https://www.amazon.com/js/countdown-deal.js"

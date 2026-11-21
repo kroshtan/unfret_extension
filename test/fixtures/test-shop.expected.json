@@ -142,6 +142,42 @@
   }
  ],
  "variations": [],
+ "variants": {
+  "source": "shopify",
+  "dimensions": [
+   {
+    "name": "",
+    "kind": "other",
+    "values": [
+     "Aurora Blue",
+     "Galaxy Purple"
+    ]
+   }
+  ],
+  "options": [
+   {
+    "label": "Aurora Blue",
+    "values": [
+     "Aurora Blue"
+    ],
+    "price": 39.99,
+    "available": true,
+    "selected": true
+   },
+   {
+    "label": "Galaxy Purple",
+    "values": [
+     "Galaxy Purple"
+    ],
+    "price": 39.99,
+    "available": true,
+    "selected": false
+   }
+  ],
+  "headline": 0,
+  "headline_basis": "selected",
+  "from_price": false
+ },
  "json_ld": [
   {
    "@type": "Product",

@@ -464,6 +464,168 @@
    },
    "title": "Testimonial",
    "type": "object"
+  },
+  "VariantDimension": {
+   "description": "One dimension of a variant picker (\"Size\", \"Farbe\", \"Stijlnaam\") and its values in the page's order.",
+   "properties": {
+    "name": {
+     "default": "",
+     "description": "As the page labels it; '' when it doesn't.",
+     "maxLength": 100,
+     "title": "Name",
+     "type": "string"
+    },
+    "kind": {
+     "default": "other",
+     "description": "What it varies, from its name (size, colour, \u2026).",
+     "enum": [
+      "size",
+      "colour",
+      "count",
+      "pattern",
+      "material",
+      "flavour",
+      "style",
+      "other"
+     ],
+     "title": "Kind",
+     "type": "string"
+    },
+    "values": {
+     "items": {
+      "maxLength": 200,
+      "type": "string"
+     },
+     "maxItems": 100,
+     "title": "Values",
+     "type": "array"
+    }
+   },
+   "title": "VariantDimension",
+   "type": "object"
+  },
+  "VariantOption": {
+   "description": "One option a shopper can pick: one value per dimension, and its price when the page gives it.",
+   "properties": {
+    "label": {
+     "default": "",
+     "description": "The option as the page names it ('Wit / 40').",
+     "maxLength": 300,
+     "title": "Label",
+     "type": "string"
+    },
+    "values": {
+     "description": "Its value in each dimension, in the dimensions' order.",
+     "items": {
+      "maxLength": 200,
+      "type": "string"
+     },
+     "maxItems": 5,
+     "title": "Values",
+     "type": "array"
+    },
+    "price": {
+     "anyOf": [
+      {
+       "minimum": 0,
+       "type": "number"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "description": "In the page's currency (PageFacts.currency).",
+     "title": "Price"
+    },
+    "available": {
+     "anyOf": [
+      {
+       "type": "boolean"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Available"
+    },
+    "selected": {
+     "default": false,
+     "title": "Selected",
+     "type": "boolean"
+    }
+   },
+   "title": "VariantOption",
+   "type": "object"
+  },
+  "Variants": {
+   "description": "The options a listing groups under one page (sizes, colours, styles, amounts), on any platform.\n\nOne rating and one review pool cover every option, and a \"from\" price is the cheapest option's: a listing that\ngroups different products as \"sizes\" shows them as one product.",
+   "properties": {
+    "source": {
+     "default": "picker",
+     "enum": [
+      "amazon",
+      "walmart",
+      "shopify",
+      "woocommerce",
+      "schema_org",
+      "picker"
+     ],
+     "title": "Source",
+     "type": "string"
+    },
+    "dimensions": {
+     "items": {
+      "$ref": "#/$defs/VariantDimension"
+     },
+     "maxItems": 5,
+     "title": "Dimensions",
+     "type": "array"
+    },
+    "options": {
+     "items": {
+      "$ref": "#/$defs/VariantOption"
+     },
+     "maxItems": 100,
+     "title": "Options",
+     "type": "array"
+    },
+    "headline": {
+     "anyOf": [
+      {
+       "maximum": 99,
+       "minimum": 0,
+       "type": "integer"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "description": "Index in options of the option the page's price belongs to.",
+     "title": "Headline"
+    },
+    "headline_basis": {
+     "default": "",
+     "enum": [
+      "",
+      "selected",
+      "from",
+      "price"
+     ],
+     "title": "Headline Basis",
+     "type": "string"
+    },
+    "from_price": {
+     "default": false,
+     "description": "The page shows its price as a 'from' price or a range.",
+     "title": "From Price",
+     "type": "boolean"
+    }
+   },
+   "title": "Variants",
+   "type": "object"
   }
  },
  "description": "Structured facts about one page. Absent facts are ``None`` or empty, never guessed.",
@@ -638,6 +800,18 @@
    "maxItems": 100,
    "title": "Variations",
    "type": "array"
+  },
+  "variants": {
+   "anyOf": [
+    {
+     "$ref": "#/$defs/Variants"
+    },
+    {
+     "type": "null"
+    }
+   ],
+   "default": null,
+   "description": "The variant picker's options, prices and the headline price's option."
   },
   "json_ld": {
    "description": "Product JSON-LD.",

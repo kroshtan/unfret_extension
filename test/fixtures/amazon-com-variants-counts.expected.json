@@ -1,0 +1,135 @@
+{
+ "platform": "amazon",
+ "url": "https://www.amazon.com/dp/B0VARUS016",
+ "title": "Volteq AA Alkaline Batteries, Long-Lasting Double A Batteries, 16 Count",
+ "brand": "Volteq",
+ "seller": "",
+ "seller_rating": null,
+ "ships_from": "",
+ "price": 11.49,
+ "list_price": null,
+ "currency": "USD",
+ "date_first_available": null,
+ "rating": 4.7,
+ "rating_count": 18210,
+ "rating_histogram": {},
+ "reviews": [],
+ "variations": [
+  "8 Count",
+  "16 Count",
+  "48 Count"
+ ],
+ "variants": {
+  "source": "amazon",
+  "dimensions": [
+   {
+    "name": "Size",
+    "kind": "size",
+    "values": [
+     "8 Count",
+     "16 Count",
+     "48 Count"
+    ]
+   }
+  ],
+  "options": [
+   {
+    "label": "8 Count",
+    "values": [
+     "8 Count"
+    ],
+    "price": 6.99,
+    "available": null,
+    "selected": false
+   },
+   {
+    "label": "16 Count",
+    "values": [
+     "16 Count"
+    ],
+    "price": 11.49,
+    "available": null,
+    "selected": true
+   },
+   {
+    "label": "48 Count",
+    "values": [
+     "48 Count"
+    ],
+    "price": 27.99,
+    "available": null,
+    "selected": false
+   }
+  ],
+  "headline": 1,
+  "headline_basis": "selected",
+  "from_price": false
+ },
+ "json_ld": [],
+ "script_srcs": [],
+ "meta": {},
+ "markup_names": [
+  "data-defaultasin",
+  "data-dp-url",
+  "dp",
+  "productTitle",
+  "bylineInfo",
+  "averageCustomerReviews",
+  "acrCustomerReviewText",
+  "corePrice_feature_div",
+  "twister",
+  "variation_size_name",
+  "size_name_0",
+  "size_name_1",
+  "size_name_2",
+  "a-icon-alt",
+  "a-price",
+  "a-offscreen",
+  "a-form-label",
+  "selection",
+  "swatchAvailable",
+  "a-button",
+  "a-button-text",
+  "twisterTextDiv",
+  "text",
+  "twisterSlotDiv",
+  "twisterSwatchPrice",
+  "swatchSelected"
+ ],
+ "external_refs": [],
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [],
+ "fee_mentions": [],
+ "vat_ids": [],
+ "legal_mentions": [],
+ "copyright_lines": [],
+ "policy_links": {},
+ "image_urls": [],
+ "product_ids": {
+  "asin": "B0VARUS016"
+ },
+ "payment_methods": [],
+ "phones": [],
+ "emails": [],
+ "addresses": [],
+ "founded_claims": [],
+ "business_name": "",
+ "legal_form": "",
+ "kvk_numbers": [],
+ "licences": [],
+ "certifications": [],
+ "cities_served": [],
+ "internal_links": [
+  {
+   "text": "Visit the Volteq Store",
+   "url": "https://www.amazon.com/stores/Volteq/page/2"
+  }
+ ],
+ "pricing_terms": [],
+ "promises": [],
+ "testimonials": [],
+ "organization_ld": [],
+ "seller_profile": null,
+ "listing": null
+}

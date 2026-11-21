@@ -50,5 +50,12 @@
   "amazon-nl-gallery": "https://www.amazon.nl/dp/B0GALLERY1",
   "amazon-com-gallery-json": "https://www.amazon.com/dp/B0GALLERY2",
   "amazon-nl-gallery-mobile": "https://www.amazon.nl/dp/B0GALLERY1",
-  "amazon-de-gallery-thumbnails": "https://www.amazon.de/dp/B0GALLERY3"
+  "amazon-de-gallery-thumbnails": "https://www.amazon.de/dp/B0GALLERY3",
+  "amazon-de-variants-bait": "https://www.amazon.de/dp/B0VARDE001",
+  "amazon-com-variants-counts": "https://www.amazon.com/dp/B0VARUS016",
+  "shopify-variants-refill": "https://brightwell.example/products/sonicle-pro",
+  "woocommerce-variants-sizes": "https://wolhuis.example/product/merino-t-shirt/",
+  "generic-productgroup-colours": "https://fernhill.example/products/trail-bottle",
+  "walmart-variants-grouped": "https://www.walmart.com/ip/Harbor-Pine-Patio-Dining-Set/9900000001",
+  "generic-select-picker": "https://oakmere.example/duvet-cover"
 }
