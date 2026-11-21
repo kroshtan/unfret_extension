@@ -1,0 +1,134 @@
+{
+ "platform": "amazon",
+ "url": "https://www.amazon.de/dp/B0VARDE001",
+ "title": "KORVIQ Handyhülle für Phone 15, stoßfeste Silikon Hülle mit Kameraschutz, Schwarz",
+ "brand": "KORVIQ",
+ "seller": "KORVIQ Direct",
+ "seller_rating": null,
+ "ships_from": "Amazon",
+ "price": 6.99,
+ "list_price": null,
+ "currency": "EUR",
+ "date_first_available": null,
+ "rating": 4.5,
+ "rating_count": 2345,
+ "rating_histogram": {},
+ "reviews": [],
+ "variations": [],
+ "variants": {
+  "source": "amazon",
+  "dimensions": [
+   {
+    "name": "Größe",
+    "kind": "size",
+    "values": [
+     "Hülle",
+     "Panzerglas 2 Stück",
+     "Ladekabel USB-C 1 m",
+     "Hülle + Panzerglas"
+    ]
+   }
+  ],
+  "options": [
+   {
+    "label": "Hülle",
+    "values": [
+     "Hülle"
+    ],
+    "price": 19.99,
+    "available": null,
+    "selected": false
+   },
+   {
+    "label": "Panzerglas 2 Stück",
+    "values": [
+     "Panzerglas 2 Stück"
+    ],
+    "price": 8.99,
+    "available": null,
+    "selected": false
+   },
+   {
+    "label": "Ladekabel USB-C 1 m",
+    "values": [
+     "Ladekabel USB-C 1 m"
+    ],
+    "price": 6.99,
+    "available": null,
+    "selected": false
+   },
+   {
+    "label": "Hülle + Panzerglas",
+    "values": [
+     "Hülle + Panzerglas"
+    ],
+    "price": 24.99,
+    "available": null,
+    "selected": false
+   }
+  ],
+  "headline": 2,
+  "headline_basis": "from",
+  "from_price": true
+ },
+ "json_ld": [],
+ "script_srcs": [],
+ "meta": {},
+ "markup_names": [
+  "data-asin",
+  "data-initiallyselected",
+  "dp",
+  "productTitle",
+  "bylineInfo",
+  "averageCustomerReviews",
+  "acrCustomerReviewText",
+  "corePrice_desktop",
+  "tabular-buybox",
+  "twister_feature_div",
+  "inline-twister-row-size_name",
+  "inline-twister-expanded-dimension-text-size_name",
+  "feature-bullets",
+  "a-icon-alt",
+  "a-price-range",
+  "a-price",
+  "a-offscreen",
+  "swatch-title-text-display",
+  "a-list-item"
+ ],
+ "external_refs": [],
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [],
+ "fee_mentions": [],
+ "vat_ids": [],
+ "legal_mentions": [],
+ "copyright_lines": [],
+ "policy_links": {},
+ "image_urls": [],
+ "product_ids": {
+  "asin": "B0VARDE001"
+ },
+ "payment_methods": [],
+ "phones": [],
+ "emails": [],
+ "addresses": [],
+ "founded_claims": [],
+ "business_name": "",
+ "legal_form": "",
+ "kvk_numbers": [],
+ "licences": [],
+ "certifications": [],
+ "cities_served": [],
+ "internal_links": [
+  {
+   "text": "Besuche den KORVIQ-Store",
+   "url": "https://www.amazon.de/stores/KORVIQ/page/1"
+  }
+ ],
+ "pricing_terms": [],
+ "promises": [],
+ "testimonials": [],
+ "organization_ld": [],
+ "seller_profile": null,
+ "listing": null
+}

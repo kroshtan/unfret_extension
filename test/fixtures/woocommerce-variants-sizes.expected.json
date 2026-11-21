@@ -1,0 +1,136 @@
+{
+ "platform": "woocommerce",
+ "url": "https://wolhuis.example/product/merino-t-shirt/",
+ "title": "Merino T-shirt",
+ "brand": "Wolhuis",
+ "seller": "",
+ "seller_rating": null,
+ "ships_from": "",
+ "price": 49.0,
+ "list_price": null,
+ "currency": "EUR",
+ "date_first_available": null,
+ "rating": null,
+ "rating_count": null,
+ "rating_histogram": {},
+ "reviews": [],
+ "variations": [],
+ "variants": {
+  "source": "woocommerce",
+  "dimensions": [
+   {
+    "name": "Maat",
+    "kind": "size",
+    "values": [
+     "S",
+     "M",
+     "L",
+     "XL"
+    ]
+   }
+  ],
+  "options": [
+   {
+    "label": "S",
+    "values": [
+     "S"
+    ],
+    "price": 49.0,
+    "available": true,
+    "selected": false
+   },
+   {
+    "label": "M",
+    "values": [
+     "M"
+    ],
+    "price": 49.0,
+    "available": true,
+    "selected": true
+   },
+   {
+    "label": "L",
+    "values": [
+     "L"
+    ],
+    "price": 52.0,
+    "available": false,
+    "selected": false
+   },
+   {
+    "label": "XL",
+    "values": [
+     "XL"
+    ],
+    "price": 55.0,
+    "available": true,
+    "selected": false
+   }
+  ],
+  "headline": 0,
+  "headline_basis": "from",
+  "from_price": true
+ },
+ "json_ld": [
+  {
+   "@type": "Product",
+   "name": "Merino T-shirt",
+   "brand": {
+    "@type": "Brand",
+    "name": "Wolhuis"
+   },
+   "offers": [
+    {
+     "@type": "AggregateOffer",
+     "lowPrice": "49.00",
+     "highPrice": "55.00",
+     "offerCount": 4,
+     "priceCurrency": "EUR"
+    }
+   ]
+  }
+ ],
+ "script_srcs": [],
+ "meta": {},
+ "markup_names": [
+  "data-product_id",
+  "data-product_variations",
+  "product",
+  "type-product",
+  "product-type-variable",
+  "product_title",
+  "price",
+  "woocommerce-Price-amount",
+  "variations_form",
+  "cart"
+ ],
+ "external_refs": [],
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [],
+ "fee_mentions": [],
+ "vat_ids": [],
+ "legal_mentions": [],
+ "copyright_lines": [],
+ "policy_links": {},
+ "image_urls": [],
+ "product_ids": {},
+ "payment_methods": [],
+ "phones": [],
+ "emails": [],
+ "addresses": [],
+ "founded_claims": [],
+ "business_name": "",
+ "legal_form": "",
+ "kvk_numbers": [],
+ "licences": [],
+ "certifications": [],
+ "cities_served": [],
+ "internal_links": [],
+ "pricing_terms": [],
+ "promises": [],
+ "testimonials": [],
+ "organization_ld": [],
+ "seller_profile": null,
+ "listing": null
+}

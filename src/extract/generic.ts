@@ -20,6 +20,7 @@ import * as p2p from "./p2p.js";
 import * as bolcom from "./bolcom.js";
 import * as walmart from "./walmart.js";
 import * as widgets from "./widgets.js";
+import { extractVariants } from "./variants.js";
 import { extractBusiness, organizations } from "./business.js";
 import { extractServiceProfile, SERVICE_PLATFORMS } from "./services.js";
 import { extractTestimonials } from "./testimonials.js";
@@ -167,6 +168,7 @@ export function extractFacts(doc: Document, html: string, url = ""): PageFacts {
   else if (facts.platform === "bol.com") bolcom.extract(doc, facts);
   else if (facts.platform === "walmart") walmart.extract(doc, facts);
   else if (facts.platform === "shopify") shopify(html, facts, url);
+  extractVariants(doc, url, facts); // the variant picker's options, on any platform
   facts.brand = cleanBrand(facts.brand); // one brand string for every check: no byline phrase, no sentence
   if (!facts.title) facts.title = text(doc.querySelector("h1")) || meta(doc, "og:title");
   const ogImage = meta(doc, "og:image");

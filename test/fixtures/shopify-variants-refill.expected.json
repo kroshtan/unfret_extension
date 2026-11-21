@@ -1,0 +1,152 @@
+{
+ "platform": "shopify",
+ "url": "https://brightwell.example/products/sonicle-pro",
+ "title": "Sonicle Pro Electric Toothbrush",
+ "brand": "Brightwell",
+ "seller": "",
+ "seller_rating": null,
+ "ships_from": "",
+ "price": 4.99,
+ "list_price": null,
+ "currency": "USD",
+ "date_first_available": null,
+ "rating": 4.8,
+ "rating_count": 1264,
+ "rating_histogram": {},
+ "reviews": [],
+ "variations": [],
+ "variants": {
+  "source": "shopify",
+  "dimensions": [
+   {
+    "name": "Style",
+    "kind": "style",
+    "values": [
+     "Brush head refill (4 pack)",
+     "Toothbrush",
+     "Toothbrush + travel case"
+    ]
+   }
+  ],
+  "options": [
+   {
+    "label": "Brush head refill (4 pack)",
+    "values": [
+     "Brush head refill (4 pack)"
+    ],
+    "price": 4.99,
+    "available": true,
+    "selected": true
+   },
+   {
+    "label": "Toothbrush",
+    "values": [
+     "Toothbrush"
+    ],
+    "price": 39.99,
+    "available": true,
+    "selected": false
+   },
+   {
+    "label": "Toothbrush + travel case",
+    "values": [
+     "Toothbrush + travel case"
+    ],
+    "price": 49.99,
+    "available": false,
+    "selected": false
+   }
+  ],
+  "headline": 0,
+  "headline_basis": "selected",
+  "from_price": false
+ },
+ "json_ld": [
+  {
+   "@type": "Product",
+   "name": "Sonicle Pro Electric Toothbrush",
+   "brand": {
+    "@type": "Brand",
+    "name": "Brightwell"
+   },
+   "offers": [
+    {
+     "@type": "Offer",
+     "price": "4.99",
+     "priceCurrency": "USD",
+     "availability": "https://schema.org/InStock"
+    }
+   ],
+   "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "4.8",
+    "ratingCount": "1264"
+   }
+  }
+ ],
+ "script_srcs": [
+  "https://cdn.shopify.com/s/trekkie.storefront.min.js"
+ ],
+ "meta": {
+  "og:type": "product",
+  "og:title": "Sonicle Pro Electric Toothbrush",
+  "og:price:amount": "4.99",
+  "og:price:currency": "USD",
+  "og:image": "https://cdn.shopify.com/s/files/1/0000/0001/products/sonicle-pro.jpg"
+ },
+ "markup_names": [
+  "ProductJson-main",
+  "price",
+  "rating",
+  "description"
+ ],
+ "external_refs": [
+  "cdn.shopify.com"
+ ],
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [],
+ "fee_mentions": [],
+ "vat_ids": [],
+ "legal_mentions": [],
+ "copyright_lines": [],
+ "policy_links": {
+  "refund": "https://brightwell.example/policies/refund-policy",
+  "contact": "https://brightwell.example/pages/contact"
+ },
+ "image_urls": [
+  "https://cdn.shopify.com/s/files/1/0000/0001/products/sonicle-pro.jpg"
+ ],
+ "product_ids": {},
+ "payment_methods": [],
+ "phones": [],
+ "emails": [],
+ "addresses": [],
+ "founded_claims": [],
+ "business_name": "",
+ "legal_form": "",
+ "kvk_numbers": [],
+ "licences": [],
+ "certifications": [],
+ "cities_served": [],
+ "internal_links": [
+  {
+   "text": "Brightwell Home",
+   "url": "https://brightwell.example/"
+  },
+  {
+   "text": "Refund policy",
+   "url": "https://brightwell.example/policies/refund-policy"
+  },
+  {
+   "text": "Contact",
+   "url": "https://brightwell.example/pages/contact"
+  }
+ ],
+ "pricing_terms": [],
+ "promises": [],
+ "testimonials": [],
+ "organization_ld": [],
+ "seller_profile": null,
+ "listing": null
+}

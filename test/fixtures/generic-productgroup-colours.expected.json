@@ -1,0 +1,117 @@
+{
+ "platform": "generic",
+ "url": "https://fernhill.example/products/trail-bottle",
+ "title": "Fernhill Trail Bottle 750 ml",
+ "brand": "Fernhill",
+ "seller": "",
+ "seller_rating": null,
+ "ships_from": "",
+ "price": 24.0,
+ "list_price": null,
+ "currency": "GBP",
+ "date_first_available": null,
+ "rating": null,
+ "rating_count": null,
+ "rating_histogram": {},
+ "reviews": [],
+ "variations": [],
+ "variants": {
+  "source": "schema_org",
+  "dimensions": [
+   {
+    "name": "color",
+    "kind": "colour",
+    "values": [
+     "Moss",
+     "Slate",
+     "Sand"
+    ]
+   }
+  ],
+  "options": [
+   {
+    "label": "Moss",
+    "values": [
+     "Moss"
+    ],
+    "price": 24.0,
+    "available": true,
+    "selected": false
+   },
+   {
+    "label": "Slate",
+    "values": [
+     "Slate"
+    ],
+    "price": 24.0,
+    "available": true,
+    "selected": false
+   },
+   {
+    "label": "Sand",
+    "values": [
+     "Sand"
+    ],
+    "price": 26.0,
+    "available": false,
+    "selected": false
+   }
+  ],
+  "headline": 0,
+  "headline_basis": "price",
+  "from_price": false
+ },
+ "json_ld": [
+  {
+   "@type": [
+    "Product",
+    "ProductGroup"
+   ],
+   "name": "Fernhill Trail Bottle 750 ml",
+   "brand": {
+    "@type": "Brand",
+    "name": "Fernhill"
+   }
+  }
+ ],
+ "script_srcs": [],
+ "meta": {
+  "og:type": "product",
+  "product:price:amount": "24.00",
+  "product:price:currency": "GBP"
+ },
+ "markup_names": [],
+ "external_refs": [],
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [],
+ "fee_mentions": [],
+ "vat_ids": [],
+ "legal_mentions": [],
+ "copyright_lines": [],
+ "policy_links": {},
+ "image_urls": [
+  "https://fernhill.example/img/trail-bottle.jpg"
+ ],
+ "product_ids": {},
+ "payment_methods": [],
+ "phones": [],
+ "emails": [],
+ "addresses": [],
+ "founded_claims": [],
+ "business_name": "",
+ "legal_form": "",
+ "kvk_numbers": [],
+ "licences": [],
+ "certifications": [],
+ "cities_served": [],
+ "internal_links": [],
+ "pricing_terms": [],
+ "promises": [
+  "00 Double-walled steel keeps drinks cold for 24 hours"
+ ],
+ "testimonials": [],
+ "organization_ld": [],
+ "seller_profile": null,
+ "listing": null
+}

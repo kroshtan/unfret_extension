@@ -123,6 +123,43 @@ export interface Checkbox {
   checked: boolean;
 }
 
+/** What a variant picker's dimension varies, from its name in any language (`extract/variants.ts`). */
+export type VariantKind =
+  "size" | "colour" | "count" | "pattern" | "material" | "flavour" | "style" | "other";
+export type VariantSource = "amazon" | "walmart" | "shopify" | "woocommerce" | "schema_org" | "picker";
+/** How the headline price's option is known: selected on the page, a "from" price or range, or its price. */
+export type HeadlineBasis = "" | "selected" | "from" | "price";
+
+export interface VariantDimension {
+  /** As the page labels it ("Size", "Farbe"); "" when it doesn't. */
+  name: string;
+  kind: VariantKind;
+  values: string[];
+}
+
+export interface VariantOption {
+  /** The option as the page names it ("Wit / 40"). */
+  label: string;
+  /** Its value in each dimension, in the dimensions' order. */
+  values: string[];
+  /** In the page's currency. */
+  price: number | null;
+  available: boolean | null;
+  selected: boolean;
+}
+
+/** The options a listing groups under one page, on any platform (backend `facts.schema.Variants`). */
+export interface Variants {
+  source: VariantSource;
+  dimensions: VariantDimension[];
+  options: VariantOption[];
+  /** Index in `options` of the option the page's price belongs to. */
+  headline: number | null;
+  headline_basis: HeadlineBasis;
+  /** The page shows its price as a "from" price or a range. */
+  from_price: boolean;
+}
+
 export interface PageFacts {
   platform: Platform;
   url: string;
@@ -140,6 +177,8 @@ export interface PageFacts {
   rating_histogram: Record<string, number>;
   reviews: Review[];
   variations: string[];
+  /** The variant picker's options, prices and the headline price's option. */
+  variants: Variants | null;
   json_ld: Record<string, unknown>[];
   script_srcs: string[];
   meta: Record<string, string>;
@@ -195,6 +234,7 @@ export function emptyFacts(url = ""): PageFacts {
     rating_histogram: {},
     reviews: [],
     variations: [],
+    variants: null,
     json_ld: [],
     script_srcs: [],
     meta: {},
