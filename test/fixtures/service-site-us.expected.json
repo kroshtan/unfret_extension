@@ -38,7 +38,9 @@
  "copyright_lines": [
   "Copyright 2026 Acme Plumbing & Rooter LLC. ROC 123456 (AZ). Yelp"
  ],
- "policy_links": {},
+ "policy_links": {
+  "about": "https://acmeplumbing.example/about-us"
+ },
  "image_urls": [],
  "product_ids": {},
  "payment_methods": [

@@ -1,0 +1,113 @@
+{
+ "platform": "shopify",
+ "url": "https://lumora.example/products/glow-desk-lamp",
+ "title": "Glow Desk Lamp",
+ "brand": "",
+ "seller": "",
+ "seller_rating": null,
+ "ships_from": "",
+ "price": 39.0,
+ "list_price": null,
+ "currency": "USD",
+ "date_first_available": null,
+ "rating": 4.62,
+ "rating_count": 58,
+ "rating_histogram": {
+  "5": 0.7586206896551724,
+  "4": 0.13793103448275862,
+  "3": 0.05172413793103448,
+  "2": 0.017241379310344827,
+  "1": 0.034482758620689655
+ },
+ "reviews": [
+  {
+   "rating": 5.0,
+   "posted": "2026-10-14",
+   "title": "Lovely warm light",
+   "body": "Bright enough to read by, and the dimmer is smooth.",
+   "verified": true
+  },
+  {
+   "rating": 3.0,
+   "posted": "2026-09-01",
+   "title": "OK",
+   "body": "Took three weeks to arrive.",
+   "verified": false
+  }
+ ],
+ "variations": [],
+ "variants": null,
+ "json_ld": [],
+ "script_srcs": [
+  "https://cdn.shopify.com/s/files/1/0000/0001/t/1/assets/theme.js"
+ ],
+ "meta": {
+  "og:type": "product",
+  "og:title": "Glow Desk Lamp",
+  "og:image": "https://cdn.shopify.com/s/files/1/0000/0001/products/glow-lamp.jpg",
+  "product:price:amount": "39.00",
+  "product:price:currency": "USD"
+ },
+ "markup_names": [
+  "data-id",
+  "data-rating",
+  "data-raters",
+  "data-average-rating",
+  "data-number-of-reviews",
+  "data-number-of-questions",
+  "data-frequency",
+  "data-percentage",
+  "data-verified-buyer",
+  "data-review-id",
+  "data-score",
+  "data-content",
+  "price",
+  "loox-rating",
+  "jdgm-rev-widg",
+  "jdgm-histogram",
+  "jdgm-histogram__row",
+  "jdgm-rev-widg__reviews",
+  "jdgm-rev",
+  "jdgm-divider-top",
+  "jdgm-rev__header",
+  "jdgm-rev__rating",
+  "jdgm-rev__timestamp",
+  "jdgm-rev__author",
+  "jdgm-rev__content",
+  "jdgm-rev__title",
+  "jdgm-rev__body"
+ ],
+ "external_refs": [
+  "cdn.shopify.com"
+ ],
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [],
+ "fee_mentions": [],
+ "vat_ids": [],
+ "legal_mentions": [],
+ "copyright_lines": [],
+ "policy_links": {},
+ "image_urls": [
+  "https://cdn.shopify.com/s/files/1/0000/0001/products/glow-lamp.jpg"
+ ],
+ "product_ids": {},
+ "payment_methods": [],
+ "phones": [],
+ "emails": [],
+ "addresses": [],
+ "founded_claims": [],
+ "business_name": "",
+ "legal_form": "",
+ "kvk_numbers": [],
+ "licences": [],
+ "certifications": [],
+ "cities_served": [],
+ "internal_links": [],
+ "pricing_terms": [],
+ "promises": [],
+ "testimonials": [],
+ "organization_ld": [],
+ "seller_profile": null,
+ "listing": null
+}

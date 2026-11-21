@@ -52,16 +52,49 @@ const SIZE_MODIFIER_RE = /\._[^/]*_\.(jpe?g|png|webp)$/iu;
 
 const PRICE_SELECTORS =
   "#corePrice_feature_div .a-offscreen, #corePriceDisplay_desktop_feature_div .a-offscreen, #priceblock_ourprice, #priceblock_dealprice, .a-price .a-offscreen";
-const LIST_PRICE_SELECTORS =
-  ".basisPrice .a-offscreen, .a-text-price .a-offscreen, #listPrice, #priceblock_listprice";
+// The price box of the current layouts (desktop and mobile). The price to pay comes first: its accessibility label
+// ("€ 20,99 met een besparing van 30 procent"), then its offscreen copy, then its visible parts (symbol, whole,
+// fraction): the mobile page (what a phone, and the Android app's WebView, is sent) leaves the offscreen copy empty.
+// Only then the older layouts' selectors, which also match a sponsored product's price or a price per unit.
+const CORE_PRICE = [
+  "#corePrice_feature_div",
+  "#corePriceDisplay_desktop_feature_div",
+  "#corePriceDisplay_mobile_feature_div",
+  "#corePrice_desktop",
+  "#corePrice_mobile_feature_div",
+];
+const PRICE_TO_PAY_LABEL = "#apex-pricetopay-accessibility-label";
+const PRICE_TO_PAY_OFFSCREEN = CORE_PRICE.map((box) => `${box} .priceToPay .a-offscreen`).join(", ");
+const PRICE_TO_PAY = CORE_PRICE.map((box) => `${box} .priceToPay`).join(", ");
+// The reference price, under whatever label the locale gives it ("List Price", "Typical price", "RRP", "UVP",
+// "Adviesprijs", "Prix conseillé", "Was"): Amazon marks it as the basis price and strikes it through. A struck price
+// in the price box is the fallback, then the older layouts' list price. Each must be above the price to pay (the
+// price box also holds a price per unit, "0,04 €/Stück"). A page without the price box (an older layout) has its
+// struck price anywhere: the last resort there.
+const LIST_PRICE_CANDIDATES = [
+  ".basisPrice .a-offscreen",
+  CORE_PRICE.map((box) => `${box} [data-a-strike="true"] .a-offscreen`).join(", "),
+  "#listPrice, #priceblock_listprice",
+  CORE_PRICE.map((box) => `${box} .a-text-price .a-offscreen`).join(", "),
+];
+const OLD_LIST_PRICE = ".a-text-price .a-offscreen";
+const RATING_SELECTORS =
+  '#averageCustomerReviews .a-icon-alt, #acrCustomerReviewLink .a-icon-alt, [data-hook="average-stars-rating-anywhere"] .a-icon-alt';
+const RATING_COUNT_SELECTORS = '#acrCustomerReviewText, [data-hook="total-rating-count"]';
 const DETAIL_ROW_SELECTORS =
   "#prodDetails tr, #productDetails_detailBullets_sections1 tr, #productDetails_techSpec_section_1 tr";
+// The mobile page names a feature's text element by `offer-display-attribute-name` instead.
 const OFFER_BLOCK_SELECTORS =
-  '[offer-display-feature-name$="-fulfiller-info"], [offer-display-feature-name$="-merchant-info"]';
+  '[offer-display-feature-name$="-fulfiller-info"], [offer-display-feature-name$="-merchant-info"], [offer-display-attribute-name$="-fulfiller-info"], [offer-display-attribute-name$="-merchant-info"]';
 const VARIATION_SELECTORS =
   "#twister li, #variation_color_name li, #variation_size_name li, #inline-twister li";
+// The top reviews: the desktop page's (`review`) and the mobile page's (`mobley-review-content`), with the title and
+// text under their older hooks or the current ones (`reviewTitle`, `reviewRichContentContainer`).
+const REVIEW_SELECTORS = '[data-hook="review"], [data-hook="mobley-review-content"]';
 const REVIEW_STAR_SELECTORS =
   '[data-hook="review-star-rating"], [data-hook="cmps-review-star-rating"], .a-icon-alt';
+const REVIEW_TITLE_SELECTORS = '[data-hook="review-title"], [data-hook="reviewTitle"]';
+const REVIEW_BODY_SELECTORS = '[data-hook="review-body"], [data-hook="reviewRichContentContainer"]';
 
 /** Fill Amazon-specific facts into `facts` (generic markup has already been read). */
 export function extract(doc: Document, facts: PageFacts): void {
@@ -133,23 +166,51 @@ function bylineParam(byline: Element | null): string {
 }
 
 function prices(doc: Document, facts: PageFacts): void {
-  const priceTag = doc.querySelector(PRICE_SELECTORS);
-  if (priceTag) {
-    const [price, currency] = parsePrice(text(priceTag));
-    facts.price = price ?? facts.price;
-    facts.currency = currency || facts.currency;
+  let [price, currency] = parsePrice(text(doc.querySelector(PRICE_TO_PAY_LABEL)));
+  if (price === null)
+    [price, currency] = firstPrice(Array.from(doc.querySelectorAll(PRICE_TO_PAY_OFFSCREEN)));
+  if (price === null) {
+    for (const tag of Array.from(doc.querySelectorAll(PRICE_TO_PAY))) {
+      [price, currency] = priceParts(tag);
+      if (price !== null) break;
+    }
   }
-  const listTag = doc.querySelector(LIST_PRICE_SELECTORS);
-  if (listTag) {
-    const [listPrice] = parsePrice(text(listTag));
-    if (listPrice !== null && (facts.price === null || listPrice > facts.price)) facts.list_price = listPrice;
+  if (price === null) [price, currency] = firstPrice(Array.from(doc.querySelectorAll(PRICE_SELECTORS)));
+  facts.price = price ?? facts.price;
+  facts.currency = currency || facts.currency;
+  const oldLayout = doc.querySelector(CORE_PRICE.join(", ")) === null;
+  for (const selectors of oldLayout ? [...LIST_PRICE_CANDIDATES, OLD_LIST_PRICE] : LIST_PRICE_CANDIDATES) {
+    const found = Array.from(doc.querySelectorAll(selectors))
+      .map((tag) => parsePrice(text(tag))[0])
+      .filter((p): p is number => p !== null && (facts.price === null || p > facts.price));
+    if (found[0] !== undefined) {
+      facts.list_price = found[0];
+      return;
+    }
   }
 }
 
+function firstPrice(tags: Element[]): [number | null, string] {
+  for (const tag of tags) {
+    const found = parsePrice(text(tag));
+    if (found[0] !== null) return found;
+  }
+  return [null, ""];
+}
+
+// The visible price: "€", "20,", "99" (the whole part may group thousands: "1.299,").
+function priceParts(tag: Element): [number | null, string] {
+  const whole = parseCount(text(tag.querySelector(".a-price-whole")));
+  if (whole === null) return [null, ""];
+  const fraction = text(tag.querySelector(".a-price-fraction")).replace(/\D/gu, "").slice(0, 2);
+  const [, currency] = parsePrice(text(tag.querySelector(".a-price-symbol")));
+  return [Number(`${String(whole)}.${fraction || "0"}`), currency];
+}
+
 function ratings(doc: Document, facts: PageFacts): void {
-  const rating = parseRating(text(doc.querySelector("#averageCustomerReviews .a-icon-alt")));
+  const rating = parseRating(text(doc.querySelector(RATING_SELECTORS)));
   if (rating !== null) facts.rating = rating;
-  const count = parseCount(text(doc.getElementById("acrCustomerReviewText")));
+  const count = parseCount(text(doc.querySelector(RATING_COUNT_SELECTORS)));
   if (count !== null) facts.rating_count = count;
   const shares = histogram(doc);
   if (Object.keys(shares).length > 0) facts.rating_histogram = shares;
@@ -176,16 +237,21 @@ function seller(doc: Document, facts: PageFacts): void {
 }
 
 function reviews(doc: Document, facts: PageFacts): void {
-  const found: Review[] = Array.from(doc.querySelectorAll('[data-hook="review"]'))
-    .slice(0, 100)
-    .map((node) => ({
+  const seen = new Set<string>();
+  const found: Review[] = [];
+  for (const node of Array.from(doc.querySelectorAll(REVIEW_SELECTORS))) {
+    const id = attr(node, "id");
+    if (id && seen.has(id)) continue; // the same review twice (a page with both layouts' widgets)
+    seen.add(id);
+    found.push({
       rating: parseRating(text(node.querySelector(REVIEW_STAR_SELECTORS))),
       posted: parseDate(text(node.querySelector('[data-hook="review-date"]'))),
-      title: cut(text(node.querySelector('[data-hook="review-title"]')), 300),
-      body: cut(text(node.querySelector('[data-hook="review-body"]')), 2000),
+      title: cut(text(node.querySelector(REVIEW_TITLE_SELECTORS)), 300),
+      body: cut(text(node.querySelector(REVIEW_BODY_SELECTORS)), 2000),
       verified: node.querySelector('[data-hook^="avp-badge"]') !== null,
-    }));
-  if (found.length > 0) facts.reviews = found;
+    });
+  }
+  if (found.length > 0) facts.reviews = found.slice(0, 100);
 }
 
 function variationsAndImages(doc: Document, facts: PageFacts): void {
@@ -336,7 +402,7 @@ function offerDisplayRows(doc: Document): Map<string, string> {
   const labels = new Map<string, string>();
   const values = new Map<string, string>();
   for (const block of Array.from(doc.querySelectorAll(OFFER_BLOCK_SELECTORS))) {
-    const feature = attr(block, "offer-display-feature-name");
+    const feature = attr(block, "offer-display-feature-name") || attr(block, "offer-display-attribute-name");
     const label = text(block.querySelector(".offer-display-feature-label"));
     const value = text(
       block.querySelector(".offer-display-feature-text-message, .offer-display-feature-text"),

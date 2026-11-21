@@ -1,0 +1,81 @@
+{
+ "platform": "bol.com",
+ "url": "https://www.bol.com/nl/nl/p/bouwset-politieboot/9300000000001/",
+ "title": "Bouwset politieboot met rubberboot, 264 onderdelen",
+ "brand": "",
+ "seller": "Speelgoedpartner",
+ "seller_rating": 87.0,
+ "ships_from": "",
+ "price": 21.99,
+ "list_price": 29.99,
+ "currency": "EUR",
+ "date_first_available": null,
+ "rating": 4.7,
+ "rating_count": 20,
+ "rating_histogram": {
+  "1": 0.05,
+  "2": 0.0,
+  "3": 0.0,
+  "4": 0.15,
+  "5": 0.8
+ },
+ "reviews": [
+  {
+   "rating": 5.0,
+   "posted": "2026-11-19",
+   "title": "Drijft echt",
+   "body": "Mooi verjaardagscadeau, hij gaat mee in bad.",
+   "verified": true
+  },
+  {
+   "rating": 1.0,
+   "posted": "2026-02-14",
+   "title": "",
+   "body": "Doos was beschadigd bij aankomst.",
+   "verified": false
+  }
+ ],
+ "variations": [],
+ "variants": null,
+ "json_ld": [],
+ "script_srcs": [],
+ "meta": {
+  "og:title": "Bouwset politieboot met rubberboot, 264 onderdelen"
+ },
+ "markup_names": [
+  "data-testid",
+  "buy-block",
+  "flex",
+  "seller",
+  "alternatives"
+ ],
+ "external_refs": [],
+ "hidden_text": [],
+ "checkboxes": [],
+ "timers": [],
+ "fee_mentions": [],
+ "vat_ids": [],
+ "legal_mentions": [],
+ "copyright_lines": [],
+ "policy_links": {},
+ "image_urls": [],
+ "product_ids": {},
+ "payment_methods": [],
+ "phones": [],
+ "emails": [],
+ "addresses": [],
+ "founded_claims": [],
+ "business_name": "",
+ "legal_form": "",
+ "kvk_numbers": [],
+ "licences": [],
+ "certifications": [],
+ "cities_served": [],
+ "internal_links": [],
+ "pricing_terms": [],
+ "promises": [],
+ "testimonials": [],
+ "organization_ld": [],
+ "seller_profile": null,
+ "listing": null
+}

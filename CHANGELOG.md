@@ -27,6 +27,30 @@ backend's changelog, which lists each one published at `/extension`.)
   order: from the image block's data (`colorImages`), else the mobile page's carousel (`data-a-hires`), else the
   thumbnails made large; Amazon's product images only, one per photo, at most 12. Other platforms are as before.
 
+## Unreleased
+
+- **Reference prices and reviews from the page itself, on every layout** (backend: the same change, a line-for-line
+  port). On Amazon's mobile page (what the Android app's WebView, which runs this extractor, is sent) the price's
+  offscreen copy is empty: the app sent no price, so a discount against "Adviesprijs" went unseen and its check said
+  "Worth a look" where the server's own read said "Think twice". The price to pay now comes from its accessibility
+  label or visible parts first; the reference price ("List Price", "Typical price", "RRP", "UVP", "Adviesprijs") is
+  the basis or struck price above it; the mobile page's rating, review count, seller row and top reviews are read,
+  and the reviews' titles and texts under Amazon's current hooks. bol.com: the offer's price and reference price, a
+  partner seller and its score, the star distribution and the reviews on the page. Any shop: JSON-LD
+  `StrikethroughPrice`/`ListPrice`, a microdata rating, WooCommerce's sale price, rating and reviews, Judge.me, Loox
+  and Stamped, eBay's struck "List price" (`src/extract/widgets.ts`).
+- **Structured data read as the backend reads it**: a schema.org `ProductGroup` (its variants' offers and photos), a
+  product's rating in a separate `AggregateRating` block, an `ImageObject`'s `contentUrl`, photos resolved against
+  the page's address, and the Open Graph photo first on a product page. The committed parity expectations had gone
+  stale (`test-shop`, `test-shop-sister`: relative photo URLs), so the test passed while the two differed.
+- **The shop's "About us" page among its policy links** (backend: the claim audit reads the shop's pages), which
+  the new CI parity check found missing here.
+- **Parity, checked against the backend's main in CI**: CI regenerates the parity expectations with the backend's
+  extractors and fails when they differ from the committed ones; `test/parity.test.ts` also names, per fixture, each
+  of the fields the scorer and the shopper's reasons read that differs. Nine new made-up fixture pages (Amazon mobile
+  nl and de, Amazon.com reviews, bol.com, WooCommerce, Shopify with Judge.me, JSON-LD strike-through price, microdata
+  rating, eBay).
+
 ## 0.13.0 (2026-11-20)
 
 - **The store summary, from the listing.** `package.json`'s `description`, which the build puts in the manifest and
