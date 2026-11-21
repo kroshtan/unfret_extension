@@ -15,6 +15,7 @@ import {
   type Platform,
 } from "../shared/facts.js";
 import * as amazon from "./amazon.js";
+import * as gallery from "./gallery.js";
 import * as p2p from "./p2p.js";
 import * as bolcom from "./bolcom.js";
 import * as walmart from "./walmart.js";
@@ -159,7 +160,9 @@ export function extractFacts(doc: Document, html: string, url = ""): PageFacts {
   textSignals(doc, facts);
   policyLinks(doc, url, facts);
   images(doc, url, facts);
-  mainPhotoFirst(doc, url, facts, structuredData(doc, facts));
+  const structured = structuredData(doc, facts);
+  const main = structured.length > 0 ? structured : mainPhotoFirst(doc, url, facts);
+  gallery.extract(doc, url, facts, main);
   if (facts.platform === "amazon") amazon.extract(doc, facts);
   else if (facts.platform === "bol.com") bolcom.extract(doc, facts);
   else if (facts.platform === "walmart") walmart.extract(doc, facts);
@@ -393,6 +396,7 @@ function productRating(node: Json): Json | null {
   return isObject(rating) && aboutAProduct(rating.itemReviewed) ? rating : null;
 }
 
+/** The page's products (Product, ProductGroup) and the product ratings stated on their own. */
 function jsonLd(doc: Document): [Json[], Json[]] {
   const products: Json[] = [];
   const ratings: Json[] = [];
@@ -419,29 +423,13 @@ function jsonLd(doc: Document): [Json[], Json[]] {
   return [products, ratings];
 }
 
+// The first of a ProductGroup's variants that has `key` (its photos, its offers).
 function variantField(product: Json, key: string): unknown {
   const variants = product.hasVariant;
   for (const variant of Array.isArray(variants) ? variants : [variants]) {
     if (isObject(variant) && truthy(variant[key])) return variant[key];
   }
   return null;
-}
-
-/**
- * The photo checks take a product page's first image as its main photo. Without one in the structured data, the
- * page's own markup comes first in document order: on most shops the header's logo. A product page's Open Graph
- * image is its product photo, so it goes first; pages that don't say they are about a product keep their order.
- */
-function mainPhotoFirst(doc: Document, url: string, facts: PageFacts, structured: boolean): void {
-  const image = meta(doc, "og:image:secure_url") || meta(doc, "og:image");
-  if (structured || !image || image.startsWith("data:")) return;
-  const ogType = meta(doc, "og:type").trim().toLowerCase();
-  if (
-    !["product", "product.item", "product.group", "og:product"].includes(ogType) &&
-    !facts.json_ld.some((p) => aboutAProduct(p))
-  )
-    return;
-  facts.image_urls = dedupe([urljoin(url, image), ...facts.image_urls]).slice(0, 50);
 }
 
 function trim(node: Json): Json {
@@ -453,11 +441,27 @@ function trim(node: Json): Json {
   return small;
 }
 
-/** Read the product, its offer, rating, reviews and photos from the JSON-LD; whether it named the photos. */
-function structuredData(doc: Document, facts: PageFacts): boolean {
+// A product page's Open Graph types (the backend's _main_photo_first).
+const PRODUCT_OG_TYPES = new Set(["product", "product.item", "product.group", "og:product"]);
+
+/**
+ * Without photos in the structured data, a product page's Open Graph image is its main photo and goes first (the
+ * page's markup starts with its logo). Pages that don't say they are about a product keep their order.
+ */
+function mainPhotoFirst(doc: Document, url: string, facts: PageFacts): string[] {
+  const image = meta(doc, "og:image:secure_url") || meta(doc, "og:image");
+  if (!image || image.startsWith("data:")) return [];
+  if (!PRODUCT_OG_TYPES.has(meta(doc, "og:type").trim().toLowerCase()) && facts.json_ld.length === 0)
+    return [];
+  facts.image_urls = dedupe([urljoin(url, image), ...facts.image_urls]).slice(0, 50);
+  return [urljoin(url, image)];
+}
+
+/** The product's facts from its JSON-LD; returns the photos it named (then first in `image_urls`). */
+function structuredData(doc: Document, facts: PageFacts): string[] {
   const [products, ratings] = jsonLd(doc);
+  let photos: string[] = [];
   facts.json_ld = products.slice(0, 20).map(trim);
-  let photos = false;
   const product = products[0];
   if (product) {
     facts.title = facts.title || cut(str(or(product.name, "")), 2000);
@@ -480,7 +484,7 @@ function structuredData(doc: Document, facts: PageFacts): boolean {
     facts.list_price = referencePrice(product.offers, facts.price);
   if (facts.rating === null || facts.rating_count === null) microdataRating(doc, facts);
   if (facts.reviews.length === 0) microdataReviews(doc, facts);
-  return products.length > 0 && photos;
+  return product ? photos : [];
 }
 
 // A priceSpecification's priceType for a reference price ("https://schema.org/ListPrice", "StrikethroughPrice").
@@ -545,15 +549,15 @@ function applyReviews(reviews: unknown, facts: PageFacts): void {
   }
 }
 
-function applyImages(imgs: unknown, facts: PageFacts): boolean {
+function applyImages(imgs: unknown, facts: PageFacts): string[] {
   const items: unknown[] = Array.isArray(imgs) ? imgs : truthy(imgs) ? [imgs] : [];
-  // An ImageObject names its file as `url` or as `contentUrl` (IKEA's, among others).
+  // An ImageObject names its file as `url` or as `contentUrl`.
   const urls = items
     .map((i) => (isObject(i) ? or(i.url, i.contentUrl) : i))
     .filter((u): u is string => typeof u === "string" && u.length > 0 && !u.startsWith("data:"))
     .map((u) => urljoin(facts.url, u));
   facts.image_urls = dedupe([...urls, ...facts.image_urls]).slice(0, 50);
-  return urls.length > 0;
+  return urls;
 }
 
 function microdataReviews(doc: Document, facts: PageFacts): void {

@@ -5,6 +5,14 @@ backend's changelog, which lists each one published at `/extension`.)
 
 ## Unreleased
 
+- **Every product page sends its gallery first, not only Amazon's** (backend's `facts/gallery.py`, same rules, new
+  `src/extract/gallery.ts`). The product's photos lead the page facts' `image_urls`, large and in order: the
+  structured data's photos or a product's Open Graph image (now first, as on the server), AliExpress's
+  `imagePathList`, Temu's `gallery`, Shopify's product JSON, then gallery markup (zoom and full-size attributes such
+  as WooCommerce's `data-large_image`, eBay's `data-zoom-src`, bol.com's `data-zoom-image-url`; images inside a
+  gallery, carousel or slider, never in a header, menu, footer, video or related products). One photo in several
+  sizes counts once, at most 12, product pages only; the page's other images follow. The structured data's photos
+  may also be an ImageObject's `contentUrl` and are made absolute, as on the server.
 - **Amazon pages send the product's whole gallery** (backend's `facts/amazon.py`, same rules). The page facts' photos
   were the main image followed by the page's other images (40 px thumbnails, banners, sprites, tracking pixels), so the
   deep check's photo steps saw one product photo. Now an Amazon page on any locale sends its gallery, large and in its
