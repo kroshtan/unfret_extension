@@ -5,10 +5,10 @@ backend's changelog, which lists each one published at `/extension`.)
 
 ## Unreleased
 
-- **Store listing: euro prices include VAT.** `store/listing.en.md` now says the packs cost €6 or €20 in the euro
-  area, VAT included (the backend's euro card prices became VAT-inclusive), next to the dollar prices before sales tax
-  or VAT. The text in the Chrome Web Store dashboard is unchanged until the next listing update: the listing under
-  review still has the old wording.
+- **Store listing: the new pack prices, tax included.** `store/listing.en.md` now says 25 checks cost $6.50 or €6.50
+  ($5 with crypto) and 100 checks $21 or €21 ($20 with crypto), sales tax and VAT included, as the backend charges
+  since 0.15.0 (it said $6 / $20 plus tax, and €6 / €20). The text in the Chrome Web Store dashboard is unchanged until
+  the next listing update.
 - **Variant options on any platform** (backend's `facts/variants.py`, same rules, new `src/extract/variants.ts`). The
   page facts gain `variants`: the variant picker's dimensions as the page names them, with what each varies (size,
   colour, count, pattern, material, flavour, style), every option with its price when the page gives it, whether it

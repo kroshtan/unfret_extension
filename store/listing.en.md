@@ -43,7 +43,7 @@ Unfret also checks ads on second-hand marketplaces and the websites of tradespeo
 Free to start
 • 5 free deep checks when you install Unfret. No account, no e-mail, no code.
 • After that, quick checks stay free, as many as you like: they read the page itself, by Unfret's rules.
-• Deep checks, which also look the seller, the shop and the product up elsewhere, come in packs you buy on unfret.net, by card or with crypto (USDC or SOL): 25 checks for $6 ($5 with crypto) or 100 checks for $20, plus sales tax or VAT where it applies; in the euro area €6 or €20, VAT included. No subscription, and checks never expire.
+• Deep checks, which also look the seller, the shop and the product up elsewhere, come in packs you buy on unfret.net, by card or with crypto (USDC or SOL): 25 checks for $6.50 or €6.50 ($5 with crypto) or 100 checks for $21 or €21 ($20 with crypto), sales tax and VAT included. No subscription, and checks never expire.
 • Every pack comes with gift codes to share, one per 25 checks bought (1 with 25 checks, 4 with 100), 5 checks each. A gift code from a friend works for any Unfret pass, new or old, except the one that bought the pack (one gift code a month per pass).
 Your checks are held by your Unfret pass, an anonymous key the extension makes for you; no account or wallet needed. Paid with a Solana wallet? Sign in with it instead: signing in is a free message, not a transaction, and Unfret never gets access to your funds.
 

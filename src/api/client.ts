@@ -177,7 +177,7 @@ export interface DeepCheck {
   adds?: { key: string; area: string; label: string }[];
   /** "A deep check also looks at …"; empty when not suggested. */
   text?: string;
-  /** "Uses 1 of your 3 free deep checks.", "Deep checks come in packs, from $6 for 25.", … */
+  /** "Uses 1 of your 3 free deep checks.", "Deep checks come in packs, from $6.50 for 25.", … */
   cost?: string | null;
   action?: "run_deep" | "get_checks" | null;
   action_label?: string | null;

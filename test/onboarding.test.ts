@@ -611,7 +611,7 @@ describe("the popup's next step", () => {
             deep_check: {
               suggested: true,
               text: "A deep check also looks at how old this shop is.",
-              cost: "Deep checks come in packs, from $6 for 25.",
+              cost: "Deep checks come in packs, from $6.50 for 25.",
               action: "get_checks",
               action_label: "Get checks",
             },
