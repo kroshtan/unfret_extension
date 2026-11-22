@@ -465,7 +465,7 @@ describe("deep-check suggestion under a quick result", () => {
       { key: "photo_elsewhere", area: "product", label: "whether its product photo appears on other shops" },
     ],
     text: "A deep check also looks at how old this shop is and whether its product photo appears on other shops.",
-    cost: "Deep checks come in packs, from $6 for 25.",
+    cost: "Deep checks come in packs, from $6.50 for 25.",
     action: "get_checks",
     action_label: "Get checks",
   };
