@@ -1,6 +1,6 @@
 /** Messages between the popup and the background (the analysis runs in the background so closing the popup is safe). */
 
-import type { AnalysisResult, AnalyzeBody, Finding, ReportReason, SharePreview } from "../api/client.js";
+import type { AnalysisResult, AnalyzeBody, Finding, Pause, SharePreview } from "../api/client.js";
 
 export const ANALYSIS_PORT = "unfret-analysis";
 
@@ -8,15 +8,11 @@ export const ANALYSIS_PORT = "unfret-analysis";
  * What the background knows about a tab's analysis. Kept in memory and mirrored to `chrome.storage.session` (memory
  * only, cleared when the browser closes) so a result survives the service worker going to sleep; never written to disk.
  * `steps` are the checks that have finished, for the progress checklist. A finished state keeps the analysed request
- * (`body`, already cleaned) so the user can report a wrong result; it goes to the server only with their consent.
+ * (`body`, already cleaned, without its proof of work) so the user can report a wrong result.
  * The same request and result make a shared link when the user shares it after a preview (`share`); the link and its
  * delete code stay with the tab's result, in memory, until the tab moves on.
  */
 
-export type ReportState =
-  | { status: "sending" }
-  | { status: "sent"; outcome: "queued" | "already_reported" | "already_known" }
-  | { status: "error"; message: string };
 export type ShareState =
   | { status: "loading" }
   | { status: "preview"; preview: SharePreview }
@@ -27,6 +23,8 @@ export type ShareState =
 export type TabState =
   | { status: "idle" }
   | { status: "extracting" }
+  /** A free deep check's proof of work, a few seconds of hashing in the background. */
+  | { status: "preparing" }
   | { status: "analysing"; pageType?: string; findings: Finding[]; steps?: string[] }
   | {
       status: "done";
@@ -35,26 +33,20 @@ export type TabState =
       steps?: string[];
       result: AnalysisResult;
       body?: AnalyzeBody;
-      report?: ReportState;
       share?: ShareState;
-      /** Why a quick check ran instead of the deep one asked for (no checks left, free deep checks paused). */
+      /** Why a quick check ran instead of the deep one asked for (free deep checks paused or unavailable). */
       note?: string;
+      /** Free deep checks are paused (the spend ceiling): the popup says so, with "Support Unfret". */
+      pause?: Pause;
     }
   | {
       status: "error";
       message: string;
-      needsSignIn: boolean;
-      needsCredits: boolean;
-      /** The server no longer knows the pass (Unfret's new free start): it is forgotten, a new one is offered. */
-      passEnded?: boolean;
-      /** True when no check was used (the server refunds failed analyses). */
-      refunded?: boolean;
     };
 
 export type PopupRequest =
   | { type: "watch"; tabId: number }
   | { type: "analyze"; tabId: number; tier?: "quick" }
-  | { type: "report"; tabId: number; reason: ReportReason }
   | { type: "share-preview"; tabId: number }
   | { type: "share"; tabId: number }
   | { type: "share-cancel"; tabId: number };

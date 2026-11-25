@@ -30,20 +30,14 @@ const PUBLIC_KEY_FILE = {
 const entries = {
   background: "src/background/index.ts",
   extract: "src/content/extract-entry.ts",
-  "connect-relay": "src/content/connect-relay.ts",
-  "key-relay": "src/content/key-relay.ts",
-  "ref-relay": "src/content/ref-relay.ts",
   "popup/popup": "src/popup/popup.ts",
   "options/options": "src/options/options.ts",
-  "confirm/confirm": "src/confirm/confirm.ts",
 };
 const statics = [
   "popup/popup.html",
   "popup/popup.css",
   "options/options.html",
   "options/options.css",
-  "confirm/confirm.html",
-  "confirm/confirm.css",
   "shared/ui.css",
   "shared/fonts",
 ];

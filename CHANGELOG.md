@@ -5,6 +5,22 @@ backend's changelog, which lists each one published at `/extension`.)
 
 ## Unreleased
 
+- **Free for shoppers, with no pass** (backend: "Free checks for shoppers"). Quick and deep checks are free and go
+  without Authorization: the extension makes no pass, signs in to nothing and sends nothing that names the user. A
+  deep check gets a challenge (`GET /v1/analyze/challenge`), solves its proof of work in the background
+  (`src/shared/pow.ts`, plain-TypeScript SHA-256, the website's solver ported; about 1 s for 20 bits) and sends it as
+  `proof_of_work`; a refused challenge (428 / 400 `BAD_CHALLENGE`) gets one new one. When free deep checks are paused
+  (the monthly spend ceiling: the challenge's `paused`, `/v1/pricing`'s `free.paused` or 429 `FREE_CHECKS_PAUSED`)
+  nothing is solved: the popup says free checks run on donations, quick checks still work and deep checks are back
+  next month, with "Support Unfret" (`/donate`), and the main button runs the quick check. 503 runs a quick check
+  instead, saying why; 429 `TOO_MANY_REQUESTS` says how long to wait. A quick result's `action: "donate"` opens
+  `/donate`. A quiet "Support Unfret" (`/support`) sits under the popup and in the settings.
+- **Gone: the pass, wallet sign-in, gift codes, affiliates and check counters.** No free pass on install, no welcome
+  page, no "Get your free checks", "Buy checks", "Have a gift code?", phone sign-in or backup code; no content scripts
+  on Unfret's pages (the connect, checkout and welcome relays) and no confirm window. A pass, wallet sign-in, backup
+  code or "had its free checks" note an older version stored is deleted on update, start-up and whenever the popup or
+  settings open, and never sent. The old "Wrong result?" report (it needed a pass) is gone until the new one lands.
+
 - **Store listing: the new pack prices, tax included.** `store/listing.en.md` now says 25 checks cost $6.50 or €6.50
   ($5 with crypto) and 100 checks $21 or €21 ($20 with crypto), sales tax and VAT included, as the backend charges
   since 0.15.0 (it said $6 / $20 plus tax, and €6 / €20). The text in the Chrome Web Store dashboard is unchanged until

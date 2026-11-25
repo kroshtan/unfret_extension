@@ -1,45 +1,29 @@
 /**
- * A small mock of the Unfret API (contract v1) for tests and the smoke run: pricing, credits, and a streamed
- * analysis that records the request it got. Behaviour per bearer token: "expired" → 401, "broke" → 402,
- * "off" → 503, "midway" → stream error event, anything else → a normal result.
+ * A small mock of the Unfret API (contract v1, "Free checks for shoppers") for tests and the smoke run: pricing, a
+ * free deep check's challenge (4 bits) and a streamed analysis that records the request it got. Its behaviour is set
+ * through `mode`: "ok" → a normal result, "paused" → free deep checks paused (the challenge says so, and a deep check
+ * gets 429 FREE_CHECKS_PAUSED), "off" → 503 on a deep check, "busy" → 429 TOO_MANY_REQUESTS on a deep check,
+ * "midway" → a stream error event, "spent" → the first deep check's challenge is refused with 400 BAD_CHALLENGE.
+ * A deep check without a valid proof of work gets 428 PROOF_OF_WORK_REQUIRED, as on the server. Any Authorization
+ * header is refused (a test that sees it fails): shoppers' checks name no one.
  *
- * Gift codes (`POST /v1/invites/redeem`): INVITE_OK adds 3 checks; INVITE_USED_CODE, INVITE_UNKNOWN_CODE,
- * INVITE_OWN_CODE and INVITE_MONTHLY_CODE are refused with the server's codes and words, anything else with 400
- * INVALID_INVITE; once INVITE_OK is redeemed by a token,
- * `/v1/credits` reports `invite_eligible: false` for it (before that the field is absent, like an older server). Shares (`/v1/shares/preview`, `/v1/shares`) refuse
- * a request with Authorization, like the server; share token "expired.mac" → 422, "busy.mac" → 429 on create.
- *
- * Free passes (0.12.0): `POST /v1/keys` (after `GET /v1/keys/challenge`, 4 bits) always issues FREE_PASS, with
- * `freeChecks` free checks when the body asks for them (`free: true`), none otherwise; a deep check with it uses one,
- * then 402. A quick check (`tier: "quick"`) is never charged. Token "paused" → 429 FREE_CHECKS_PAUSED on a deep check.
- * `/welcome?setup=1` is the website's page that tells the extension whether this browser had its free checks
- * (WELCOME_SETUP_PAGE); other `/welcome` addresses are an empty page.
+ * Shares (`/v1/shares/preview`, `/v1/shares`): share token "expired.mac" → 422, a url with "busy" → 429 on create.
  */
 
+import { createHash } from "node:crypto";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
 
 import type { SharePreview } from "../src/api/client.js";
 
+export type MockMode = "ok" | "paused" | "off" | "busy" | "midway" | "spent";
+
 export interface MockApi {
   url: string;
-  /** The free checks the next free pass gets, and those left on it. */
-  free: { perPass: number; left: number };
+  mode: MockMode;
   requests: { path: string; auth: string; body: unknown; language?: string }[];
-  /**
-   * Phone pairing behaviour. `POST /v1/auth/pair` returns `id`; polls of "pair-ok" answer 202 `pendingPolls` times,
-   * then the session once, then 404. "pair-expired" → 410, "pair-gone" → 404, "pair-flaky" → 503 once, then the
-   * session. `connectBase` overrides the connect URL's origin (to test the origin check).
-   */
-  pairing: { id: string; pendingPolls: number; connectBase?: string; delivered: boolean; flaked: boolean };
   close(): Promise<void>;
 }
-
-export const PAIRED_SESSION = {
-  token: "paired-session-token-0123456789",
-  address: "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin",
-  expires_at: "2099-01-01T00:00:00Z",
-};
 
 /** The verdict the mock analysis returns. */
 export const VERDICT = {
@@ -66,41 +50,25 @@ export const VERDICT = {
   checks_run: 12,
 };
 
-export const INVITE_OK = `ufi_${"a".repeat(32)}`;
-export const INVITE_USED_CODE = `ufi_${"b".repeat(32)}`;
-export const INVITE_UNKNOWN_CODE = `ufi_${"c".repeat(32)}`;
-/** A code from the redeeming account's own pack: 403 INVITE_OWN_PACK. */
-export const INVITE_OWN_CODE = `ufi_${"d".repeat(32)}`;
-/** Refused with 429 INVITE_MONTHLY_LIMIT (`metadata.next_month` 2026-12-01); the BARE one: the same without metadata. */
-export const INVITE_MONTHLY_CODE = `ufi_${"e".repeat(32)}`;
-export const INVITE_MONTHLY_BARE_CODE = `ufi_${"g".repeat(32)}`;
-
-const INVITE_REFUSALS: Record<
-  string,
-  { status: number; error_code: string; detail: string; metadata?: Record<string, unknown> }
-> = {
-  [INVITE_MONTHLY_CODE]: {
-    status: 429,
-    error_code: "INVITE_MONTHLY_LIMIT",
-    detail: "This pass already used a gift code this month.",
-    metadata: { next_month: "2026-12-01" },
-  },
-  [INVITE_MONTHLY_BARE_CODE]: { status: 429, error_code: "INVITE_MONTHLY_LIMIT", detail: "" },
-  [INVITE_USED_CODE]: {
-    status: 409,
-    error_code: "INVITE_USED",
-    detail: "This gift code has already been used.",
-  },
-  [INVITE_UNKNOWN_CODE]: { status: 404, error_code: "UNKNOWN_INVITE", detail: "Unknown gift code." },
-  [INVITE_OWN_CODE]: {
-    status: 403,
-    error_code: "INVITE_OWN_PACK",
-    detail: "This gift code came with your own pack: give it to a friend.",
-  },
+export const PAUSE = {
+  reason: "spend_ceiling",
+  retry_after_s: 86_400,
+  quick_checks: true,
+  message_key: "free_checks_run_on_donations",
+  donate_url: "https://unfret.net/donate",
 };
 
-export const FREE_PASS = `ufk_freepasszz_${"f".repeat(52)}`;
-export const FREE_PASS_BACKUP = `ufr_freepasszz_${"b".repeat(52)}`;
+const BITS = 4;
+
+function zeroBits(digest: Buffer): number {
+  let bits = 0;
+  for (const byte of digest) {
+    if (byte) return bits + Math.clz32(byte) - 24;
+    bits += 8;
+  }
+  return bits;
+}
+
 export const SHARE_ID = "k3v7q2m9x4b8n6c1d5f0h2j4la";
 export const SHARE_DELETE_CODE = "delcode7q2m9x4b8n6c1d5f0h2";
 
@@ -138,30 +106,6 @@ function json(res: ServerResponse, status: number, body: unknown): void {
   res.end(JSON.stringify(body));
 }
 
-/**
- * `/welcome?setup=1` as the website's welcome.js does it: says whether this browser had its free checks (its
- * localStorage note) until the extension answers, sets the note when a pass was made, and moves on.
- */
-export const WELCOME_SETUP_PAGE = `<!doctype html><title>setup</title><script>
-  const had = localStorage.getItem("unfret-free-pass") !== null;
-  let done = false;
-  addEventListener("message", (e) => {
-    if (e.source !== window || !e.data || e.data.type !== "unfret-free-answer" || done) return;
-    done = true;
-    console.log("unfret-status:" + e.data.status);
-    if (["free", "had-free", "none-today"].includes(e.data.status)) localStorage.setItem("unfret-free-pass", "1");
-    location.replace(e.data.status === "free" ? "/welcome?free=" + e.data.free
-      : ["had-free", "none-today"].includes(e.data.status) ? "/welcome?note=" + e.data.status : "/welcome");
-  });
-  let tries = 0;
-  const ask = () => {
-    if (done || tries++ >= 40) return;
-    window.postMessage({ type: "unfret-free-ask", had }, location.origin);
-    setTimeout(ask, 250);
-  };
-  ask();
-</script>`;
-
 async function readBody(req: IncomingMessage): Promise<unknown> {
   const chunks: Buffer[] = [];
   for await (const chunk of req) chunks.push(chunk as Buffer);
@@ -171,19 +115,17 @@ async function readBody(req: IncomingMessage): Promise<unknown> {
 
 export async function startMockApi(): Promise<MockApi> {
   const requests: MockApi["requests"] = [];
-  const pairing: MockApi["pairing"] = { id: "pair-ok", pendingPolls: 2, delivered: false, flaked: false };
-  const invited = new Set<string>(); // tokens that redeemed an invite
-  const free: MockApi["free"] = { perPass: 5, left: 0 };
-  let base = "";
+  const issued = new Set<string>();
+  let challenges = 0;
+  const state = { mode: "ok" as MockMode };
   const server: Server = createServer((req, res) => {
     void (async () => {
       const auth = req.headers.authorization ?? "";
-      const token = auth.replace(/^Bearer /u, "");
       const path = req.url ?? "";
       if (req.method === "OPTIONS") {
         res.writeHead(204, {
           "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Headers": "Authorization, Content-Type, X-Unfret-Claim",
+          "Access-Control-Allow-Headers": "Content-Type",
           "Access-Control-Allow-Methods": "GET, POST",
         });
         res.end();
@@ -192,99 +134,35 @@ export async function startMockApi(): Promise<MockApi> {
       const body = req.method === "POST" ? await readBody(req) : null;
       const language = req.headers["accept-language"];
       requests.push({ path, auth, body, ...(typeof language === "string" ? { language } : {}) });
-      if (token === "expired") {
-        json(res, 401, { detail: "Sign in again.", error_code: "UNAUTHORIZED" });
+      if (auth) {
+        json(res, 400, { detail: "No Authorization here.", error_code: "AUTHORIZATION_NOT_ALLOWED" });
         return;
       }
-      if (token === "off") {
-        json(res, 503, { detail: "Sign-in is off.", error_code: "SERVICE_UNAVAILABLE" });
-        return;
-      }
-      if (path.startsWith("/welcome")) {
-        res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-        res.end(
-          path.startsWith("/welcome?setup=1") ? WELCOME_SETUP_PAGE : `<!doctype html><title>welcome</title>`,
-        );
-        return;
-      }
+      const paused = state.mode === "paused";
       if (path === "/v1/pricing") {
         json(res, 200, {
-          analysis_lamports: 1_500_000,
-          x402: { quick_lamports: 100_000, deep_lamports: 1_500_000 },
-          bonuses: [],
-          suggested_packs: [{ checks: 10, lamports: 15_000_000 }],
-          hot_wallet: "HotWa11etHotWa11etHotWa11etHotWa11etHotWa11",
-          network: "solana-devnet",
+          free: {
+            quick_checks: true,
+            deep_checks: true,
+            paused,
+            ...(paused ? { pause: PAUSE } : {}),
+            donate_url: "https://unfret.net/donate",
+            checks_per_pass: 0,
+          },
         });
         return;
       }
-      if (path === "/v1/auth/pair" && req.method === "POST") {
-        json(res, 201, {
-          pair_id: pairing.id,
-          confirm_code: "K7-4Q",
-          connect_url: `${pairing.connectBase ?? base}/connect?pair=${pairing.id}`,
-          expires_at: "2099-01-01T00:05:00Z",
+      if (path === "/v1/analyze/challenge") {
+        challenges += 1;
+        const challenge = `mock-${String(challenges)}.${BITS}`;
+        issued.add(challenge);
+        json(res, 200, {
+          challenge,
+          bits: BITS,
+          expires_at: 4_102_444_800,
+          paused,
+          ...(paused ? { pause: PAUSE } : {}),
         });
-        return;
-      }
-      if (path.startsWith("/v1/auth/pair/")) {
-        const id = decodeURIComponent(path.slice("/v1/auth/pair/".length));
-        if (id === "pair-expired") {
-          json(res, 410, { detail: "This pairing expired; start again.", error_code: "PAIRING_EXPIRED" });
-        } else if (id === "pair-flaky" && !pairing.flaked) {
-          pairing.flaked = true;
-          json(res, 503, { detail: "Busy.", error_code: "SERVICE_UNAVAILABLE" });
-        } else if ((id === "pair-ok" || id === "pair-flaky") && !pairing.delivered) {
-          if (id === "pair-ok" && pairing.pendingPolls > 0) {
-            pairing.pendingPolls -= 1;
-            json(res, 202, { status: "pending" });
-          } else {
-            pairing.delivered = true;
-            json(res, 200, PAIRED_SESSION);
-          }
-        } else {
-          json(res, 404, { detail: "Unknown pairing.", error_code: "PAIRING_UNKNOWN" });
-        }
-        return;
-      }
-      if (path === "/v1/reports" && req.method === "POST") {
-        if (token === "limited") {
-          json(res, 429, {
-            detail: "You've used this month's reports.",
-            error_code: "REPORT_LIMIT",
-            metadata: { used: 5, limit: 5 },
-          });
-        } else {
-          json(res, 201, { status: "queued", reports_used: 1, reports_per_month: 5 });
-        }
-        return;
-      }
-      if (path === "/v1/invites/redeem" && req.method === "POST") {
-        if (!token) {
-          json(res, 401, { detail: "Sign in first.", error_code: "UNAUTHORIZED" });
-          return;
-        }
-        const code = (body as { code?: string } | null)?.code ?? "";
-        const refusal = INVITE_REFUSALS[code];
-        if (refusal)
-          json(res, refusal.status, {
-            detail: refusal.detail,
-            error_code: refusal.error_code,
-            ...(refusal.metadata ? { metadata: refusal.metadata } : {}),
-          });
-        else if (code === INVITE_OK) {
-          invited.add(token);
-          json(res, 200, {
-            checks_added: 3,
-            usd_micros_added: 600_000,
-            balance_usd_micros: 600_000,
-            checks_remaining: 3,
-          });
-        } else
-          json(res, 400, {
-            detail: "That isn't a gift code.",
-            error_code: "INVALID_INVITE",
-          });
         return;
       }
       if ((path === "/v1/shares/preview" || path === "/v1/shares") && req.method === "POST") {
@@ -317,67 +195,46 @@ export async function startMockApi(): Promise<MockApi> {
         }
         return;
       }
-      if (path === "/v1/keys/challenge") {
-        json(res, 200, { challenge: "mock-challenge", bits: 4, expires_at: 4_102_444_800 });
-        return;
-      }
-      if (path === "/v1/keys" && req.method === "POST") {
-        free.left = (body as { free?: unknown } | null)?.free === true ? free.perPass : 0;
-        json(res, 201, {
-          key_id: "freepasszz",
-          key: FREE_PASS,
-          recovery_code: FREE_PASS_BACKUP,
-          account: "key:freepasszz",
-          balance_usd_micros: 0,
-          free_checks: free.left,
-        });
-        return;
-      }
-      if (path === "/v1/keys/move-free-checks" && req.method === "POST") {
-        const moved = token === FREE_PASS ? free.left : 0;
-        if (token === FREE_PASS) free.left = 0;
-        json(res, 200, { moved });
-        return;
-      }
-      if (path === "/v1/credits" && token === FREE_PASS) {
-        json(res, 200, {
-          address: "key:freepasszz",
-          balance_lamports: 0,
-          checks_remaining: free.left,
-          free_checks_remaining: free.left,
-          free_checks_paused: false,
-          invite_eligible: true,
-        });
-        return;
-      }
-      if (path === "/v1/credits") {
-        json(res, 200, {
-          address: "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin",
-          balance_lamports: 7_500_000,
-          checks_remaining: 5,
-          ...(invited.has(token) ? { invite_eligible: false } : {}),
-        });
-        return;
-      }
       if (path === "/v1/analyze/stream") {
-        const quick = (body as { tier?: unknown } | null)?.tier === "quick";
-        if (!quick && token === "paused") {
-          json(res, 429, {
-            detail: "Free deep checks are back tomorrow (00:00 UTC). Quick checks still work.",
-            error_code: "FREE_CHECKS_PAUSED",
-            metadata: { retry_after_s: 3600, quick_checks: true },
-          });
-          return;
+        const sent = (body ?? {}) as {
+          tier?: unknown;
+          proof_of_work?: { challenge?: string; solution?: string };
+        };
+        const quick = sent.tier === "quick";
+        if (!quick) {
+          if (paused) {
+            json(res, 429, {
+              detail: "Free deep checks are paused until next month. Quick checks still work.",
+              error_code: "FREE_CHECKS_PAUSED",
+              metadata: PAUSE,
+            });
+            return;
+          }
+          if (state.mode === "off") {
+            json(res, 503, { detail: "Not now.", error_code: "SERVICE_UNAVAILABLE" });
+            return;
+          }
+          if (state.mode === "busy") {
+            json(res, 429, {
+              detail: "Too many.",
+              error_code: "TOO_MANY_REQUESTS",
+              metadata: { retry_after_s: 1200 },
+            });
+            return;
+          }
+          const proof = sent.proof_of_work;
+          if (!proof?.challenge || proof.solution === undefined) {
+            json(res, 428, { detail: "Proof of work required.", error_code: "PROOF_OF_WORK_REQUIRED" });
+            return;
+          }
+          const digest = createHash("sha256").update(`${proof.challenge}:${proof.solution}`).digest();
+          const spent = state.mode === "spent";
+          if (spent) state.mode = "ok";
+          if (spent || !issued.delete(proof.challenge) || zeroBits(digest) < BITS) {
+            json(res, 400, { detail: "Bad challenge.", error_code: "BAD_CHALLENGE" });
+            return;
+          }
         }
-        if (!quick && token === FREE_PASS && free.left === 0) {
-          json(res, 402, {
-            detail: "Not enough credits for an analysis.",
-            error_code: "INSUFFICIENT_CREDITS",
-          });
-          return;
-        }
-        const freeCheck = !quick && token === FREE_PASS;
-        if (freeCheck) free.left -= 1;
         if (quick) {
           res.writeHead(200, { "Content-Type": "text/event-stream", "Access-Control-Allow-Origin": "*" });
           res.end(
@@ -385,22 +242,34 @@ export async function startMockApi(): Promise<MockApi> {
               JSON.stringify({
                 score: 40,
                 explanation: "An inflated discount.",
-                verdict: { ...VERDICT, band: "careful", label: "Think twice" },
-                balance_usd_micros: 0,
-                balance_lamports: 0,
+                verdict: {
+                  ...VERDICT,
+                  band: "careful",
+                  label: "Think twice",
+                  deep_check: paused
+                    ? {
+                        suggested: true,
+                        reason: "paused",
+                        text: "A deep check also looks the shop up elsewhere.",
+                        cost: "Free deep checks are paused until next month.",
+                        action: "donate",
+                        action_label: "Support Unfret",
+                      }
+                    : {
+                        suggested: true,
+                        reason: "signals",
+                        text: "A deep check also looks the shop up elsewhere.",
+                        cost: "Deep checks are free.",
+                        action: "run_deep",
+                        action_label: "Run a deep check",
+                      },
+                },
                 charged: false,
                 tier: "quick",
+                label_token: "label-quick.mac",
               }) +
               "\n\n",
           );
-          return;
-        }
-        if (token === "broke") {
-          json(res, 402, {
-            detail: "Not enough credits.",
-            error_code: "INSUFFICIENT_CREDITS",
-            metadata: { balance_lamports: 0, analysis_lamports: 1_500_000 },
-          });
           return;
         }
         res.writeHead(200, { "Content-Type": "text/event-stream", "Access-Control-Allow-Origin": "*" });
@@ -411,7 +280,7 @@ export async function startMockApi(): Promise<MockApi> {
         res.write(
           ': keep-alive\n\nevent: finding\r\ndata: {"skill": "reviews", "type": "velocity", "evidence": "4,800 reviews in 6 weeks."}\r\n\r\n',
         );
-        if (token === "midway") {
+        if (state.mode === "midway") {
           res.end(
             'event: error\ndata: {"detail": "Analysis took too long.", "error_code": "GATEWAY_TIMEOUT"}\n\n',
           );
@@ -428,12 +297,12 @@ export async function startMockApi(): Promise<MockApi> {
                 model_version: "v1-test",
                 flags: [{ type: "listing.discount_pct", evidence: "85% off.", weight: 1.2 }],
               },
-              balance_lamports: 6_000_000,
-              charged: true,
+              charged: false,
+              free_check: true,
+              charge_note: "Deep checks are free.",
               tier: "deep",
-              ...(freeCheck ? { free_check: true } : {}),
               verdict: VERDICT,
-              report_token: "report-token.mac",
+              label_token: "label-deep.mac",
               share_token: "share-token.mac",
             }) +
             "\n\n",
@@ -445,12 +314,15 @@ export async function startMockApi(): Promise<MockApi> {
   });
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   const { port } = server.address() as AddressInfo;
-  base = `http://127.0.0.1:${port}`;
   return {
-    url: base,
-    free,
+    url: `http://127.0.0.1:${port}`,
+    get mode() {
+      return state.mode;
+    },
+    set mode(mode: MockMode) {
+      state.mode = mode;
+    },
     requests,
-    pairing,
     close: () =>
       new Promise((resolve, reject) => {
         server.close((err) => {

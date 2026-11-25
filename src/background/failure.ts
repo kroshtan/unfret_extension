@@ -2,40 +2,27 @@
 
 import { ApiError } from "../api/client.js";
 import type { TabState } from "../shared/messages.js";
-import { endPass, passEndedBy } from "../shared/new-pass.js";
-import type { Session } from "../shared/settings.js";
-import { OFFLINE, PASS_ENDED, SESSION_EXPIRED } from "../shared/text.js";
+import { OFFLINE } from "../shared/text.js";
 
-/**
- * The tab's state after a check failed with `error`. A pass the server no longer knows (Unfret's new free start) is
- * forgotten here at once, even with the popup closed ({@link endPass}); the popup then offers the new free pass.
- */
-export async function checkFailed(
-  session: Session | undefined,
-  error: unknown,
-): Promise<Extract<TabState, { status: "error" }>> {
+/** "a minute", "5 minutes", "an hour": how long to wait, from `retry_after_s`. */
+export function waitText(seconds: number | undefined): string {
+  if (seconds === undefined || seconds <= 60) return "a minute";
+  if (seconds < 3600) return `${String(Math.ceil(seconds / 60))} minutes`;
+  return "an hour";
+}
+
+/** The tab's state after a check failed with `error`. */
+export function checkFailed(error: unknown, quick: boolean): Extract<TabState, { status: "error" }> {
   const apiError = error instanceof ApiError ? error : null;
-  const passEnded = passEndedBy(session, error);
-  if (passEnded) await endPass(session);
-  const message = apiError?.serviceOff
-    ? "Unfret checks aren't available right now. Please try again later."
-    : passEnded
-      ? PASS_ENDED
-      : apiError?.needsSignIn
-        ? SESSION_EXPIRED
-        : apiError?.needsCredits
-          ? "You have no checks left."
-          : apiError?.code === "TOO_MANY_REQUESTS"
-            ? "Too many quick checks in a minute; wait a moment. No check was used."
-            : apiError
-              ? "The check failed. No check was used."
-              : OFFLINE;
-  return {
-    status: "error",
-    message,
-    needsSignIn: apiError?.needsSignIn ?? false,
-    needsCredits: apiError?.needsCredits ?? false,
-    ...(passEnded ? { passEnded } : {}),
-    refunded: apiError !== null && !apiError.needsSignIn && !apiError.needsCredits,
-  };
+  const message =
+    apiError?.code === "TOO_MANY_REQUESTS"
+      ? quick
+        ? `Too many quick checks from your network just now. Please wait ${waitText(apiError.retryAfterS)}.`
+        : `Too many deep checks from your network this hour. Please wait ${waitText(apiError.retryAfterS)}, or run a quick check.`
+      : apiError?.serviceOff
+        ? "Unfret checks aren't available right now. Please try again later."
+        : apiError
+          ? "The check failed. Please try again."
+          : OFFLINE;
+  return { status: "error", message };
 }

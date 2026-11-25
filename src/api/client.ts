@@ -1,6 +1,8 @@
 /**
- * The Unfret API, as the extension uses it (contract v1: SIWS sessions, credits in lamports, streamed analysis).
- * Errors carry the backend's `{detail, error_code, metadata}` shape.
+ * The Unfret API, as the extension uses it (contract v1, "Free checks for shoppers"): quick and deep checks with no
+ * pass and no identity (a deep check carries a proof of work instead), streamed analysis, shared results. Nothing this
+ * client sends names the user: it never sends Authorization. Errors carry the backend's `{detail, error_code,
+ * metadata}` shape.
  */
 
 import type { PageFacts } from "../shared/facts.js";
@@ -17,96 +19,60 @@ export class ApiError extends Error {
     this.name = "ApiError";
   }
 
-  get needsSignIn(): boolean {
-    return this.status === 401;
+  /** The deep check needs a (new) proof of work: none was sent (428), or the challenge was spent or expired (400). */
+  get needsProof(): boolean {
+    return this.code === "PROOF_OF_WORK_REQUIRED" || this.code === "BAD_CHALLENGE";
   }
 
-  /**
-   * The server doesn't know this Unfret pass (any more): retired at Unfret's new free start (0.13.0), or replaced with
-   * its backup code. A wallet's sign-in that expired is a 401 too, but never this code.
-   */
-  get passEnded(): boolean {
-    return this.status === 401 && this.code === "INVALID_API_KEY";
+  /** This month's free deep checks are paused (the spend ceiling): quick checks still work. */
+  get freePaused(): boolean {
+    return this.code === "FREE_CHECKS_PAUSED";
   }
 
-  get needsCredits(): boolean {
-    return this.status === 402 || this.code === "INSUFFICIENT_CREDITS";
-  }
-
-  /** The server has sign-in / credits switched off (503 SERVICE_UNAVAILABLE). */
+  /** The server can't offer free deep checks right now (503). */
   get serviceOff(): boolean {
     return this.status === 503;
   }
+
+  /** Seconds to wait, when the server says (`metadata.retry_after_s`). */
+  get retryAfterS(): number | undefined {
+    const m = this.metadata as { retry_after_s?: unknown } | null | undefined;
+    return typeof m?.retry_after_s === "number" ? m.retry_after_s : undefined;
+  }
 }
 
-export interface Pricing {
-  analysis_lamports: number;
-  /** null while buying credits is switched off on the server. */
-  hot_wallet: string | null;
-  suggested_packs?: { checks: number; lamports: number }[];
-  network?: string;
-  /** The free checks a new pass gets (0: none at the moment); absent on older servers. */
-  free?: { checks_per_pass?: number };
-  /**
-   * "Wrong result?": reports per account per month and the rewards, paid once a person labelled the page:
-   * `reward_checks` when the score was at least `reward_gap` points off, `small_reward_checks` when at least
-   * `small_reward_gap`. Older servers have only `per_month` and `reward_checks`, or no `reports` at all.
-   */
-  reports?: {
-    per_month?: number;
-    reward_checks?: number;
-    reward_gap?: number;
-    small_reward_checks?: number;
-    small_reward_gap?: number;
-  };
+/**
+ * Why free deep checks are paused (the monthly spend ceiling): `FREE_CHECKS_PAUSED`'s metadata, the challenge's
+ * `pause` and `/v1/pricing`'s `free.pause`. The extension shows its own words for `message_key`.
+ */
+export interface Pause {
+  reason?: string;
+  retry_after_s?: number;
+  quick_checks?: boolean;
+  message_key?: string;
+  donate_url?: string;
 }
 
-export interface Credits {
-  address: string;
-  balance_lamports: number;
-  /** Checks left: bought ones plus free ones. */
-  checks_remaining: number;
-  /** Whether an invite can still be redeemed onto this account (it never had credit); absent on older servers. */
-  invite_eligible?: boolean;
-  /** Of `checks_remaining`, the free ones (a free pass's); absent on older servers. */
-  free_checks_remaining?: number;
-  /** Today's free deep checks are all used, by everyone: the free ones wait until 00:00 UTC. */
-  free_checks_paused?: boolean;
-}
-
-/** A proof-of-work challenge for a new pass (GET /v1/keys/challenge). */
-export interface KeyChallenge {
+/** A free deep check's proof-of-work challenge (GET /v1/analyze/challenge). */
+export interface Challenge {
   challenge: string;
   bits: number;
   expires_at: number;
+  /** Free deep checks are paused: don't solve it; show the pause and offer a quick check. */
+  paused: boolean;
+  pause?: Pause;
 }
 
-/** A new pass and its backup code (POST /v1/keys), shown this once. */
-export interface IssuedKey {
-  key_id: string;
-  key: string;
-  recovery_code: string;
-  account: string;
-  balance_usd_micros: number;
-  /** Free deep checks on it (0 from an older server, or once this network had its share today). */
-  free_checks?: number;
+export interface Pricing {
+  /** Free checks for shoppers; absent on older servers. */
+  free?: {
+    quick_checks?: boolean;
+    deep_checks?: boolean;
+    paused?: boolean;
+    pause?: Pause;
+    donate_url?: string;
+  };
 }
-
-/** A phone sign-in pairing (contract: "phone sign-in by pairing"). */
-export interface Pairing {
-  pair_id: string;
-  confirm_code: string;
-  connect_url: string;
-  expires_at: string;
-}
-
-export interface PairedSession {
-  token: string;
-  address: string;
-  expires_at: string;
-}
-
-export type PairPoll = { status: "pending" } | { status: "ready"; session: PairedSession };
 
 export interface Flag {
   type: string;
@@ -177,9 +143,10 @@ export interface DeepCheck {
   adds?: { key: string; area: string; label: string }[];
   /** "A deep check also looks at …"; empty when not suggested. */
   text?: string;
-  /** "Uses 1 of your 3 free deep checks.", "Deep checks come in packs, from $6.50 for 25.", … */
+  /** "Deep checks are free.", or while they're paused, when they're back. */
   cost?: string | null;
-  action?: "run_deep" | "get_checks" | null;
+  /** "donate" while free deep checks are paused (label "Support Unfret"); absent: no button. */
+  action?: "run_deep" | "donate" | "get_checks" | null;
   action_label?: string | null;
 }
 
@@ -210,38 +177,19 @@ export interface AnalysisResult {
   score: number;
   explanation: string;
   assessment?: { risk_score: number; confidence: number; flags: Flag[]; model_version: string };
-  balance_lamports?: number;
-  balance_usd_micros?: number;
-  /** False when no check was used (a page that couldn't be analysed, a recent result from the cache, a quick check). */
+  /** Always false for a shopper's free check. */
   charged?: boolean;
   /** "quick": rule-based checks of the page itself only, free; "deep" (or absent): the full check. */
   tier?: "deep" | "quick";
-  /** True when one of the pass's free checks paid for it. */
+  /** True for a free deep check (and a quick check). */
   free_check?: boolean;
-  /** What the check cost, as a sentence ("This check used one of your free checks; 4 are left."). */
+  /** What the check cost, as a sentence ("Deep checks are free."). */
   charge_note?: string;
   verdict?: Verdict;
-  /** Lets this account report the result as wrong (POST /v1/reports) within 7 days. */
-  report_token?: string;
+  /** Lets whoever has the result report it as wrong (POST /v1/labels); names no one. */
+  label_token?: string;
   /** Lets anyone holding the result share it as a public link (POST /v1/shares) within 7 days; names no account. */
   share_token?: string;
-}
-
-export type ReportReason = "real_brand" | "scam" | "junk" | "other";
-export type ReportOutcome = "queued" | "already_reported" | "already_known";
-
-export interface ReportResponse {
-  status: ReportOutcome;
-  reports_used: number;
-  reports_per_month: number;
-}
-
-/** What an invite added (POST /v1/invites/redeem). */
-export interface InviteRedeemed {
-  checks_added: number;
-  usd_micros_added: number;
-  balance_usd_micros: number;
-  checks_remaining: number;
 }
 
 /** A result to share: the check's share token, the url as it was analysed and the result as it came back. */
@@ -312,6 +260,8 @@ export interface AnalyzeBody {
   page_content?: string;
   checkout_content?: string;
   flags?: string[];
+  /** A free deep check's solved challenge (never part of what a report or a share sends back). */
+  proof_of_work?: { challenge: string; solution: string };
 }
 
 export type StreamEvent =
@@ -360,21 +310,23 @@ function asFindings(data: Record<string, unknown>): Finding[] {
 export class UnfretApi {
   constructor(
     private readonly base: string,
-    private readonly token?: string,
     private readonly fetcher: FetchLike = (input, init) => fetch(input, init),
   ) {}
 
+  /** Never an Authorization header: shoppers' checks name no one. */
   private headers(json: boolean): Record<string, string> {
     return {
       ...(json ? { "Content-Type": "application/json" } : {}),
-      ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
       // The extension is in English. Whatever the server writes about a page is shown as it comes.
       "Accept-Language": "en",
     };
   }
 
   private async get<T>(path: string): Promise<T> {
-    const response = await this.fetcher(`${this.base}${path}`, { headers: this.headers(false) });
+    const response = await this.fetcher(`${this.base}${path}`, {
+      headers: this.headers(false),
+      cache: "no-store",
+    });
     if (!response.ok) throw await errorFrom(response);
     return (await response.json()) as T;
   }
@@ -383,50 +335,12 @@ export class UnfretApi {
     return this.get<Pricing>("/v1/pricing");
   }
 
-  credits(): Promise<Credits> {
-    return this.get<Credits>("/v1/credits");
+  /** A new proof-of-work challenge, one per deep check. */
+  challenge(): Promise<Challenge> {
+    return this.get<Challenge>("/v1/analyze/challenge");
   }
 
-  /**
-   * Report a result as wrong, with the user's consent to share this one check's page data: the analysed request
-   * and the explanation go back exactly as they were, with the result's report token.
-   */
-  async report(body: AnalyzeBody, result: AnalysisResult, reason: ReportReason): Promise<ReportResponse> {
-    const response = await this.fetcher(`${this.base}/v1/reports`, {
-      method: "POST",
-      headers: this.headers(true),
-      body: JSON.stringify({
-        report_token: result.report_token,
-        reason,
-        consent: true,
-        request: body,
-        explanation: result.explanation,
-        ...(result.verdict ? { verdict: result.verdict } : {}),
-      }),
-    });
-    if (!response.ok) throw await errorFrom(response);
-    return (await response.json()) as ReportResponse;
-  }
-
-  /**
-   * Redeem a gift code someone gave the user for this account (the wallet's session or the API key). Refusals come
-   * back as ApiError with the server's reason (INVALID_INVITE, UNKNOWN_INVITE, INVITE_USED, INVITE_OWN_PACK,
-   * INVITE_MONTHLY_LIMIT).
-   */
-  async redeemInvite(code: string): Promise<InviteRedeemed> {
-    const response = await this.fetcher(`${this.base}/v1/invites/redeem`, {
-      method: "POST",
-      headers: this.headers(true),
-      body: JSON.stringify({ code }),
-    });
-    if (!response.ok) throw await errorFrom(response);
-    return (await response.json()) as InviteRedeemed;
-  }
-
-  /**
-   * A share is anonymous: it goes without Authorization, whatever this client was made with, so nothing ties the
-   * public page to an account (the server refuses a share request that carries one).
-   */
+  /** A share is anonymous: nothing ties the public page to anyone (the server refuses one with Authorization). */
   private async postShare<T>(path: string, request: ShareRequest): Promise<T> {
     const response = await this.fetcher(`${this.base}${path}`, {
       method: "POST",
@@ -455,77 +369,6 @@ export class UnfretApi {
       throw new ApiError(502, "BAD_SHARE", "The server sent an unexpected shared link.");
     }
     return created;
-  }
-
-  /** A proof-of-work challenge for a new pass. */
-  keyChallenge(): Promise<KeyChallenge> {
-    return this.get<KeyChallenge>("/v1/keys/challenge");
-  }
-
-  /** Make a new pass with a solved challenge; `free` asks for the free checks a new pass can come with. */
-  async createKey(challenge: string, solution: string, free: boolean): Promise<IssuedKey> {
-    const response = await this.fetcher(`${this.base}/v1/keys`, {
-      method: "POST",
-      headers: this.headers(true),
-      body: JSON.stringify({ challenge, solution, ...(free ? { free: true } : {}) }),
-    });
-    if (!response.ok) throw await errorFrom(response);
-    return (await response.json()) as IssuedKey;
-  }
-
-  /** Move this pass's free checks (this client's key) to another pass; resolves how many moved. */
-  async moveFreeChecks(toKeyId: string): Promise<number> {
-    const response = await this.fetcher(`${this.base}/v1/keys/move-free-checks`, {
-      method: "POST",
-      headers: this.headers(true),
-      body: JSON.stringify({ to_key_id: toKeyId }),
-    });
-    if (!response.ok) throw await errorFrom(response);
-    const moved = ((await response.json()) as { moved?: unknown }).moved;
-    return typeof moved === "number" ? moved : 0;
-  }
-
-  /**
-   * Count this pass (this client's key) for the affiliate whose link brought its user; resolves the server's status
-   * (attributed, already, not_eligible or invalid).
-   */
-  async attributeAffiliate(code: string): Promise<string> {
-    const response = await this.fetcher(`${this.base}/v1/affiliates/attribute`, {
-      method: "POST",
-      headers: this.headers(true),
-      body: JSON.stringify({ code }),
-    });
-    if (!response.ok) throw await errorFrom(response);
-    const status = ((await response.json()) as { status?: unknown }).status;
-    return typeof status === "string" ? status : "invalid";
-  }
-
-  /** Start a phone sign-in; the connect URL must be on this API's origin (it goes into a QR code). */
-  async startPairing(): Promise<Pairing> {
-    const response = await this.fetcher(`${this.base}/v1/auth/pair`, {
-      method: "POST",
-      headers: this.headers(true),
-    });
-    if (!response.ok) throw await errorFrom(response);
-    const pairing = (await response.json()) as Pairing;
-    if (
-      typeof pairing.connect_url !== "string" ||
-      !pairing.connect_url.startsWith(`${this.base}/connect?pair=`)
-    ) {
-      throw new ApiError(502, "BAD_PAIRING", "The server sent an unexpected sign-in link.");
-    }
-    return pairing;
-  }
-
-  /** One poll: pending (202), or the session (200, delivered once). 410 expired and 404 unknown throw ApiError. */
-  async pollPairing(pairId: string): Promise<PairPoll> {
-    const response = await this.fetcher(`${this.base}/v1/auth/pair/${encodeURIComponent(pairId)}`, {
-      headers: this.headers(false),
-      cache: "no-store",
-    });
-    if (response.status === 202) return { status: "pending" };
-    if (!response.ok) throw await errorFrom(response);
-    return { status: "ready", session: (await response.json()) as PairedSession };
   }
 
   /** Run a streamed analysis; yields progress, ends with the result, throws ApiError on failure. */

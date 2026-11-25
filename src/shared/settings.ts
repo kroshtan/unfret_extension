@@ -1,7 +1,6 @@
 /**
- * The only things the extension stores: the API base URL, the session (token, wallet address, expiry; or an API key
- * in its place), whether the last session expired or the last pass ended (so the popup can say so) and which version
- * of the consent screen was accepted. No browsing data, no analysis results, no history.
+ * The only things the extension stores: the API base URL and which version of the consent screen was accepted. No
+ * account, no pass, no browsing data, no analysis results, no history.
  */
 
 // Set by the build: the dev deployment for "Unfret Dev", production for everything else (and in tests).
@@ -9,70 +8,6 @@ declare const __UNFRET_API__: string | undefined;
 export const DEFAULT_API_BASE = typeof __UNFRET_API__ === "string" ? __UNFRET_API__ : "https://unfret.net";
 /** Origins allowed as a development override (they need an optional host permission). */
 export const DEV_ORIGINS = ["http://localhost", "http://127.0.0.1"];
-
-export interface Session {
-  /** A wallet's session token, or an API key (`ufk_…`): both are sent as `Authorization: Bearer`. */
-  token: string;
-  /** The wallet address, or `key:<id>` for an API key. */
-  address: string;
-  expiresAt: string;
-  kind?: "wallet" | "key";
-}
-
-/** An API key: `ufk_<10-letter id>_<52-letter secret>`, lower-case base32. */
-export const API_KEY_RE = /^ufk_([a-z2-7]{10})_[a-z2-7]{52}$/u;
-/** API keys don't expire; they are replaced with the recovery code. */
-const KEY_EXPIRY = "9999-12-31T00:00:00.000Z";
-
-/** A session that uses an API key instead of a wallet, or null when `value` isn't a key. */
-export function keySession(value: string): Session | null {
-  const key = value.trim();
-  const match = API_KEY_RE.exec(key);
-  if (!match) return null;
-  return { token: key, address: `key:${match[1]}`, expiresAt: KEY_EXPIRY, kind: "key" };
-}
-
-export function isKeySession(session: Session | undefined): boolean {
-  return session?.kind === "key";
-}
-
-const KEY_ID_RE = /^[a-z2-7]{10}$/u;
-
-/**
- * Where to get more checks (a path on the API base): signed in with a key, that key's top-up with its ID filled in
- * (the ID only: the key itself never goes into an address, which ends up in history and logs); otherwise the checkout,
- * which offers a wallet's own purchase.
- */
-export function checkoutPath(session: Session | undefined): string {
-  if (!session || !isKeySession(session)) return "/checkout";
-  const id = session.address.slice("key:".length);
-  return KEY_ID_RE.test(id) ? `/checkout?mode=topup&key_id=${id}` : "/checkout?mode=topup";
-}
-
-/**
- * A pass's public ID as the website shows it: in capitals, in two groups ("ABCDE-FGHIJ"), so it can be read out and
- * compared. Only the words change: the key and its stored `key:<id>` stay lower case.
- */
-export function showPassId(id: string): string {
-  const value = id.toUpperCase();
-  return value.length === 10 ? `${value.slice(0, 5)}-${value.slice(5)}` : value;
-}
-
-/** How to name the account: a shortened wallet address, or the pass's public ID ("ABCDE-FGHIJ"). */
-export function accountLabel(session: Session): string {
-  return isKeySession(session)
-    ? showPassId(session.address.slice("key:".length))
-    : shortAddress(session.address);
-}
-
-interface Stored {
-  apiBase?: string;
-  session?: Session;
-  sessionExpired?: boolean;
-  passEnded?: boolean;
-}
-
-const BASE58_ADDRESS_RE = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/u;
 
 /**
  * The API base, normalised (no trailing slash): this build's own API or a local dev server, and the default for
@@ -95,47 +30,9 @@ export function isDevBase(apiBase: string): boolean {
   return normaliseApiBase(apiBase) !== DEFAULT_API_BASE;
 }
 
-/** A session object from an untrusted source (the connect page), or null when it doesn't look right. */
-export function parseSession(value: unknown, now: Date = new Date()): Session | null {
-  if (typeof value !== "object" || value === null) return null;
-  const v = value as Record<string, unknown>;
-  const token = v.token;
-  const address = v.address;
-  const expiresAt = v.expires_at ?? v.expiresAt;
-  if (typeof token !== "string" || token.length < 16 || token.length > 4096) return null;
-  if (typeof address !== "string" || !BASE58_ADDRESS_RE.test(address)) return null;
-  if (typeof expiresAt !== "string") return null;
-  const expiry = Date.parse(expiresAt);
-  if (Number.isNaN(expiry) || expiry <= now.getTime()) return null;
-  return { token, address, expiresAt: new Date(expiry).toISOString() };
-}
-
-export function sessionValid(session: Session | undefined, now: Date = new Date()): session is Session {
-  return session !== undefined && Date.parse(session.expiresAt) > now.getTime();
-}
-
-export async function loadSettings(): Promise<{
-  apiBase: string;
-  session?: Session;
-  expired: boolean;
-  passEnded: boolean;
-}> {
-  const stored = await chrome.storage.local.get<Stored>([
-    "apiBase",
-    "session",
-    "sessionExpired",
-    "passEnded",
-  ]);
-  const apiBase = normaliseApiBase(stored.apiBase);
-  // A stored session past its expiry, or one the server rejected: the checks are still on the wallet.
-  const hadSession = stored.session !== undefined;
-  if (sessionValid(stored.session))
-    return { apiBase, session: stored.session, expired: false, passEnded: false };
-  return {
-    apiBase,
-    expired: hadSession || stored.sessionExpired === true,
-    passEnded: stored.passEnded === true,
-  };
+export async function loadSettings(): Promise<{ apiBase: string }> {
+  const stored = await chrome.storage.local.get<{ apiBase?: string }>("apiBase");
+  return { apiBase: normaliseApiBase(stored.apiBase) };
 }
 
 export async function saveApiBase(apiBase: string): Promise<string> {
@@ -144,25 +41,33 @@ export async function saveApiBase(apiBase: string): Promise<string> {
   return normalised;
 }
 
-export async function saveSession(session: Session): Promise<void> {
-  await chrome.storage.local.set({ session });
-  await chrome.storage.local.remove(["sessionExpired", "passEnded"]);
-}
+/**
+ * What versions before free checks for shoppers (0.14.0) kept about an account: the session or Unfret pass, its
+ * backup code, notes about it, and this profile's "had its free checks" flag. The extension no longer uses any of it.
+ */
+export const OLD_ACCOUNT_KEYS = ["session", "sessionExpired", "passEnded", "ownPass", "passPending"] as const;
+const OLD_SYNC_KEYS = ["freeChecksUsed"];
+const OLD_SESSION_KEYS = ["pendingPairing", "handoffTickets", "handoffOffer"];
 
-/** Signing out on purpose: forget the session and that it existed. */
-export async function clearSession(): Promise<void> {
-  await chrome.storage.local.remove(["session", "sessionExpired", "passEnded"]);
-}
-
-/** The server rejected the session (expired or revoked): forget it, but remember to say why. */
-export async function expireSession(): Promise<void> {
-  await chrome.storage.local.remove("session");
-  await chrome.storage.local.set({ sessionExpired: true });
+/** Delete every trace of an account an older version stored (run on install, update and start-up; cheap). */
+export async function forgetOldAccount(): Promise<void> {
+  const remove = async (
+    area: chrome.storage.StorageArea | undefined,
+    keys: readonly string[],
+  ): Promise<void> => {
+    try {
+      await area?.remove([...keys]);
+    } catch {
+      // that storage area isn't available: nothing was kept there
+    }
+  };
+  await remove(chrome.storage.local, OLD_ACCOUNT_KEYS);
+  await remove(chrome.storage.sync, OLD_SYNC_KEYS);
+  await remove(chrome.storage.session, OLD_SESSION_KEYS);
 }
 
 /**
- * Bump when what the consent screen says changes materially: everyone is asked again. Only the consent is asked
- * again; the session (wallet or API key) is stored apart and stays. 2 (0.11.0): marketplace ads and service providers.
+ * Bump when what the consent screen says changes materially: everyone is asked again. 2 (0.11.0): marketplace ads and service providers.
  */
 export const CONSENT_VERSION = 2;
 export const PRIVACY_URL = `${DEFAULT_API_BASE}/privacy`;
@@ -175,8 +80,4 @@ export async function consentGiven(): Promise<boolean> {
 
 export async function giveConsent(): Promise<void> {
   await chrome.storage.local.set({ consent: { version: CONSENT_VERSION } });
-}
-
-export function shortAddress(address: string): string {
-  return address.length > 10 ? `${address.slice(0, 4)}…${address.slice(-4)}` : address;
 }

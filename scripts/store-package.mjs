@@ -31,8 +31,7 @@ export function storeProblems(dir, zipPath, version) {
   if (manifest.name !== "Unfret") problems.push(`name ${JSON.stringify(manifest.name)}`);
   for (const field of ["key", "update_url"])
     if (field in manifest) problems.push(`manifest has \`${field}\``);
-  const relay = manifest.content_scripts?.[0]?.matches?.[0];
-  if (relay !== `${API_ORIGIN}/connect*`) problems.push(`sign-in relay on ${relay}`);
+  if (manifest.content_scripts !== undefined) problems.push("manifest has content scripts");
   if (!manifest.content_security_policy?.extension_pages?.includes(`connect-src ${API_ORIGIN} `)) {
     problems.push("CSP doesn't name the production API");
   }
