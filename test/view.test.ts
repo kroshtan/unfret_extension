@@ -639,7 +639,7 @@ describe("the risk level", () => {
         label: "May not arrive, or may not be safe",
         because: [
           { type: "hidden_ai_text", level: 4, title: "Hidden text to fool checks" },
-          { type: "origin_doubt", level: 3, title: "'Made in USA' doubtful" },
+          { type: "origin_doubt", level: 3, title: "'Made in USA' doubtful", source: "The product's labels" },
           { type: "generic_brand", level: 2, title: "Unknown brand" },
           { type: "dropshipping_tools", level: 2, title: "Dropshipping" },
           { type: "supplier_links", level: 2, title: "Supplier traces" },
@@ -684,6 +684,9 @@ describe("the risk level", () => {
       "Returns go abroad Level 2",
     ]);
     expect(shown[0]?.querySelector(".source")?.textContent).toBe("Source: The page's code");
+    // Every finding behind the level has its source, not only the card's reasons (an older server: none sent).
+    expect(shown[1]?.querySelector(".source")?.textContent).toBe("Source: The product's labels");
+    expect(shown[2]?.querySelector(".source")).toBeNull();
     expect(shown[0]?.querySelector(".detail")?.textContent).toBe("The page hides text aimed at AI tools.");
     // The rest folds away, still worst first.
     const more = root.querySelector("details.more-reasons");
