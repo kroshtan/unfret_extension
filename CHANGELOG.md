@@ -3,8 +3,13 @@
 Releases of the Unfret browser extension. (Earlier releases are described in their commit messages and in the
 backend's changelog, which lists each one published at `/extension`.)
 
-## Unreleased
+## 0.14.0 (unreleased)
 
+- **Store texts for free checks** (`store/`): the listing, the privacy-practices answers, the reviewer notes, AMO's
+  summary and notes and Edge's say free for shoppers, no account or pass, one risk level, and what a "Wrong result?"
+  report keeps (the page, never who sent it). No test key for reviewers; AMO's "requires payment" is unticked. The
+  screenshots still show the four answers and a pass: to be captured again. `minBackendVersion` is 0.16.0 (the
+  backend release with free checks for shoppers).
 - **"Wrong result?" is one flow** (backend: 'one "Wrong result?" flow'). Under a result with a `label_token`: pick
   the level you think is right (ours marked), mark shown findings as wrong, open "Something missing?" for findings it
   didn't show (a short list of the catalogue's types), then `POST /v1/labels` with the token, the request exactly as
@@ -65,8 +70,6 @@ backend's changelog, which lists each one published at `/extension`.)
   deep check's photo steps saw one product photo. Now an Amazon page on any locale sends its gallery, large and in its
   order: from the image block's data (`colorImages`), else the mobile page's carousel (`data-a-hires`), else the
   thumbnails made large; Amazon's product images only, one per photo, at most 12. Other platforms are as before.
-
-## Unreleased
 
 - **Reference prices and reviews from the page itself, on every layout** (backend: the same change, a line-for-line
   port). On Amazon's mobile page (what the Android app's WebView, which runs this extractor, is sent) the price's

@@ -146,7 +146,7 @@ Partner Center's Publish API gives a client ID and an API key for the product; t
 
 The API can't create an item or fill in its listing: the first version goes through these steps once.
 
-1. **Account**: complete the trader declaration (DSA): you sell checks, so you're a trader. It shows your business
+1. **Account**: complete the trader declaration (DSA): Unfret sells developer checks, so you're a trader. It shows your business
    name, address (use the KvK business address), e-mail and phone publicly in the EU.
 2. **New item** (later releases: the workflow does this, see above) → upload `unfret-chrome-<version>.zip` from the
    release.

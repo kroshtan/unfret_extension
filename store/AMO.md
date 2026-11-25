@@ -67,10 +67,10 @@ The listing (texts, images, categories, privacy policy) isn't touched. Review th
 
 **Add-on URL**: `unfret`
 
-**Summary** (≤ 250 characters; 246):
+**Summary** (≤ 250 characters; 204):
 
 ```
-Is this shop legit? Catch fake sellers on Amazon and other marketplaces, fake shops, fake discounts and dropshipping before you buy, in plain words. 5 free deep checks on install, then unlimited free quick checks. Nothing is read until you click.
+Is this shop legit? Catch fake sellers on Amazon and other marketplaces, fake shops, fake discounts and dropshipping before you buy, in plain words. Free, with no account. Nothing is read until you click.
 ```
 
 **Description**: the Chrome description in [listing.en.md](listing.en.md), unchanged (AMO accepts plain text with
@@ -80,8 +80,8 @@ blank lines between paragraphs and "•" bullets).
 
 **Tags**: shopping, scam, fake shop, dropshipping, reviews, fake discounts.
 
-**This add-on requires payment, non-free services or software**: **tick it** (after the 5 free checks on install,
-deep checks are prepaid packs; quick checks stay free).
+**This add-on requires payment, non-free services or software**: **untick it** (since 0.14.0 quick and deep checks
+are free for shoppers, with no account; donations buy nothing).
 
 **Support email**: the public contact address. **Support website**: https://unfret.net
 
@@ -93,10 +93,10 @@ the page, select all, copy), keeping the link at the top: "The current version i
 **Images**: icon `icons/icon-128.png`; the five screenshots `store/screenshots/*.png`, in the order of
 [listing.en.md](listing.en.md) (1280×800 is fine on AMO), each with its caption's title as the AMO caption.
 
-## Notes to reviewer (paste, with the test key filled in)
+## Notes to reviewer (paste)
 
-The `AMO_APPROVAL_NOTES` secret holds this block with the key filled in; without the secret, paste it in the
-Developer Hub (the version → **Notes to Reviewer**). The testing steps match the Chrome reviewer's in
+The `AMO_APPROVAL_NOTES` secret holds this block (update it to this text: since 0.14.0 there is no test key);
+without the secret, paste it in the Developer Hub (the version → **Notes to Reviewer**). The testing steps match the Chrome reviewer's in
 [reviewer-notes.md](reviewer-notes.md); the build and data paragraphs are AMO's own.
 
 ```
@@ -107,28 +107,24 @@ Build: the add-on is bundled and minified with esbuild. To reproduce it from the
   Output: dist/unfret-firefox-<version>.zip, byte-identical to the uploaded add-on (dist/firefox is the unzipped
   add-on). The build script is scripts/build.mjs; the manifest comes from scripts/manifest.mjs.
 
-Testing: no account or wallet is needed.
-1. Install the add-on and pin it to the toolbar. A welcome page on unfret.net opens once: leave it open a few
-   seconds while it gives the add-on its free Unfret pass, then it says "You have 5 free checks".
+Testing: checks are free; there is no account, sign-in or key.
+1. Install the add-on and pin it to the toolbar.
 2. Click the Unfret toolbar button and read the first-run screen, then click "I agree".
 3. Open a product page, for example the Unfret test shop https://unfret.net/test-shop (a made-up shop with the
    tricks Unfret catches) or a product on https://www.amazon.com, click the Unfret button, then "Check this page".
-   The result appears in 10-30 seconds: a verdict in plain words with its reasons.
-4. If the popup says there are no free checks (today's are all given out), open the add-on's settings, paste this
-   test key under "Use an Unfret pass instead" and click "Use this pass"; it holds about 20 checks:
-   ufk_<REPLACE WITH THE TEST KEY>
-5. Optional: under a result, "Wrong result?" lets you report a wrong result (it asks for consent first).
+   After a few seconds of computing (a proof of work against bots), the result appears in 10-30 seconds: a risk
+   level from 0 to 4 in plain words, with its reasons.
+4. "Quick check (free)" gives a faster result from the page alone.
+5. Optional: under a result, "Wrong result?" sends a report (the level you think is right, reasons wrong or missing).
 Nothing is read or sent until "Check this page" or "Quick check (free)" is clicked.
 
 Data: on "Check this page" the page address (without its fragment, tracking parameters, sessions or e-mail
 addresses), product facts and cleaned visible text of that one page go to the Unfret API (https://unfret.net), which
-is the add-on's only network destination. On install it asks the API for a free Unfret pass (an anonymous key; a
-proof of work, nothing about the user). Three content scripts run only on Unfret's own pages:
-https://unfret.net/connect* (the wallet sign-in page) to receive the session, https://unfret.net/checkout* to receive
-a new Unfret pass the checkout page shows, and https://unfret.net/welcome* to receive whether this browser already had
-its free checks (a yes or no) and an affiliate's code; they read nothing else from the page.
+is the add-on's only network destination. A deep check first fetches a small puzzle from the API and sends back its
+answer (a proof of work, nothing about the user). No check carries an account, key or device ID. The add-on has no
+content scripts; it runs only in the tab the user clicked on (activeTab). An optional contributor key (off unless
+turned on in the settings; 32 random bytes made in the browser) goes only with "Wrong result?" reports.
 Privacy policy: https://unfret.net/privacy
 ```
 
-The test key: the one made for the Chrome review (`~/kroshtan_secrets/unfret-cws-reviewer-key.json`) works, or make
-a new one as in [reviewer-notes.md](reviewer-notes.md).
+No test key is needed since 0.14.0.

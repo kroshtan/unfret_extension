@@ -38,7 +38,7 @@ The API only updates an extension that exists: the first version goes through Pa
      business name.
    - **Contact info**: for Microsoft only; use the same public contact address as for the Chrome Web Store.
    - Accept the App Developer Agreement → **Finish**, and wait for the confirmation e-mail. If Partner Center asks
-     for a trader declaration (EU Digital Services Act), answer as for the Chrome Web Store: you sell checks, so
+     for a trader declaration (EU Digital Services Act), answer as for the Chrome Web Store: Unfret sells developer checks, so
      you're a trader.
 3. **You**: Partner Center → **Microsoft Edge** → **Overview** → **Create new extension** → upload
    `unfret-chrome-<version>.zip` from the release.
@@ -47,12 +47,11 @@ The API only updates an extension that exists: the first version goes through Pa
    `hello@unfret.net`, mature content not ticked.
 6. **You**: **Privacy**: the page has the Chrome Web Store's sections; copy them from
    [privacy-practices.md](privacy-practices.md): single purpose, one justification per permission (activeTab,
-   scripting, storage, declarativeContent, and the content scripts on unfret.net's own sign-in, checkout and
-   welcome pages), remote code **No, I am not using remote code**, the data usage ticks and the certifications,
+   scripting, storage, declarativeContent; since 0.14.0 no content scripts), remote code **No, I am not using remote code**, the data usage ticks and the certifications,
    and the privacy policy URL `https://unfret.net/privacy`.
 7. **You**: **Store listings** → English → **Edit details**, from [Listing](#listing) below, then **Save draft**.
-8. **You**: **Publish** → **Notes for certification**: create the testers' test key as in
-   [reviewer-notes.md](reviewer-notes.md) and paste its block with the key filled in → **Publish**. Certification
+8. **You**: **Publish** → **Notes for certification**: paste the block in [reviewer-notes.md](reviewer-notes.md)
+   (no test key since 0.14.0) → **Publish**. Certification
    can take up to seven business days.
 9. **You**, once it is **In the Store**: note the listing URL (the extension's **Overview** page). Adding it to this
    README and to the website's `/extension` page is a later change.
@@ -124,7 +123,7 @@ Is this shop legit? Catch fake sellers on marketplaces, fake shops, fake discoun
 ```
 
 **Description** (250 to 10,000 characters): the Chrome description in [listing.en.md](listing.en.md), unchanged
-(3,862 characters; plain text with blank lines between paragraphs and "•" bullets).
+(plain text with blank lines between paragraphs and "•" bullets).
 
 **Category**: Shopping.
 
@@ -132,8 +131,8 @@ Is this shop legit? Catch fake sellers on marketplaces, fake shops, fake discoun
 words):
 
 ```
-scam checker
 fake shop checker
+free shopping checker
 fake discount
 dropshipping
 Fakespot alternative
