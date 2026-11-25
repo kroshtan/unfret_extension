@@ -4,6 +4,7 @@ import { existsSync, readFileSync } from "node:fs";
 
 import type { AnalysisResult, DeepCheck } from "../src/api/client.js";
 import { manifest } from "../scripts/manifest.mjs";
+import { badgeFor } from "../src/background/badge.js";
 import { bandOf } from "../src/shared/bands.js";
 import {
   buildChecklist,
@@ -12,6 +13,7 @@ import {
   deepHintOf,
   renderResult,
   renderSharePreview,
+  riskFindings,
   shownThumbnails,
   updateChecklist,
 } from "../src/popup/view.js";
@@ -596,6 +598,153 @@ describe("English only", () => {
       const html = readFileSync(page, "utf8");
       expect(html, page).not.toMatch(/data-i18n|__MSG_/u);
       expect(html, page).toContain('<html lang="en">');
+    }
+  });
+});
+
+describe("the risk level", () => {
+  const RISK_RESULT: AnalysisResult = {
+    score: 22,
+    explanation: "",
+    charged: false,
+    tier: "deep",
+    verdict: {
+      band: "concerns", // deprecated: the level is what shows, whatever the band says
+      label: "Worth a look",
+      headline: "The band's headline.",
+      reasons: [
+        {
+          type: "hidden_ai_text",
+          title: "Hidden text to fool checks",
+          detail: "The page hides text aimed at AI tools.",
+          severity: "high",
+          level: 4,
+          source: "The page's code",
+        },
+        {
+          type: "timer_resets",
+          title: "Fake countdown",
+          detail: "This countdown restarts when you reload the page.",
+          severity: "high",
+          level: 1,
+          source: "The page",
+        },
+      ],
+      positives: [
+        { type: "protected_payment", title: "Card payment", detail: "You can get your money back." },
+      ],
+      risk: {
+        level: 4,
+        key: "wont_arrive",
+        label: "May not arrive, or may not be safe",
+        because: [
+          { type: "hidden_ai_text", level: 4, title: "Hidden text to fool checks" },
+          { type: "origin_doubt", level: 3, title: "'Made in USA' doubtful" },
+          { type: "generic_brand", level: 2, title: "Unknown brand" },
+          { type: "dropshipping_tools", level: 2, title: "Dropshipping" },
+          { type: "supplier_links", level: 2, title: "Supplier traces" },
+          { type: "returns_abroad", level: 2, title: "Returns go abroad" },
+          { type: "timer_resets", level: 1, title: "Fake countdown" },
+        ],
+        combined: null,
+        modifier: {
+          direction: "raised",
+          type: "irreversible_payment_only",
+          text: "Raised: only payments you can't get back.",
+        },
+        explanation: "Level 4 because: Hidden text to fool checks + 'Made in USA' doubtful + Unknown brand.",
+        source: "band",
+      },
+    },
+  };
+
+  it("shows the level in words, its explanation and every finding behind it, worst first, with sources", () => {
+    const root = document.createElement("div");
+    renderResult(root, RISK_RESULT);
+    const head = root.querySelector(".verdict");
+    expect(head?.className).toBe("verdict junk_or_scam");
+    expect(head?.getAttribute("data-level")).toBe("4");
+    expect(root.querySelector(".verdict .label")?.textContent).toBe("May not arrive, or may not be safe");
+    expect(root.querySelector(".verdict .level")?.textContent).toBe("Risk level 4 of 4");
+    expect(root.querySelector(".headline")?.textContent).toBe(
+      "Level 4 because: Hidden text to fool checks + 'Made in USA' doubtful + Unknown brand.",
+    );
+    expect(root.textContent).not.toContain("The band's headline.");
+    expect(root.textContent).not.toContain("Worth a look");
+    expect([...root.querySelectorAll(".risk-step")].map((n) => n.textContent)).toEqual([
+      "Raised: only payments you can't get back.",
+    ]);
+    const shown = [...root.querySelectorAll("ul.reasons:not(.more-reasons ul) > li")];
+    expect(shown.map((li) => li.querySelector("strong")?.textContent)).toEqual([
+      "Hidden text to fool checks Level 4",
+      "'Made in USA' doubtful Level 3",
+      "Unknown brand Level 2",
+      "Dropshipping Level 2",
+      "Supplier traces Level 2",
+      "Returns go abroad Level 2",
+    ]);
+    expect(shown[0]?.querySelector(".source")?.textContent).toBe("Source: The page's code");
+    expect(shown[0]?.querySelector(".detail")?.textContent).toBe("The page hides text aimed at AI tools.");
+    // The rest folds away, still worst first.
+    const more = root.querySelector("details.more-reasons");
+    expect(more?.querySelector("summary")?.textContent).toBe("Show 1 more");
+    expect(more?.querySelector("li strong")?.textContent).toBe("Fake countdown Level 1");
+    expect(more?.querySelector("li .source")?.textContent).toBe("Source: The page");
+    expect([...root.querySelectorAll("h2")].map((h) => h.textContent)).toEqual(["Why", "What looks good"]);
+  });
+
+  it("level 0: no concerns found, what looks good first, no level line", () => {
+    const root = document.createElement("div");
+    const none = structuredClone(RISK_RESULT);
+    if (!none.verdict?.risk) throw new Error("no risk");
+    none.verdict.reasons = [];
+    none.verdict.risk = {
+      level: 0,
+      key: "none",
+      label: "No concerns found",
+      because: [],
+      explanation: "No concerns found.",
+    };
+    renderResult(root, none);
+    expect(root.querySelector(".verdict")?.className).toBe("verdict reliable");
+    expect(root.querySelector(".verdict .level")).toBeNull();
+    expect([...root.querySelectorAll("h2")].map((h) => h.textContent)).toEqual(["What looks good"]);
+  });
+
+  it("colours the badge by the level, never by the deprecated band", () => {
+    const at = (level: number): ReturnType<typeof badgeFor> => {
+      const result = structuredClone(RISK_RESULT);
+      if (result.verdict?.risk) result.verdict.risk.level = level;
+      return badgeFor({ status: "done", findings: [], result });
+    };
+    expect([0, 1, 2, 3, 4].map((l) => at(l)?.text)).toEqual(["✓", "!", "!", "⚠", "✕"]);
+    expect([0, 1, 2, 3, 4].map((l) => at(l)?.color)).toEqual([
+      "#1e7d32",
+      "#b26a00",
+      "#b26a00",
+      "#c62828",
+      "#c62828",
+    ]);
+  });
+
+  it("an older server without a level: the band, as before", () => {
+    const old = structuredClone(RISK_RESULT);
+    if (old.verdict) delete old.verdict.risk;
+    const root = document.createElement("div");
+    renderResult(root, old);
+    expect(root.querySelector(".verdict .label")?.textContent).toBe("Worth a look");
+    expect(root.querySelector(".headline")?.textContent).toBe("The band's headline.");
+    expect(riskFindings).toBeTypeOf("function");
+  });
+
+  it("never calls a shop a scam in the extension's own words", () => {
+    for (const file of [
+      "src/popup/popup.html",
+      "src/popup/view.ts",
+      "src/popup/popup.ts",
+      "src/shared/text.ts",
+    ]) {
+      expect(readFileSync(file, "utf8"), file).not.toMatch(/\bscam\b/iu);
     }
   });
 });

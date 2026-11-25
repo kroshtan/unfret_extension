@@ -1,10 +1,10 @@
 /**
- * The toolbar badge for a tab's analysis state: once known, a symbol for the verdict in a traffic-light colour. The
- * popup speaks in words ("Looks fine", "Serious concerns"), so the badge shows the same verdict, never the score.
+ * The toolbar badge for a tab's analysis state: once known, a symbol for the risk level in a traffic-light colour. The
+ * popup speaks in words ("May cost more than it's worth"), so the badge shows the same level, never the score.
  */
 
 import type { AnalysisResult } from "../api/client.js";
-import { BAND_SYMBOL, bandOf } from "../shared/bands.js";
+import { toneOf } from "../shared/bands.js";
 import type { TabState } from "../shared/messages.js";
 
 export const GREEN = "#1e7d32";
@@ -14,12 +14,15 @@ export const GREY = "#5f6368";
 /** The neutral accent of the marketplace icon hint: "Unfret can check this", not a warning. */
 export const ACCENT = "#3b5bdb";
 
-/** The traffic light for a result: the verdict band when the server sent one, else the same score thresholds. */
+/**
+ * The traffic light for a result: its risk level (0 green, 1–2 amber, 3–4 red), else the verdict band an older server
+ * sent, else the same score thresholds.
+ */
 export function light(result: Pick<AnalysisResult, "score" | "verdict">): "green" | "amber" | "red" | "none" {
-  const band = bandOf(result);
-  if (band === null) return "none";
-  if (band === "reliable") return "green";
-  if (band === "concerns") return "amber";
+  const tone = toneOf(result)?.tone;
+  if (tone === undefined) return "none";
+  if (tone === "reliable") return "green";
+  if (tone === "concerns") return "amber";
   return "red";
 }
 
@@ -34,9 +37,8 @@ export function badgeFor(state: TabState): { text: string; color: string } | nul
     case "analysing":
       return { text: "…", color: GREY };
     case "done": {
-      const band = bandOf(state.result);
       const colour = { green: GREEN, amber: AMBER, red: RED, none: GREY }[light(state.result)];
-      return { text: band === null ? "–" : BAND_SYMBOL[band], color: colour };
+      return { text: toneOf(state.result)?.symbol ?? "–", color: colour };
     }
     case "error":
       return { text: "", color: GREY };

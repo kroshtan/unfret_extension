@@ -94,6 +94,8 @@ export interface VerdictReason {
   thumbnails?: string[];
   /** Where the evidence comes from, in words ("Domain registry (RDAP)"); absent from older results. */
   source?: string | null;
+  /** The risk level this reason is evidence for (1–4, higher is worse); null for a modifier or the small signs. */
+  level?: number | null;
 }
 
 export interface VerdictPositive {
@@ -163,9 +165,41 @@ export interface ResultCard {
 
 export type Band = "reliable" | "concerns" | "careful" | "junk_or_scam";
 
+/** One finding behind the risk level. */
+export interface RiskReason {
+  type: string;
+  /** The level it is evidence for (1–4), or null for a protection modifier. */
+  level: number | null;
+  title: string;
+}
+
+/**
+ * The one overall risk level (contract: "one overall risk level"; higher is always worse): 0 no concerns found,
+ * 1 pressure and tricks, 2 may cost more than it's worth, 3 may not work as described, 4 may not arrive or may not be
+ * safe. `because` lists every finding behind it, worst first.
+ */
+export interface Risk {
+  level: number;
+  key: string;
+  /** The level in words: "May not arrive, or may not be safe". */
+  label: string;
+  because: RiskReason[];
+  /** Lower-level problems together moved the level up: which ones, in words. */
+  combined?: string | null;
+  /** Protection raised or lowered it. */
+  modifier?: { direction: "raised" | "lowered"; type: string; text: string } | null;
+  /** One line: "Level 4 because: …". */
+  explanation: string;
+  source?: string;
+  confidence?: number | null;
+}
+
 /** The shopper-facing verdict, as the server wrote it (shown as it comes, whatever its language). */
 export interface Verdict extends ResultCard {
+  /** Deprecated: the client renders `risk`. Kept for an older server's result. */
   band: Band;
+  /** The overall risk level; absent from an older server's result. */
+  risk?: Risk | null;
   label: string;
   headline: string;
   reasons: VerdictReason[];

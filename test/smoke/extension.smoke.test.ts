@@ -309,9 +309,9 @@ describe("with the access a click grants (activeTab)", () => {
     expect(streamed()[0]?.language).toBe("en");
 
     const view = await renderedPopup(granted, tabId);
-    expect(view.label).toBe("Serious concerns");
-    expect(view.headings).toEqual(["What we noticed", "What you can do", "What we checked · 12 checks"]);
-    expect(view.reasons).toEqual(["Suspicious number of reviews"]);
+    expect(view.label).toBe("May not arrive, or may not be safe");
+    expect(view.headings).toEqual(["Why", "What you can do", "What we checked · 12 checks"]);
+    expect(view.reasons).toEqual(["Brand-new web shop Level 4", "Suspicious number of reviews Level 1"]);
     expect(view.text).toContain("Source: The reviews on the page");
     expect(view.text).toContain("Deep checks are free.");
     expect(view.text).not.toMatch(/listing\.|=\s*\d/u);
@@ -475,7 +475,7 @@ describe("in a Dutch browser", () => {
 
     const view = await renderedPopup(dutch, tabId);
     expect(view.lang).toBe("en");
-    expect(view.headings).toEqual(["What we noticed", "What you can do", "What we checked · 12 checks"]);
+    expect(view.headings).toEqual(["Why", "What you can do", "What we checked · 12 checks"]);
     expect(view.analyse).toBe("Check this page");
   });
 });
