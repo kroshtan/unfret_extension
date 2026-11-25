@@ -454,7 +454,7 @@ describe("deep-check suggestion under a quick result", () => {
       { key: "photo_elsewhere", area: "product", label: "whether its product photo appears on other shops" },
     ],
     text: "A deep check also looks at how old this shop is and whether its product photo appears on other shops.",
-    cost: "Free deep checks are paused until next month.",
+    cost: "Free deep checks are paused until tomorrow.",
     action: "donate",
     action_label: "Support Unfret",
   };

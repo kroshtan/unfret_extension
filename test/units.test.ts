@@ -189,21 +189,12 @@ describe("presentation", () => {
   });
 });
 
-describe("the pause's words (daily pacing of the spend ceiling)", () => {
-  it("says tomorrow for a day's pause and next month for the month's; without a scope, by retry_after_s", async () => {
-    const { freePausedQuick, freePausedText, pauseUntil } = await import("../src/shared/text.js");
-    expect(pauseUntil({ scope: "day", retry_after_s: 2_000_000 })).toBe("tomorrow");
-    expect(pauseUntil({ scope: "month", retry_after_s: 60 })).toBe("next month");
-    expect(pauseUntil({ retry_after_s: 3_600 })).toBe("tomorrow");
-    expect(pauseUntil({ retry_after_s: 86_400 })).toBe("next month");
-    expect(pauseUntil({})).toBe("next month");
-    expect(pauseUntil(undefined)).toBe("next month");
-    expect(freePausedText({ scope: "day" })).toBe(
+describe("the pause's words (the spend ceiling, paced per day)", () => {
+  it("always says deep checks are back tomorrow, never next month", async () => {
+    const { FREE_PAUSED, FREE_PAUSED_QUICK } = await import("../src/shared/text.js");
+    expect(FREE_PAUSED).toBe(
       "Free checks run on donations, and today's are used up. Quick checks still work; deep checks are back tomorrow.",
     );
-    expect(freePausedText({ scope: "month" })).toMatch(/this month's are used up.*back next month\.$/u);
-    expect(freePausedQuick({ scope: "day" })).toBe(
-      "Free deep checks are paused until tomorrow, so this is a quick check.",
-    );
+    expect(FREE_PAUSED_QUICK).toBe("Free deep checks are paused until tomorrow, so this is a quick check.");
   });
 });

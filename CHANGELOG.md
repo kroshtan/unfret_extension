@@ -5,9 +5,8 @@ backend's changelog, which lists each one published at `/extension`.)
 
 ## 0.14.0 (unreleased)
 
-- **A paused day or a paused month** (backend: daily pacing of the spend ceiling). The pause's `scope` says which:
-  "day" → "today's are used up … deep checks are back tomorrow", "month" → "this month's … back next month". Without
-  a scope, `retry_after_s` under 24 hours means tomorrow.
+- **Paused until tomorrow** (backend: the spend ceiling is paced per day). The pause note and the quick check's note
+  always say deep checks are back tomorrow ("today's are used up"), never next month.
 - **Store texts for free checks** (`store/`): the listing, the privacy-practices answers, the reviewer notes, AMO's
   summary and notes and Edge's say free for shoppers, no account or pass, one risk level, and what a "Wrong result?"
   report keeps (the page, never who sent it). No test key for reviewers; AMO's "requires payment" is unticked. The
@@ -37,9 +36,9 @@ backend's changelog, which lists each one published at `/extension`.)
   deep check gets a challenge (`GET /v1/analyze/challenge`), solves its proof of work in the background
   (`src/shared/pow.ts`, plain-TypeScript SHA-256, the website's solver ported; about 1 s for 20 bits) and sends it as
   `proof_of_work`; a refused challenge (428 / 400 `BAD_CHALLENGE`) gets one new one. When free deep checks are paused
-  (the monthly spend ceiling: the challenge's `paused`, `/v1/pricing`'s `free.paused` or 429 `FREE_CHECKS_PAUSED`)
+  (the spend ceiling: the challenge's `paused`, `/v1/pricing`'s `free.paused` or 429 `FREE_CHECKS_PAUSED`)
   nothing is solved: the popup says free checks run on donations, quick checks still work and deep checks are back
-  next month, with "Support Unfret" (`/donate`), and the main button runs the quick check. 503 runs a quick check
+  tomorrow, with "Support Unfret" (`/donate`), and the main button runs the quick check. 503 runs a quick check
   instead, saying why; 429 `TOO_MANY_REQUESTS` says how long to wait. A quick result's `action: "donate"` opens
   `/donate`. A quiet "Support Unfret" (`/support`) sits under the popup and in the settings.
 - **Gone: the pass, wallet sign-in, gift codes, affiliates and check counters.** No free pass on install, no welcome

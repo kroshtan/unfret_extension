@@ -28,7 +28,7 @@ import {
 } from "../shared/settings.js";
 import { isAnalysable } from "../shared/sites.js";
 import { withoutSecrets } from "../shared/urls.js";
-import { CONSENT_HINT, DONATE_PATH, freePausedText, SUPPORT_PATH } from "../shared/text.js";
+import { CONSENT_HINT, DONATE_PATH, FREE_PAUSED, SUPPORT_PATH } from "../shared/text.js";
 import {
   buildChecklist,
   checklistDone,
@@ -86,7 +86,7 @@ function openPage(path: string): void {
 
 function renderCheck(): void {
   const analyse = button("analyse");
-  // Paused, the main button runs the quick check (free deep checks are back next month).
+  // Paused, the main button runs the quick check (free deep checks are back tomorrow).
   analyse.textContent = busy ? "Checking…" : paused ? "Quick check (free)" : "Check this page";
   analyse.disabled = busy || !consented || !analysable;
   // The free quick check, under the main button before a check. Paused, the main button is the quick check.
@@ -101,7 +101,7 @@ function renderCheck(): void {
         : paused
           ? ""
           : "Deep checks are free. Nothing is sent until you click.";
-  el("paused-text").textContent = freePausedText(paused);
+  el("paused-text").textContent = FREE_PAUSED;
   show("paused", consented && paused !== undefined);
 }
 
