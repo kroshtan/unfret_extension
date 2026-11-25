@@ -102,6 +102,10 @@ toolbar click ─► popup ─► background ─► inject extract.js into the t
   `withoutSecrets` (`shared/urls.ts`): query parameters and fragments that look like a secret are dropped. The address of a page you check goes through `checkedUrl`: no
   fragment, user name or password, and no tracking or referral parameters, sessions, tokens or e-mail addresses (the
   backend's list, kept equal by `make parity`); what picks the product or its variant stays.
+- **"Wrong result?"** is one flow: the level you think is right, shown findings that are wrong, findings that are
+  missing, sent to `POST /v1/labels` with the result's `label_token` and the request as analysed. It keeps the page,
+  never who sent it. An optional contributor key (settings: "Count my reports"; 32 random bytes made in the browser)
+  goes only with reports and contributor calls, never with a check; it gives an opt-in leaderboard nickname.
 - **"Share this result"** asks the API for a preview of the public page (`POST /v1/shares/preview`), and only on
   "Share" makes it (`POST /v1/shares`), both without Authorization, so the page names no one. The link and its
   delete code stay with the tab's result in session memory.

@@ -226,6 +226,41 @@ export interface AnalysisResult {
   share_token?: string;
 }
 
+/** A "Wrong result?" report (POST /v1/labels): the level the shopper thinks is right, findings wrong or missing. */
+export interface Label {
+  level?: number;
+  wrong?: string[];
+  missing?: string[];
+}
+
+export type LabelOutcome = "queued" | "already_reported" | "already_known";
+
+export interface LabelResponse {
+  status: LabelOutcome;
+  /** This contributor had reported the page before: this replaces it. */
+  updated?: boolean;
+  anonymous?: boolean;
+}
+
+/** A contributor profile (POST /v1/contributors). */
+export interface Contributor {
+  handle: string | null;
+  public: boolean;
+  points?: number;
+  labels: number;
+  settled: number;
+  agreed: number;
+  trusted: boolean;
+  rank?: number | null;
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  handle: string;
+  agreed: number;
+  settled: number;
+}
+
 /** A result to share: the check's share token, the url as it was analysed and the result as it came back. */
 export interface ShareRequest {
   share_token: string;
@@ -372,6 +407,62 @@ export class UnfretApi {
   /** A new proof-of-work challenge, one per deep check. */
   challenge(): Promise<Challenge> {
     return this.get<Challenge>("/v1/analyze/challenge");
+  }
+
+  private async post<T>(path: string, body: unknown): Promise<T> {
+    const response = await this.fetcher(`${this.base}${path}`, {
+      method: "POST",
+      headers: this.headers(true),
+      body: JSON.stringify(body),
+      cache: "no-store",
+    });
+    if (!response.ok) throw await errorFrom(response);
+    return (await response.json()) as T;
+  }
+
+  /**
+   * "Wrong result?": the report, with the result's label token, the analysed request exactly as it was sent (without
+   * the proof of work, which the token doesn't cover), the explanation and verdict as they came back, and the
+   * contributor key only when the user turned it on. Never anything else that names the user.
+   */
+  label(
+    body: AnalyzeBody,
+    result: AnalysisResult,
+    label: Label,
+    contributorKey?: string,
+  ): Promise<LabelResponse> {
+    const request: AnalyzeBody = { ...body };
+    delete request.proof_of_work;
+    return this.post<LabelResponse>("/v1/labels", {
+      label_token: result.label_token,
+      request,
+      ...(label.level !== undefined ? { level: label.level } : {}),
+      ...(label.wrong?.length ? { wrong: label.wrong } : {}),
+      ...(label.missing?.length ? { missing: label.missing } : {}),
+      explanation: result.explanation,
+      ...(result.verdict ? { verdict: result.verdict } : {}),
+      ...(contributorKey ? { contributor_key: contributorKey } : {}),
+    });
+  }
+
+  /** Make, read or change the contributor profile of `key` (fields left out stay as they are). */
+  contributor(key: string, change: { handle?: string; public?: boolean } = {}): Promise<Contributor> {
+    return this.post<Contributor>("/v1/contributors", { contributor_key: key, ...change });
+  }
+
+  /** Delete the contributor profile of `key` (labels sent stay, unlinked). */
+  async forgetContributor(key: string): Promise<boolean> {
+    const answer = await this.post<{ deleted?: unknown }>("/v1/contributors/forget", {
+      contributor_key: key,
+    });
+    return answer.deleted === true;
+  }
+
+  async leaderboard(limit = 10): Promise<LeaderboardEntry[]> {
+    const board = await this.get<{ entries?: LeaderboardEntry[] }>(
+      `/v1/contributors/leaderboard?limit=${String(limit)}`,
+    );
+    return Array.isArray(board.entries) ? board.entries : [];
   }
 
   /** A share is anonymous: nothing ties the public page to anyone (the server refuses one with Authorization). */

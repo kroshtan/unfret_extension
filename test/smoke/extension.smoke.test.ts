@@ -372,6 +372,86 @@ describe("sharing a result, in the popup", () => {
   });
 });
 
+describe('"Wrong result?" and the contributor key', () => {
+  it("reports anonymously: a level and a wrong reason, with the request as analysed", async () => {
+    const extensionId = new URL(granted.worker.url()).host;
+    const page = await granted.context.newPage();
+    await page.goto(`chrome-extension://${extensionId}/popup/popup.html?tab=${analysedTab}`);
+    await page.click("#report-open");
+    await page.waitForSelector("#report:not([hidden])");
+    expect(await page.textContent("#report")).toMatch(/never\s+keeps\s+who sent it/u);
+    expect(await page.textContent("#report-as")).toBe("It is sent anonymously.");
+    expect(await page.textContent("#report-level")).toContain(
+      "4 · May not arrive, or may not be safe (our answer)",
+    );
+    expect(await page.isDisabled("#report-send")).toBe(true);
+    await page.check('#report input[name="level"][value="1"]');
+    await page.check('#report input[name="wrong"][value="new_domain"]');
+    await page.click("#report-send");
+    await page.waitForSelector('#report-status[data-kind="ok"]');
+    expect(await page.textContent("#report-status")).toBe("Thanks! A person will review this page.");
+    expect(await page.isVisible("#report-open")).toBe(false); // one report per check
+    const sent = api.requests.filter((r) => r.path === "/v1/labels").at(-1);
+    const analysed = streamed()[0]?.body as Record<string, unknown>;
+    const { proof_of_work: _spent, ...page_ } = analysed;
+    expect(_spent).toBeDefined();
+    expect(sent?.auth).toBe("");
+    expect(sent?.body).toMatchObject({ label_token: "label-deep.mac", level: 1, wrong: ["new_domain"] });
+    expect((sent?.body as { request: unknown }).request).toEqual(page_);
+    expect(sent?.body).not.toHaveProperty("contributor_key");
+    await page.close();
+  });
+
+  it("turned on in the settings, the key goes with reports and contributor calls, never with a check", async () => {
+    const extensionId = new URL(granted.worker.url()).host;
+    const options = await granted.context.newPage();
+    await options.goto(`chrome-extension://${extensionId}/options/options.html`);
+    await options.check("#contributor-on");
+    await options.waitForSelector("#contributor:not([hidden])");
+    await options.waitForFunction(() => document.querySelector("#contributor-stats")?.textContent !== "");
+    const { contributorKey: key } = await granted.worker.evaluate(() =>
+      chrome.storage.local.get<{ contributorKey: string }>("contributorKey"),
+    );
+    expect(key).toMatch(/^[A-Za-z0-9_-]{43}$/u);
+    await options.fill("#handle", "sharp-eye");
+    await options.check("#handle-public");
+    await options.click("#handle-save");
+    await options.waitForSelector('#contributor-status[data-kind="ok"]');
+    await options.click("#leaderboard-box summary");
+    await options.waitForFunction(() =>
+      document.querySelector("#leaderboard")?.textContent.includes("sharp-eye"),
+    );
+
+    const tabId = await amazonTab(granted);
+    const before = api.requests.length;
+    const state = await check(granted, tabId);
+    expect(state.status).toBe("done");
+    const popup = await granted.context.newPage();
+    await popup.goto(`chrome-extension://${extensionId}/popup/popup.html?tab=${tabId}`);
+    await popup.click("#report-open");
+    await popup.waitForSelector("#report:not([hidden])");
+    expect(await popup.textContent("#report-as")).toMatch(/contributor profile/u);
+    await popup.click("#report-missing-set summary");
+    await popup.check('#report input[name="missing"][value="drip_pricing"]');
+    await popup.click("#report-send");
+    await popup.waitForSelector('#report-status[data-kind="ok"]');
+    const since = api.requests.slice(before);
+    const withKey = since.filter((r) => JSON.stringify(r.body ?? "").includes(key)).map((r) => r.path);
+    expect(withKey).toEqual(["/v1/labels"]);
+    expect(
+      api.requests.filter((r) => JSON.stringify(r.body ?? "").includes(key)).map((r) => r.path),
+    ).not.toContain("/v1/analyze/stream");
+
+    // Off: the profile is forgotten on the server and the key deleted here.
+    await options.uncheck("#contributor-on");
+    await options.waitForSelector('#contributor-status[data-kind="ok"]');
+    expect(api.requests.at(-1)?.path).toBe("/v1/contributors/forget");
+    expect(await granted.worker.evaluate(() => chrome.storage.local.get("contributorKey"))).toEqual({});
+    await popup.close();
+    await options.close();
+  });
+});
+
 describe("the free quick check, and the pause", () => {
   it("runs a quick check from its own button, with no challenge", async () => {
     const tabId = await amazonTab(granted);

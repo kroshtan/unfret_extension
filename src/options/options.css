@@ -55,3 +55,21 @@ main {
   align-items: center;
   min-height: var(--target);
 }
+
+/* A checkbox and its words: one whole-row target. */
+.card label.check {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: var(--target);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+#leaderboard-box summary {
+  display: flex;
+  align-items: center;
+  min-height: var(--target);
+  cursor: pointer;
+  font-weight: 600;
+}

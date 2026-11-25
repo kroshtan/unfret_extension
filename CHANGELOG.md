@@ -5,6 +5,17 @@ backend's changelog, which lists each one published at `/extension`.)
 
 ## Unreleased
 
+- **"Wrong result?" is one flow** (backend: 'one "Wrong result?" flow'). Under a result with a `label_token`: pick
+  the level you think is right (ours marked), mark shown findings as wrong, open "Something missing?" for findings it
+  didn't show (a short list of the catalogue's types), then `POST /v1/labels` with the token, the request exactly as
+  analysed (without its proof of work, which the token doesn't cover), the result's explanation and verdict. The form
+  says the report keeps the page and never who sent it. Refusals in plain words (`BAD_LABEL_TOKEN`,
+  `ALREADY_LABELLED`, `LABEL_LIMIT`, `LABELS_PAUSED`, `QUEUE_FULL`, …).
+- **Optional contributor key** (settings, "Your reports" → "Count my reports", off by default): 32 random bytes in
+  base64url made and kept in this browser, sent only with reports and `/v1/contributors` calls, never with a check.
+  The settings show the profile's counts, take an opt-in nickname for the leaderboard and show the top 10; turning it
+  off forgets the profile on the server and deletes the key.
+
 - **The result is one risk level, 0 to 4** (backend: "one overall risk level", "risk levels: higher is worse"). The
   card's head is `verdict.risk`'s words ("May not arrive, or may not be safe", "No concerns found") with "Risk level n
   of 4", the line under it its one-line explanation, then what moved it (smaller problems that add up, protection),

@@ -1,6 +1,14 @@
 /** Messages between the popup and the background (the analysis runs in the background so closing the popup is safe). */
 
-import type { AnalysisResult, AnalyzeBody, Finding, Pause, SharePreview } from "../api/client.js";
+import type {
+  AnalysisResult,
+  AnalyzeBody,
+  Finding,
+  Label,
+  LabelOutcome,
+  Pause,
+  SharePreview,
+} from "../api/client.js";
 
 export const ANALYSIS_PORT = "unfret-analysis";
 
@@ -13,6 +21,10 @@ export const ANALYSIS_PORT = "unfret-analysis";
  * delete code stay with the tab's result, in memory, until the tab moves on.
  */
 
+export type ReportState =
+  | { status: "sending" }
+  | { status: "sent"; outcome: LabelOutcome; updated: boolean; anonymous: boolean }
+  | { status: "error"; message: string };
 export type ShareState =
   | { status: "loading" }
   | { status: "preview"; preview: SharePreview }
@@ -33,6 +45,7 @@ export type TabState =
       steps?: string[];
       result: AnalysisResult;
       body?: AnalyzeBody;
+      report?: ReportState;
       share?: ShareState;
       /** Why a quick check ran instead of the deep one asked for (free deep checks paused or unavailable). */
       note?: string;
@@ -47,6 +60,7 @@ export type TabState =
 export type PopupRequest =
   | { type: "watch"; tabId: number }
   | { type: "analyze"; tabId: number; tier?: "quick" }
+  | { type: "report"; tabId: number; label: Label }
   | { type: "share-preview"; tabId: number }
   | { type: "share"; tabId: number }
   | { type: "share-cancel"; tabId: number };

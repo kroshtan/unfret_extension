@@ -70,10 +70,37 @@
         <p id="share-open-row">
           <button id="share-open" type="button">Share this result</button>
         </p>
+        <p id="report-open-row" hidden>
+          <button id="report-open" type="button" class="link" aria-controls="report">Wrong result?</button>
+        </p>
       </div>
       <p id="objection-row" class="muted small">
         Your shop? <button id="objection-open" type="button" class="link">Object to this result</button>
       </p>
+
+      <form id="report" hidden>
+        <fieldset id="report-level">
+          <legend id="report-legend" tabindex="-1">How risky is this page, really?</legend>
+        </fieldset>
+        <fieldset id="report-wrong-set">
+          <legend>Which reasons are wrong?</legend>
+          <div id="report-wrong"></div>
+        </fieldset>
+        <details id="report-missing-set">
+          <summary>Something missing?</summary>
+          <div id="report-missing"></div>
+        </details>
+        <p class="muted small">
+          Your report keeps this page, with personal details removed, so a person can review it. It never
+          keeps who sent it: no account, IP address or time of day.
+          <span id="report-as"></span>
+        </p>
+        <div class="buttons">
+          <button id="report-send" type="submit" class="primary" disabled>Send report</button>
+          <button id="report-cancel" type="button" class="quiet">Cancel</button>
+        </div>
+      </form>
+      <p id="report-status" class="status" role="status" aria-live="polite" hidden></p>
 
       <div id="share-area" hidden>
         <div id="share-preview" class="share-preview" hidden>

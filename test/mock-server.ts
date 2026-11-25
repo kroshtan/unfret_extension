@@ -8,6 +8,11 @@
  * header is refused (a test that sees it fails): shoppers' checks name no one.
  *
  * Shares (`/v1/shares/preview`, `/v1/shares`): share token "expired.mac" → 422, a url with "busy" → 429 on create.
+ *
+ * Reports (`POST /v1/labels`): 201 queued for a known label token with a request and a level, `wrong` or `missing`;
+ * 400 BAD_LABEL_TOKEN for another token, 400 BAD_LABEL without any of the three; a second anonymous report of the
+ * same token is 409 ALREADY_LABELLED. Contributors (`/v1/contributors`, `/forget`, `/leaderboard`) keep profiles by
+ * key in memory; the handle "taken" is 409 HANDLE_TAKEN.
  */
 
 import { createHash } from "node:crypto";
@@ -130,6 +135,8 @@ async function readBody(req: IncomingMessage): Promise<unknown> {
 export async function startMockApi(): Promise<MockApi> {
   const requests: MockApi["requests"] = [];
   const issued = new Set<string>();
+  const labelled = new Set<string>();
+  const profiles = new Map<string, { handle: string | null; public: boolean; labels: number }>();
   let challenges = 0;
   const state = { mode: "ok" as MockMode };
   const server: Server = createServer((req, res) => {
@@ -177,6 +184,71 @@ export async function startMockApi(): Promise<MockApi> {
           paused,
           ...(paused ? { pause: PAUSE } : {}),
         });
+        return;
+      }
+      if (path === "/v1/labels" && req.method === "POST") {
+        const label = (body ?? {}) as {
+          label_token?: string;
+          request?: unknown;
+          level?: number;
+          wrong?: string[];
+          missing?: string[];
+          contributor_key?: string;
+        };
+        if (!label.request || !["label-deep.mac", "label-quick.mac"].includes(label.label_token ?? "")) {
+          json(res, 400, { detail: "Check again.", error_code: "BAD_LABEL_TOKEN" });
+          return;
+        }
+        if (label.level === undefined && !label.wrong?.length && !label.missing?.length) {
+          json(res, 400, { detail: "Nothing to report.", error_code: "BAD_LABEL" });
+          return;
+        }
+        const key = label.contributor_key;
+        if (!key && labelled.has(label.label_token ?? "")) {
+          json(res, 409, { detail: "Already.", error_code: "ALREADY_LABELLED" });
+          return;
+        }
+        if (!key) labelled.add(label.label_token ?? "");
+        const profile = key ? profiles.get(key) : undefined;
+        if (profile) profile.labels += 1;
+        json(res, 201, { status: "queued", updated: false, anonymous: !key });
+        return;
+      }
+      if (path === "/v1/contributors" && req.method === "POST") {
+        const ask = (body ?? {}) as { contributor_key?: string; handle?: string; public?: boolean };
+        const key = ask.contributor_key ?? "";
+        if (!/^[A-Za-z0-9_-]{43}$/u.test(key)) {
+          json(res, 400, { detail: "Bad key.", error_code: "BAD_CONTRIBUTOR_KEY" });
+          return;
+        }
+        if (ask.handle === "taken") {
+          json(res, 409, { detail: "Taken.", error_code: "HANDLE_TAKEN" });
+          return;
+        }
+        const profile = profiles.get(key) ?? { handle: null, public: false, labels: 0 };
+        if (ask.handle !== undefined) profile.handle = ask.handle || null;
+        if (ask.public !== undefined) profile.public = ask.public;
+        profiles.set(key, profile);
+        json(res, 200, {
+          ...profile,
+          points: 0,
+          settled: 0,
+          agreed: 0,
+          trusted: false,
+          rank: profile.public && profile.handle ? 1 : null,
+        });
+        return;
+      }
+      if (path === "/v1/contributors/forget" && req.method === "POST") {
+        const key = (body as { contributor_key?: string } | null)?.contributor_key ?? "";
+        json(res, 200, { deleted: profiles.delete(key) });
+        return;
+      }
+      if (path.startsWith("/v1/contributors/leaderboard")) {
+        const entries = [...profiles.values()]
+          .filter((p) => p.public && p.handle)
+          .map((p, i) => ({ rank: i + 1, handle: p.handle ?? "", agreed: 0, settled: 0 }));
+        json(res, 200, { entries });
         return;
       }
       if ((path === "/v1/shares/preview" || path === "/v1/shares") && req.method === "POST") {
