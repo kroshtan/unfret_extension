@@ -78,6 +78,9 @@ toolbar click ─► popup ─► background ─► inject extract.js into the t
   (`declarativeContent`), without the extension seeing the page.
 - **Unfret's own site isn't checked**, nor browser and store pages, except the **test shop** (`/test-shop` on the
   API base: a made-up store with every trick Unfret catches, for demos and trying the extension out).
+- **The result is one risk level, 0 to 4** (`verdict.risk`; higher is worse): its words, its one-line explanation and
+  every finding behind it, worst first, with its source. The deprecated `verdict.band` is read only from an older
+  server's result. Unfret never calls a shop a scam.
 - **Extraction happens in the browser.** `src/extract/` is a TypeScript port of the backend's PageFacts
   extractors (`facts/*.py`). It also adds what only the rendered page shows: text hidden by stylesheet CSS,
   the current state of checkboxes, and countdowns read twice a few seconds apart.

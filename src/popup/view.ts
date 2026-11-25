@@ -1,7 +1,16 @@
 /** Presentation for the popup: the result view and the progress checklist (pure DOM, tested in jsdom). */
 
-import type { AnalysisResult, Band, Flag, ResultCard, ShareBand, SharePreview } from "../api/client.js";
-import { BAND_SYMBOL, bandOf } from "../shared/bands.js";
+import type {
+  AnalysisResult,
+  Band,
+  Flag,
+  ResultCard,
+  Risk,
+  ShareBand,
+  SharePreview,
+  VerdictReason,
+} from "../api/client.js";
+import { BAND_SYMBOL, bandOf, LEVEL_SYMBOL, LEVEL_TONE, riskOf } from "../shared/bands.js";
 import { QUICK_NOTE } from "../shared/text.js";
 
 // ── Progress ──────────────────────────────────────────────────────────────────
@@ -240,6 +249,83 @@ const OVERALL_REASON = {
   severity: "low",
 } as const;
 
+// ── The risk level: the level in words, its one-line explanation and every finding behind it, worst first ─────
+
+/** Findings shown in full before the rest fold away under "Show all". */
+const RISK_SHOWN = 6;
+
+/** "Level 3": a finding's level, as a small tag (a modifier or the small signs have none). */
+function levelTag(level: number | null | undefined): HTMLElement | null {
+  if (typeof level !== "number" || level < 1 || level > 4) return null;
+  const tag = element("span", `level-tag l${String(level)}`, `Level ${String(level)}`);
+  return tag;
+}
+
+/**
+ * The findings behind the level, worst first (the server's order): each with its detail and source when the card
+ * shows it as a reason, else its title. Then the card's reasons the level doesn't name (notes), so nothing shown on
+ * the card goes missing.
+ */
+export function riskFindings(
+  risk: Risk,
+  reasons: readonly VerdictReason[],
+): { type: string; level: number | null; title: string; reason?: VerdictReason }[] {
+  const byType = new Map(reasons.map((r) => [r.type, r]));
+  const named = new Set(risk.because.map((b) => b.type));
+  const findings = risk.because.map((b) => {
+    const reason = byType.get(b.type);
+    return { type: b.type, level: b.level, title: reason?.title ?? b.title, ...(reason ? { reason } : {}) };
+  });
+  for (const r of reasons) {
+    if (!named.has(r.type))
+      findings.push({ type: r.type, level: r.level ?? null, title: r.title, reason: r });
+  }
+  return findings;
+}
+
+function findingItem(
+  finding: ReturnType<typeof riskFindings>[number],
+  thumbs: readonly string[],
+): HTMLLIElement {
+  const li = element("li", finding.reason?.severity ?? "low");
+  const title = element("strong", undefined, finding.title);
+  const tag = levelTag(finding.level);
+  if (tag) title.append(document.createTextNode(" "), tag);
+  li.append(title);
+  if (finding.reason?.detail) li.append(element("span", "detail", finding.reason.detail));
+  if (finding.reason?.source) li.append(element("span", "source", `Source: ${finding.reason.source}`));
+  if (thumbs.length) li.append(thumbnails(thumbs));
+  return li;
+}
+
+function riskReasonNodes(
+  risk: Risk,
+  reasons: readonly VerdictReason[],
+  apiOrigin: string | undefined,
+  sameShown: boolean,
+): Node[] {
+  const findings = riskFindings(risk, reasons);
+  if (findings.length === 0) return [];
+  const items = findings.map((f) =>
+    findingItem(
+      f,
+      // The photo of the same product is shown once, up top.
+      sameShown && f.type === "photo_reused" ? [] : shownThumbnails(f.reason?.thumbnails, apiOrigin),
+    ),
+  );
+  const ul = element("ul", "reasons");
+  ul.append(...items.slice(0, RISK_SHOWN));
+  const nodes: Node[] = [element("h2", undefined, "Why"), ul];
+  if (items.length > RISK_SHOWN) {
+    const more = element("details", "more-reasons");
+    const rest = element("ul", "reasons");
+    rest.append(...items.slice(RISK_SHOWN));
+    more.append(element("summary", undefined, `Show ${String(items.length - RISK_SHOWN)} more`), rest);
+    nodes.push(more);
+  }
+  return nodes;
+}
+
 interface VerdictView {
   /** The CSS band (null: not assessed). */
   band: Band | null;
@@ -259,27 +345,38 @@ interface VerdictView {
   flags: readonly Pick<Flag, "label" | "evidence" | "kind" | "severity">[];
   confidence?: number | undefined;
   modelVersion?: string | undefined;
+  /** The overall risk level: when set, the head, the line under it and the reasons are the level's. */
+  risk?: Risk | null;
 }
 
 /** The verdict head, headline, reasons and positives (in the band's order) and the details disclosure. */
 function verdictNodes(view: VerdictView, apiOrigin: string | undefined): { nodes: Node[]; details?: Node } {
-  const head = element("div", `verdict ${view.band ?? "none"}`);
-  const symbol = element("span", "symbol", view.symbol);
+  const risk = view.risk ?? null;
+  const tone = risk ? (LEVEL_TONE[risk.level] ?? "concerns") : (view.band ?? "none");
+  const head = element("div", `verdict ${tone}`);
+  if (risk) head.dataset.level = String(risk.level);
+  const symbol = element("span", "symbol", risk ? (LEVEL_SYMBOL[risk.level] ?? "!") : view.symbol);
   symbol.setAttribute("aria-hidden", "true");
   // The verdict is the result's heading for screen readers (its sub-headings are h2, so it is one level up from
   // them in meaning, without changing the h2s that the page's other headings follow).
-  const label = element("p", "label", view.label);
+  const label = element("p", "label", risk ? risk.label : view.label);
   label.setAttribute("role", "heading");
   label.setAttribute("aria-level", "2");
-  head.append(symbol, label);
-  const nodes: Node[] = [head, element("p", "headline", view.headline)];
+  const words = element("div", "verdict-text");
+  words.append(label);
+  if (risk && risk.level > 0) words.append(element("span", "level", `Risk level ${String(risk.level)} of 4`));
+  head.append(symbol, words);
+  // With a level: its one-line explanation, and what moved it (smaller problems that add up, protection).
+  const nodes: Node[] = [head, element("p", "headline", risk ? risk.explanation : view.headline)];
+  if (risk?.combined) nodes.push(element("p", "risk-step", `Moved up: ${risk.combined}.`));
+  if (risk?.modifier?.text) nodes.push(element("p", "risk-step", risk.modifier.text));
   const card = view.card ?? {};
   // Right under the headline: part of the check didn't finish, so the verdict may be milder than it should be.
   if (card.incomplete?.text) nodes.push(element("p", "incomplete", card.incomplete.text));
   const same = card.same_product ? sameProductNode(card.same_product, apiOrigin) : null;
   if (same) nodes.push(same);
   const checks = typeof card.checks_run === "number" ? card.checks_run : null;
-  if (view.band === "reliable" && view.reasons.length === 0 && checks) {
+  if ((risk ? risk.level === 0 : view.band === "reliable") && view.reasons.length === 0 && checks) {
     nodes.push(element("p", "clean", `Nothing worrying in ${String(checks)} checks.`));
   }
 
@@ -287,27 +384,30 @@ function verdictNodes(view: VerdictView, apiOrigin: string | undefined): { nodes
     view.reasons.length > 0 || view.band === null || view.band === "reliable"
       ? view.reasons
       : [OVERALL_REASON];
-  const reasons: Node[] = shownReasons.length
-    ? [
-        element("h2", undefined, "What we noticed"),
-        list(
-          "reasons",
-          shownReasons.map((r) => ({
-            title: r.title,
-            detail: r.detail,
-            cls: r.severity,
-            // The photo of the same product is shown once, up top.
-            thumbs: same && r.type === "photo_reused" ? [] : shownThumbnails(r.thumbnails, apiOrigin),
-            source: "source" in r ? r.source : undefined,
-          })),
-        ),
-      ]
-    : [];
+  const reasons: Node[] = risk
+    ? riskReasonNodes(risk, view.reasons as readonly VerdictReason[], apiOrigin, same !== null)
+    : shownReasons.length
+      ? [
+          element("h2", undefined, "What we noticed"),
+          list(
+            "reasons",
+            shownReasons.map((r) => ({
+              title: r.title,
+              detail: r.detail,
+              cls: r.severity,
+              // The photo of the same product is shown once, up top.
+              thumbs: same && r.type === "photo_reused" ? [] : shownThumbnails(r.thumbnails, apiOrigin),
+              source: "source" in r ? r.source : undefined,
+            })),
+          ),
+        ]
+      : [];
   const positives: Node[] = view.positives.length
     ? [element("h2", undefined, "What looks good"), list("positives", view.positives)]
     : [];
-  // Reliable: what looks good first; otherwise what we noticed first.
-  nodes.push(...(view.band === "reliable" ? [...positives, ...reasons] : [...reasons, ...positives]));
+  // No concern: what looks good first; otherwise why first.
+  const fine = risk ? risk.level === 0 : view.band === "reliable";
+  nodes.push(...(fine ? [...positives, ...reasons] : [...reasons, ...positives]));
   if (card.next_step?.text) {
     const step = element("section", "next-step");
     step.append(element("h2", undefined, "What you can do"), element("p", undefined, card.next_step.text));
@@ -412,6 +512,7 @@ export function renderResult(
       flags: assessment?.flags ?? [],
       confidence: assessment?.confidence,
       modelVersion: assessment?.model_version,
+      risk: riskOf(result),
     },
     apiOrigin,
   );

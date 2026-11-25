@@ -37,10 +37,24 @@ export const VERDICT = {
       detail: "4,800 ratings for a product that's only been listed for 6 weeks.",
       severity: "high",
       source: "The reviews on the page",
+      level: 1,
     },
   ],
   positives: [],
   language: "en",
+  risk: {
+    level: 4,
+    key: "wont_arrive",
+    label: "May not arrive, or may not be safe",
+    because: [
+      { type: "new_domain", level: 4, title: "Brand-new web shop" },
+      { type: "review_velocity", level: 1, title: "Suspicious number of reviews" },
+    ],
+    combined: null,
+    modifier: null,
+    explanation: "Level 4 because: Brand-new web shop + Suspicious number of reviews.",
+    source: "band",
+  },
   // The result card (backend: the result card).
   next_step: { type: "junk_or_scam", text: "Better to buy this from a shop you know." },
   checklist: [
@@ -246,6 +260,14 @@ export async function startMockApi(): Promise<MockApi> {
                   ...VERDICT,
                   band: "careful",
                   label: "Think twice",
+                  risk: {
+                    ...VERDICT.risk,
+                    level: 1,
+                    key: "manipulation",
+                    label: "Pressure and tricks",
+                    because: [VERDICT.risk.because[1]],
+                    explanation: "Level 1 because: Suspicious number of reviews.",
+                  },
                   deep_check: paused
                     ? {
                         suggested: true,

@@ -5,6 +5,14 @@ backend's changelog, which lists each one published at `/extension`.)
 
 ## Unreleased
 
+- **The result is one risk level, 0 to 4** (backend: "one overall risk level", "risk levels: higher is worse"). The
+  card's head is `verdict.risk`'s words ("May not arrive, or may not be safe", "No concerns found") with "Risk level n
+  of 4", the line under it its one-line explanation, then what moved it (smaller problems that add up, protection),
+  then "Why": every finding in `risk.because`, worst first, each with its level and, where the card has it as a
+  reason, its detail and source (the first six shown, the rest under "Show n more"). The colours and the toolbar
+  badge follow the level (0 green, 1–2 amber, 3–4 red). `verdict.band` (deprecated) is used only for an older
+  server's result without a level. The consent screen says it the same way, and never calls a shop a scam.
+
 - **Free for shoppers, with no pass** (backend: "Free checks for shoppers"). Quick and deep checks are free and go
   without Authorization: the extension makes no pass, signs in to nothing and sends nothing that names the user. A
   deep check gets a challenge (`GET /v1/analyze/challenge`), solves its proof of work in the background

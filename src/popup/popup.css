@@ -267,6 +267,14 @@ body[data-phase="done"] #analyse:not(:disabled) {
   letter-spacing: -0.01em;
 }
 
+.verdict .level {
+  display: block;
+  margin-top: 0.1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
 .verdict.reliable {
   background: var(--good-soft);
 }
@@ -300,6 +308,36 @@ body[data-phase="done"] #analyse:not(:disabled) {
   margin: 0.65rem 0 0.25rem;
   font-size: 1.02rem;
   color: var(--ink-2);
+}
+
+/* What moved the level: smaller problems that add up, or protection. */
+.risk-step {
+  margin: 0.2rem 0;
+  font-size: 0.9rem;
+  color: var(--ink-2);
+}
+
+/* A finding's level, next to its title. */
+.level-tag {
+  display: inline-block;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--ink-2);
+  vertical-align: 0.1em;
+}
+
+.more-reasons summary {
+  min-height: var(--target);
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--brand-ink);
+  font-weight: 600;
 }
 
 #result-body h2,
