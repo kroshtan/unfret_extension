@@ -52,8 +52,13 @@ export const VERDICT = {
     key: "wont_arrive",
     label: "May not arrive, or may not be safe",
     because: [
-      { type: "new_domain", level: 4, title: "Brand-new web shop" },
-      { type: "review_velocity", level: 1, title: "Suspicious number of reviews" },
+      { type: "new_domain", level: 4, title: "Brand-new web shop", source: "Domain registry (RDAP)" },
+      {
+        type: "review_velocity",
+        level: 1,
+        title: "Suspicious number of reviews",
+        source: "The reviews on the page",
+      },
     ],
     combined: null,
     modifier: null,
@@ -78,6 +83,16 @@ export const PAUSE = {
 };
 
 const BITS = 4;
+
+/** `GET /v1/catalogue/findings`: a few of the server's, worst first, with a payment modifier (level null). */
+export const CATALOGUE = [
+  { type: "new_domain", title: "Brand-new web shop", level: 4, key: "wont_arrive" },
+  { type: "mailbox_address", title: "Address is a mailbox", level: 4, key: "wont_arrive" },
+  { type: "claim_contradicted", title: "A claim that doesn't add up", level: 3, key: "doesnt_work" },
+  { type: "drip_pricing", title: "Price goes up at checkout", level: 2, key: "overpaying" },
+  { type: "countdown", title: "Countdown timer", level: 1, key: "manipulation" },
+  { type: "irreversible_payment_only", title: "Only payments you can't get back", level: null, key: null },
+];
 
 function zeroBits(digest: Buffer): number {
   let bits = 0;
@@ -212,6 +227,10 @@ export async function startMockApi(): Promise<MockApi> {
         const profile = key ? profiles.get(key) : undefined;
         if (profile) profile.labels += 1;
         json(res, 201, { status: "queued", updated: false, anonymous: !key });
+        return;
+      }
+      if (path === "/v1/catalogue/findings") {
+        json(res, 200, { findings: CATALOGUE });
         return;
       }
       if (path === "/v1/contributors" && req.method === "POST") {

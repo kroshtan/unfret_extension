@@ -10,6 +10,7 @@ import {
   type PopupRequest,
   type TabState,
 } from "../shared/messages.js";
+import type { CatalogueFinding } from "../api/client.js";
 import { contributorKey } from "../shared/contributor.js";
 import {
   LEVEL_CHOICES,
@@ -251,16 +252,37 @@ async function buildReportForm(): Promise<void> {
   const shown = shownFindings(result);
   el("report-wrong").replaceChildren(...shown.map((f) => choice("checkbox", "wrong", f.type, f.title)));
   show("report-wrong-set", shown.length > 0);
-  el("report-missing").replaceChildren(
-    ...missingChoices(result).map((c) => choice("checkbox", "missing", c.type, c.title)),
-  );
+  // Grouped by level, worst first, as the catalogue orders them.
+  const groups: Node[] = [];
+  let level: number | null | undefined;
+  for (const c of missingChoices(result, await findingsCatalogue())) {
+    if (c.level !== level) {
+      level = c.level;
+      const words = LEVEL_CHOICES.find((l) => l.level === c.level)?.label;
+      if (words)
+        groups.push(
+          Object.assign(document.createElement("p"), { className: "missing-level", textContent: words }),
+        );
+    }
+    groups.push(choice("checkbox", "missing", c.type, c.title));
+  }
+  el("report-missing").replaceChildren(...groups);
+  (el("report-comment") as HTMLTextAreaElement).value = "";
   el("report-as").textContent = (await contributorKey())
     ? "It counts toward your contributor profile (Settings)."
     : "It is sent anonymously.";
   button("report-send").disabled = true;
 }
 
-function reportPicked(): { level?: number; wrong: string[]; missing: string[] } {
+/** The server's catalogue of findings a report can name as missing; null offline (the short list stands in). */
+let catalogue: Promise<CatalogueFinding[] | null> | undefined;
+
+function findingsCatalogue(): Promise<CatalogueFinding[] | null> {
+  catalogue ??= new UnfretApi(apiBase).findingsCatalogue().catch(() => null);
+  return catalogue.then((found) => (found?.length ? found : null));
+}
+
+function reportPicked(): { level?: number; wrong: string[]; missing: string[]; comment: string } {
   const picked = (name: string): string[] =>
     [...document.querySelectorAll<HTMLInputElement>(`#report input[name="${name}"]:checked`)].map(
       (i) => i.value,
@@ -270,6 +292,7 @@ function reportPicked(): { level?: number; wrong: string[]; missing: string[] } 
     ...(level !== undefined ? { level: Number(level) } : {}),
     wrong: picked("wrong"),
     missing: picked("missing"),
+    comment: (el("report-comment") as HTMLTextAreaElement).value,
   };
 }
 

@@ -90,6 +90,18 @@
           <summary>Something missing?</summary>
           <div id="report-missing"></div>
         </details>
+        <label for="report-comment" class="comment-label">Anything else? (optional)</label>
+        <textarea
+          id="report-comment"
+          maxlength="500"
+          rows="3"
+          spellcheck="true"
+          aria-describedby="report-comment-hint"
+        ></textarea>
+        <p id="report-comment-hint" class="muted small">
+          Up to 500 characters. Personal details (e-mail addresses, phone numbers, names) are removed from it
+          before it's stored.
+        </p>
         <p class="muted small">
           Your report keeps this page, with personal details removed, so a person can review it. It never
           keeps who sent it: no account, IP address or time of day.

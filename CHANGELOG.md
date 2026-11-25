@@ -5,6 +5,13 @@ backend's changelog, which lists each one published at `/extension`.)
 
 ## 0.14.0 (unreleased)
 
+- **"Wrong result?": the server's catalogue, a comment, every source** (backend: "the findings catalogue", "a
+  report's comment; a source for every finding behind the level"). "Something missing?" lists
+  `GET /v1/catalogue/findings` (public, cached a day), grouped by level, without payment modifiers (level null) or
+  what the result showed; the short built-in list stays only as the offline fallback. An optional comment ("Anything
+  else?", at most 500 characters) goes as `comment`; the form says personal details are removed from it before it's
+  stored. A comment alone isn't a report. Every finding under "Why" shows its source (`risk.because[].source`), not
+  only the card's reasons.
 - **Paused until tomorrow** (backend: the spend ceiling is paced per day). The pause note and the quick check's note
   always say deep checks are back tomorrow ("today's are used up"), never next month.
 - **Store texts for free checks** (`store/`): the listing, the privacy-practices answers, the reviewer notes, AMO's

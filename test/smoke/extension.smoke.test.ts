@@ -313,6 +313,7 @@ describe("with the access a click grants (activeTab)", () => {
     expect(view.headings).toEqual(["Why", "What you can do", "What we checked · 12 checks"]);
     expect(view.reasons).toEqual(["Brand-new web shop Level 4", "Suspicious number of reviews Level 1"]);
     expect(view.text).toContain("Source: The reviews on the page");
+    expect(view.text).toContain("Source: Domain registry (RDAP)"); // a finding that is no card reason
     expect(view.text).toContain("Deep checks are free.");
     expect(view.text).not.toMatch(/listing\.|=\s*\d/u);
   });
@@ -432,10 +433,24 @@ describe('"Wrong result?" and the contributor key', () => {
     await popup.waitForSelector("#report:not([hidden])");
     expect(await popup.textContent("#report-as")).toMatch(/contributor profile/u);
     await popup.click("#report-missing-set summary");
+    // The server's catalogue, grouped by level, without payment modifiers or what the result showed.
+    expect(
+      await popup.$$eval("#report-missing input", (inputs) =>
+        inputs.map((i) => (i as HTMLInputElement).value),
+      ),
+    ).toEqual(["mailbox_address", "claim_contradicted", "drip_pricing", "countdown"]);
+    expect(await popup.textContent("#report-missing .missing-level")).toBe(
+      "May not arrive, or may not be safe",
+    );
     await popup.check('#report input[name="missing"][value="drip_pricing"]');
+    await popup.fill("#report-comment", "The price went up by $12 at checkout.");
     await popup.click("#report-send");
     await popup.waitForSelector('#report-status[data-kind="ok"]');
     const since = api.requests.slice(before);
+    expect(since.filter((r) => r.path === "/v1/labels").at(-1)?.body).toMatchObject({
+      missing: ["drip_pricing"],
+      comment: "The price went up by $12 at checkout.",
+    });
     const withKey = since.filter((r) => JSON.stringify(r.body ?? "").includes(key)).map((r) => r.path);
     expect(withKey).toEqual(["/v1/labels"]);
     expect(

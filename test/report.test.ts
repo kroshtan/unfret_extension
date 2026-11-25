@@ -13,7 +13,7 @@ import {
   reportError,
   shownFindings,
 } from "../src/shared/report.js";
-import { type MockApi, startMockApi, VERDICT } from "./mock-server.js";
+import { CATALOGUE, type MockApi, startMockApi, VERDICT } from "./mock-server.js";
 
 let api: MockApi;
 
@@ -56,9 +56,24 @@ describe("what a report offers and sends", () => {
       { type: "new_domain", title: "Brand-new web shop" },
       { type: "review_velocity", title: "Suspicious number of reviews" },
     ]);
+    // Offline: the short list, without what was shown (it can be wrong, not missing) and without payment modifiers.
     const missing = missingChoices(RESULT).map((c) => c.type);
-    expect(missing).not.toContain("new_domain"); // shown already: it can be wrong, not missing
-    expect(missing).toHaveLength(MISSING_CHOICES.length - 1);
+    expect(missing).not.toContain("new_domain");
+    expect(missing).not.toContain("irreversible_payment_only");
+    expect(missing).toHaveLength(MISSING_CHOICES.length - 2);
+    // The server's catalogue, when it could be read, in its order.
+    expect(missingChoices(RESULT, CATALOGUE).map((c) => c.type)).toEqual([
+      "mailbox_address",
+      "claim_contradicted",
+      "drip_pricing",
+      "countdown",
+    ]);
+    expect(missingChoices(RESULT, []).length).toBe(missing.length); // an empty catalogue: the short list
+  });
+
+  it("reads the catalogue from the server, public and cached", async () => {
+    expect(await new UnfretApi(api.url).findingsCatalogue()).toEqual(CATALOGUE);
+    expect(api.requests.at(-1)).toMatchObject({ path: "/v1/catalogue/findings", auth: "" });
   });
 
   it("keeps only a level from 0 to 4, findings shown as wrong and choices not shown as missing", () => {
@@ -69,7 +84,13 @@ describe("what a report offers and sends", () => {
         wrong: ["new_domain", "made_up", "new_domain"],
         missing: ["drip_pricing", "new_domain", "made_up"],
       }),
-    ).toEqual({ wrong: ["new_domain"], missing: ["drip_pricing"] });
+    ).toEqual({ wrong: ["new_domain"], missing: ["drip_pricing", "made_up"] }); // the server's catalogue decides
+    expect(cleanLabel(RESULT, { missing: ["Not a type!"], comment: "only words" })).toBeNull(); // a comment alone isn't a report
+    expect(cleanLabel(RESULT, { level: 2, comment: `  ${"x".repeat(600)}  ` })).toEqual({
+      level: 2,
+      comment: "x".repeat(500),
+    });
+    expect(cleanLabel(RESULT, { level: 2, comment: "   " })).toEqual({ level: 2 });
     expect(cleanLabel(RESULT, { level: 2.5, wrong: ["made_up"] })).toBeNull();
     expect(cleanLabel(RESULT, {})).toBeNull();
   });
@@ -100,8 +121,17 @@ describe("what a report offers and sends", () => {
 
     const key = newContributorKey();
     await new UnfretApi(api.url).contributor(key);
-    await new UnfretApi(api.url).label(BODY, RESULT, { missing: ["drip_pricing"] }, key);
-    expect(api.requests.at(-1)?.body).toMatchObject({ contributor_key: key, missing: ["drip_pricing"] });
+    await new UnfretApi(api.url).label(
+      BODY,
+      RESULT,
+      { missing: ["drip_pricing"], comment: "Paid, never came." },
+      key,
+    );
+    expect(api.requests.at(-1)?.body).toMatchObject({
+      contributor_key: key,
+      missing: ["drip_pricing"],
+      comment: "Paid, never came.",
+    });
     expect(await new UnfretApi(api.url).contributor(key)).toMatchObject({ labels: 1 });
   });
 

@@ -262,23 +262,35 @@ function levelTag(level: number | null | undefined): HTMLElement | null {
 }
 
 /**
- * The findings behind the level, worst first (the server's order): each with its detail and source when the card
- * shows it as a reason, else its title. Then the card's reasons the level doesn't name (notes), so nothing shown on
+ * The findings behind the level, worst first (the server's order): each with its source, and its detail when the card
+ * shows it as a reason. Then the card's reasons the level doesn't name (notes), so nothing shown on
  * the card goes missing.
  */
 export function riskFindings(
   risk: Risk,
   reasons: readonly VerdictReason[],
-): { type: string; level: number | null; title: string; reason?: VerdictReason }[] {
+): { type: string; level: number | null; title: string; source: string | null; reason?: VerdictReason }[] {
   const byType = new Map(reasons.map((r) => [r.type, r]));
   const named = new Set(risk.because.map((b) => b.type));
   const findings = risk.because.map((b) => {
     const reason = byType.get(b.type);
-    return { type: b.type, level: b.level, title: reason?.title ?? b.title, ...(reason ? { reason } : {}) };
+    return {
+      type: b.type,
+      level: b.level,
+      title: reason?.title ?? b.title,
+      source: reason?.source ?? b.source ?? null,
+      ...(reason ? { reason } : {}),
+    };
   });
   for (const r of reasons) {
     if (!named.has(r.type))
-      findings.push({ type: r.type, level: r.level ?? null, title: r.title, reason: r });
+      findings.push({
+        type: r.type,
+        level: r.level ?? null,
+        title: r.title,
+        source: r.source ?? null,
+        reason: r,
+      });
   }
   return findings;
 }
@@ -293,7 +305,7 @@ function findingItem(
   if (tag) title.append(document.createTextNode(" "), tag);
   li.append(title);
   if (finding.reason?.detail) li.append(element("span", "detail", finding.reason.detail));
-  if (finding.reason?.source) li.append(element("span", "source", `Source: ${finding.reason.source}`));
+  if (finding.source) li.append(element("span", "source", `Source: ${finding.source}`));
   if (thumbs.length) li.append(thumbnails(thumbs));
   return li;
 }

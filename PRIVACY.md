@@ -65,8 +65,8 @@ More requests go to the same API, each only when you ask for it:
   nothing is stored until you click **Share**. The page is then public at `unfret.net/r/…` for anyone with
   the link, for 90 days, and never says who checked. You get a delete code, shown once, to remove it sooner.
 
-- **Wrong result?** (reporting a result): the level you think is right and the reasons you marked as wrong or
-  missing, with that one check's request exactly as it was analysed (the page address, product facts and page text),
+- **Wrong result?** (reporting a result): the level you think is right, the reasons you marked as wrong or
+  missing and, if you write one, a short comment (personal details are removed from it before it is stored), with that one check's request exactly as it was analysed (the page address, product facts and page text),
   its result, and the result's report token, only after you click **Send report**. The report keeps that page (with
   personal details removed) so a person can review it; it never keeps who sent it: no account, IP address or time of
   day. An AI model hosted in the EU may read the stored report once to suggest an answer; a person decides. Reports

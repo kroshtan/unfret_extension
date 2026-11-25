@@ -171,6 +171,8 @@ export interface RiskReason {
   /** The level it is evidence for (1–4), or null for a protection modifier. */
   level: number | null;
   title: string;
+  /** Where its evidence comes from, in words ("The page", "Domain registry (RDAP)"); absent from older servers. */
+  source?: string | null;
 }
 
 /**
@@ -231,6 +233,17 @@ export interface Label {
   level?: number;
   wrong?: string[];
   missing?: string[];
+  /** The shopper's own words, at most 500 characters (the server removes personal details before storing it). */
+  comment?: string;
+}
+
+/** One finding type a shopper can mark as missing (GET /v1/catalogue/findings), worst first. */
+export interface CatalogueFinding {
+  type: string;
+  title: string;
+  /** Its default level (1–4), or null for a payment modifier. */
+  level: number | null;
+  key?: string | null;
 }
 
 export type LabelOutcome = "queued" | "already_reported" | "already_known";
@@ -391,10 +404,10 @@ export class UnfretApi {
     };
   }
 
-  private async get<T>(path: string): Promise<T> {
+  private async get<T>(path: string, cache: RequestCache = "no-store"): Promise<T> {
     const response = await this.fetcher(`${this.base}${path}`, {
       headers: this.headers(false),
-      cache: "no-store",
+      cache,
     });
     if (!response.ok) throw await errorFrom(response);
     return (await response.json()) as T;
@@ -402,6 +415,18 @@ export class UnfretApi {
 
   pricing(): Promise<Pricing> {
     return this.get<Pricing>("/v1/pricing");
+  }
+
+  /** The finding types a report can name as missing (public, cached by the browser for a day). */
+  async findingsCatalogue(): Promise<CatalogueFinding[]> {
+    const answer = await this.get<{ findings?: unknown }>("/v1/catalogue/findings", "default");
+    if (!Array.isArray(answer.findings)) return [];
+    return (answer.findings as Partial<CatalogueFinding>[]).filter(
+      (f): f is CatalogueFinding =>
+        typeof f.type === "string" &&
+        typeof f.title === "string" &&
+        (f.level === null || typeof f.level === "number"),
+    );
   }
 
   /** A new proof-of-work challenge, one per deep check. */
@@ -439,6 +464,7 @@ export class UnfretApi {
       ...(label.level !== undefined ? { level: label.level } : {}),
       ...(label.wrong?.length ? { wrong: label.wrong } : {}),
       ...(label.missing?.length ? { missing: label.missing } : {}),
+      ...(label.comment ? { comment: label.comment } : {}),
       explanation: result.explanation,
       ...(result.verdict ? { verdict: result.verdict } : {}),
       ...(contributorKey ? { contributor_key: contributorKey } : {}),
