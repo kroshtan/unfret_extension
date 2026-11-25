@@ -41,19 +41,6 @@ main {
   padding: 0 0.25rem;
 }
 
-#have-code-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem 0.75rem;
-}
-
-.invite {
-  margin-top: 0.75rem;
-  padding-top: 0.25rem;
-  border-top: 1px solid var(--line);
-}
-
 .server summary {
   color: var(--ink-2);
 }
@@ -62,7 +49,8 @@ main {
   margin-bottom: 0.25rem;
 }
 
-#privacy-link {
+#privacy-link,
+#support-link {
   display: inline-flex;
   align-items: center;
   min-height: var(--target);

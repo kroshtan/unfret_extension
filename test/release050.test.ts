@@ -70,17 +70,18 @@ describe("consent", () => {
       p.textContent.trim(),
     );
     expect(panels[0]).toMatch(/^Unfret checks product pages/u);
-    expect(panels[1]).toContain("unfret.net");
-    expect(panels[1]).toContain("90");
-    expect(panels[2]).toMatch(/never a private seller's name/u);
-    expect(panels[3]).toMatch(/prepaid checks/u);
+    expect(panels[1]).toMatch(/free/u);
+    expect(panels[1]).toMatch(/no check is tied to you/u);
+    expect(panels[2]).toContain("unfret.net");
+    expect(panels[2]).toContain("90");
+    expect(panels[3]).toMatch(/never a private seller's name/u);
     expect(popup.querySelector("#consent-agree")?.textContent).toBe("I agree");
     expect(PRIVACY_URL).toBe("https://unfret.net/privacy");
   });
 
   it("the popup keeps Analyse disabled until consent", () => {
     const popup = readFileSync("src/popup/popup.ts", "utf8");
-    expect(popup).toContain("busy || !consented || !session");
+    expect(popup).toContain("busy || !consented || !analysable");
     const background = readFileSync("src/background/index.ts", "utf8");
     expect(background).toContain("if (!(await consentGiven()))");
   });

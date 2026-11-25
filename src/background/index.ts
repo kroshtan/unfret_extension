@@ -1,54 +1,34 @@
 /**
  * The background (service worker in Chrome, event page in Firefox):
  *
- * - stores the session the connect page relays, and the new API key the checkout page relays, after checking where
- *   they came from, and only after a click on that page, from a tab it opened itself, or (to replace an account) the
- *   user's yes in its own window (onboarding.ts, shared/handoff.ts); opens the website's welcome page once, after
- *   installing, and makes the extension's free pass when that page says whether this browser had its free checks;
- *   opens the Unfret pages the popup and settings ask for;
  * - registers the marketplace icon hint (declarativeContent: the browser matches URLs, the extension reads nothing);
  * - runs an analysis only when the user asks, for the active tab (activeTab, granted by that click): injects the
- *   extractor, streams the result. It holds no standing access to any shop.
+ *   extractor, solves a free deep check's proof of work (off the popup), streams the result. It holds no standing
+ *   access to any shop, and no account: no check names the user;
+ * - deletes what versions before free checks kept about an account (a pass, a wallet sign-in).
  *
  * Results live in memory per tab for the popup to show, mirrored to `chrome.storage.session` (memory only, cleared
  * when the browser closes) so they survive the service worker sleeping. Nothing about pages is written to disk.
  */
 
-import { type AnalyzeBody, ApiError, type ReportReason, UnfretApi } from "../api/client.js";
-import { FREE_ASK_MESSAGE, KEY_MESSAGE, REF_MESSAGE, SESSION_MESSAGE } from "../content/relay.js";
+import { type AnalyzeBody, ApiError, type Pause, UnfretApi } from "../api/client.js";
 import {
   ANALYSIS_PORT,
   type BackgroundUpdate,
   type PopupRequest,
   type TabState,
 } from "../shared/messages.js";
-import { answerOffer, dropTickets, type Offer, OPEN_MESSAGE, pendingOffer } from "../shared/handoff.js";
-import { consentGiven, isDevBase, loadSettings } from "../shared/settings.js";
+import { PowAborted, solve } from "../shared/pow.js";
+import { consentGiven, forgetOldAccount, loadSettings } from "../shared/settings.js";
 import { createShare, previewShare, shareRequest } from "../shared/share.js";
 import { isAnalysable } from "../shared/sites.js";
-import { CONSENT_HINT, FREE_PAUSED, OFFLINE } from "../shared/text.js";
+import { CONSENT_HINT, DEEP_UNAVAILABLE, FREE_PAUSED_QUICK } from "../shared/text.js";
 import { checkedUrl } from "../shared/urls.js";
 import { badgeFor } from "./badge.js";
 import { checkFailed } from "./failure.js";
 import { registerMarketplaceHint } from "./icon-hint.js";
 import { extractFromTab } from "./inject.js";
-import {
-  fromExtensionPage,
-  openUnfretTab,
-  passEndedOnUpdate,
-  receiveFreeAsk,
-  receiveKey,
-  receiveRef,
-  receiveSession,
-  unfretPageUrl,
-  welcomeOnInstall,
-} from "./onboarding.js";
 
-// Content scripts registered for a local dev API, by id suffix (releases before the rename used another prefix).
-const DEV_RELAYS = [
-  { id: "unfret-connect-dev", path: "/connect*", js: "connect-relay.js" },
-  { id: "unfret-key-dev", path: "/checkout*", js: "key-relay.js" },
-];
 const states = new Map<number, TabState>();
 const watchers = new Map<number, Set<chrome.runtime.Port>>();
 
@@ -99,86 +79,6 @@ function setState(tabId: number, state: TabState): void {
   }
 }
 
-// ── Session and key relay; Unfret pages the extension opens ────────────────
-
-chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) => {
-  const m = message as {
-    type?: unknown;
-    session?: unknown;
-    key?: unknown;
-    replace?: unknown;
-    activated?: unknown;
-    code?: unknown;
-    had?: unknown;
-    path?: unknown;
-  } | null;
-  if (m?.type === OPEN_MESSAGE) {
-    // Only the extension's own pages (popup, settings) open a ticketed tab; a content script can't ask for one.
-    if (!fromExtensionPage(sender, chrome.runtime.id)) return false;
-    void (async () => {
-      const { apiBase } = await loadSettings();
-      const url = unfretPageUrl(apiBase, m.path);
-      if (url) await openUnfretTab(url);
-      sendResponse({ ok: url !== null });
-    })();
-    return true; // async response
-  }
-  if (m?.type === FREE_ASK_MESSAGE) {
-    void receiveFreeAsk(m, sender, chrome.runtime.id).then(
-      (reply) => {
-        sendResponse(reply);
-      },
-      () => {
-        sendResponse({ status: "error" });
-      },
-    );
-    return true; // async response
-  }
-  if (m?.type === REF_MESSAGE) {
-    void receiveRef(m, sender, chrome.runtime.id).then(
-      (reply) => {
-        sendResponse(reply);
-      },
-      () => {
-        sendResponse({ status: "error" });
-      },
-    );
-    return true; // async response
-  }
-  if (m?.type === KEY_MESSAGE) {
-    void receiveKey(m, sender, chrome.runtime.id).then(
-      (reply) => {
-        sendResponse(reply);
-      },
-      () => {
-        sendResponse({ status: "invalid" });
-      },
-    );
-    return true; // async response
-  }
-  if (m?.type !== SESSION_MESSAGE) return false;
-  void receiveSession(m, sender, chrome.runtime.id).then(
-    (reply) => {
-      sendResponse(reply);
-    },
-    () => {
-      sendResponse({ ok: false });
-    },
-  );
-  return true; // async response
-});
-
-// The extension's question closed without an answer: nothing changes, and the page is told.
-async function askClosed(match: (offer: Offer) => boolean): Promise<void> {
-  const offer = await pendingOffer();
-  if (offer && match(offer)) await answerOffer(offer.id, false);
-}
-
-// Firefox for Android has no windows (the question opens in a tab there: tabs.onRemoved below).
-(chrome.windows as typeof chrome.windows | undefined)?.onRemoved.addListener((windowId) => {
-  void askClosed((offer) => offer.windowId === windowId);
-});
-
 // ── Navigation: a result belongs to the page it was made for ────────────────
 // (No tab URL needed, and none is available without host access: any navigation clears the tab's result.)
 
@@ -193,8 +93,6 @@ chrome.tabs.onRemoved.addListener((tabId) => {
   states.delete(tabId);
   persist(tabId, undefined);
   watchers.delete(tabId);
-  void dropTickets(tabId);
-  void askClosed((offer) => offer.confirmTabId === tabId);
 });
 
 // ── Analysis ─────────────────────────────────────────────────────────────────
@@ -214,34 +112,62 @@ async function analyse(tabId: number, tier?: "quick"): Promise<void> {
   }
 }
 
-/** Why a deep check couldn't be paid for, when a quick check is offered instead; null for any other failure. */
-function quickBecause(error: unknown): string | null {
-  if (!(error instanceof ApiError)) return null;
-  if (error.code === "FREE_CHECKS_PAUSED") return `${FREE_PAUSED} Here's a quick check meanwhile.`;
-  if (error.needsCredits) return "You have no checks left, so here's a quick check instead.";
-  return null;
-}
-
 /** Uploaded text is capped: the server reads the first 20,000 characters, and sending more only costs bandwidth. */
 export const MAX_UPLOAD_TEXT_CHARS = 24_000;
 
+/** A free deep check that can't run, and a quick check runs instead: what to say, and the pause if that is why. */
+interface Fallback {
+  note: string;
+  pause?: Pause;
+}
+
+/** The pause as the server describes it, or an empty one (the extension's own words cover it). */
+function pauseOf(value: unknown): Pause {
+  return typeof value === "object" && value !== null ? value : {};
+}
+
+/** Why a deep check can't run now, when a quick check is offered instead; null for any other failure. */
+function quickBecause(error: unknown): Fallback | null {
+  if (!(error instanceof ApiError)) return null;
+  if (error.freePaused) return { note: FREE_PAUSED_QUICK, pause: pauseOf(error.metadata) };
+  if (error.serviceOff) return { note: DEEP_UNAVAILABLE };
+  return null;
+}
+
+/** Calls an extension API now and then while the proof of work runs, so Chrome doesn't stop the worker as idle. */
+function keepAlive(): void {
+  try {
+    void chrome.runtime.getPlatformInfo();
+  } catch {
+    // not available: the work is a few seconds anyway
+  }
+}
+
+/**
+ * A free deep check's proof of work: a new challenge, solved here (the popup stays responsive). Paused: the challenge
+ * says so, and nothing is solved.
+ */
+type Proof = NonNullable<AnalyzeBody["proof_of_work"]>;
+
+async function proofOfWork(api: UnfretApi): Promise<Proof | Fallback> {
+  const challenge = await api.challenge();
+  if (challenge.paused) return { note: FREE_PAUSED_QUICK, pause: pauseOf(challenge.pause) };
+  const solution = await solve(challenge.challenge, challenge.bits, { onSlice: keepAlive });
+  return { challenge: challenge.challenge, solution };
+}
+
+function isFallback(value: Proof | Fallback): value is Fallback {
+  return "note" in value;
+}
+
 async function runAnalysis(tabId: number, tier?: "quick"): Promise<void> {
   const current = states.get(tabId);
-  if (current?.status === "extracting" || current?.status === "analysing") return;
-  const { apiBase, session } = await loadSettings();
+  if (current?.status === "extracting" || current?.status === "preparing" || current?.status === "analysing")
+    return;
+  const { apiBase } = await loadSettings();
   if (!(await consentGiven())) {
     // Nothing leaves the browser before the consent screen was accepted, whoever asks.
-    setState(tabId, { status: "error", message: CONSENT_HINT, needsSignIn: false, needsCredits: false });
-    return;
-  }
-  // A quick check is free for everyone: without a pass it goes without a sign-in. A deep check needs one.
-  if (!session && tier !== "quick") {
-    setState(tabId, {
-      status: "error",
-      message: "Sign in first.",
-      needsSignIn: true,
-      needsCredits: false,
-    });
+    setState(tabId, { status: "error", message: CONSENT_HINT });
     return;
   }
   const tab = await chrome.tabs.get(tabId);
@@ -252,17 +178,14 @@ async function runAnalysis(tabId: number, tier?: "quick"): Promise<void> {
       message: tab.url
         ? "This page can't be checked."
         : "Click the Unfret button on the page you want to check, then try again.",
-      needsSignIn: false,
-      needsCredits: false,
     });
     return;
   }
   setState(tabId, { status: "extracting" });
+  let quick = tier === "quick";
   try {
     const { facts, text } = await extractFromTab(tabId);
-    const api = new UnfretApi(apiBase, session?.token);
-    let state: Extract<TabState, { status: "analysing" }> = { status: "analysing", findings: [], steps: [] };
-    setState(tabId, state);
+    const api = new UnfretApi(apiBase);
     const upload = text.slice(0, MAX_UPLOAD_TEXT_CHARS);
     // The address as extract-entry cleaned it; once more here, so nothing about the visitor in it reaches the server.
     const url = checkedUrl(facts.url);
@@ -271,13 +194,32 @@ async function runAnalysis(tabId: number, tier?: "quick"): Promise<void> {
       page_facts: { ...facts, url },
       ...(upload ? { page_content: upload } : {}),
     };
-    // A deep check that needs checks the account doesn't have (none left, or only free ones while they're paused for
-    // the day) becomes a quick check, free, saying why.
-    let note: string | undefined;
-    let body: AnalyzeBody = tier === "quick" ? { ...page, tier } : page;
+    // A deep check that can't run now (free deep checks paused, or not available) becomes a quick check, saying why.
+    // A spent or expired challenge gets one new one.
+    let fallback: Fallback | undefined;
+    let retried = false;
     for (;;) {
+      // What the result keeps (and a report sends back): the page as analysed, without the proof of work.
+      const body: AnalyzeBody = quick ? { ...page, tier: "quick" } : page;
       try {
-        for await (const event of api.analyze(body)) {
+        let sent = body;
+        if (!quick) {
+          setState(tabId, { status: "preparing" });
+          const proof = await proofOfWork(api);
+          if (isFallback(proof)) {
+            fallback = proof;
+            quick = true;
+            continue;
+          }
+          sent = { ...body, proof_of_work: proof };
+        }
+        let state: Extract<TabState, { status: "analysing" }> = {
+          status: "analysing",
+          findings: [],
+          steps: [],
+        };
+        setState(tabId, state);
+        for await (const event of api.analyze(sent)) {
           if (event.kind === "page_type") state = { ...state, pageType: event.pageType };
           else if (event.kind === "step") state = { ...state, steps: [...(state.steps ?? []), event.skill] };
           else if (event.kind === "finding")
@@ -288,7 +230,8 @@ async function runAnalysis(tabId: number, tier?: "quick"): Promise<void> {
               status: "done",
               result: event.result,
               body,
-              ...(note ? { note } : {}),
+              ...(fallback ? { note: fallback.note } : {}),
+              ...(fallback?.pause ? { pause: fallback.pause } : {}),
             });
             return;
           }
@@ -296,29 +239,20 @@ async function runAnalysis(tabId: number, tier?: "quick"): Promise<void> {
         }
         return;
       } catch (error) {
-        const because = body.tier === undefined ? quickBecause(error) : null;
+        if (!quick && error instanceof ApiError && error.needsProof && !retried) {
+          retried = true;
+          continue;
+        }
+        const because = quick ? null : quickBecause(error);
         if (because === null) throw error;
-        note = because;
-        body = { ...page, tier: "quick" };
+        fallback = because;
+        quick = true;
       }
     }
   } catch (error) {
-    setState(tabId, await checkFailed(session, error));
+    if (error instanceof PowAborted) return;
+    setState(tabId, checkFailed(error, quick));
   }
-}
-
-// ── Reports: "this is wrong" ────────────────────────────────────────────────
-
-/** The server's refusals, in plain words. */
-function reportError(error: unknown): string {
-  if (!(error instanceof ApiError)) return OFFLINE;
-  if (error.code === "REPORT_LIMIT") return "You've used this month's reports. Thank you!";
-  if (error.code === "ALREADY_REPORTED_BY_YOU") return "You've already reported this page.";
-  if (error.code === "QUEUE_FULL")
-    return "Our review queue is full right now; please try again in a few days.";
-  if (error.code === "BAD_REPORT_TOKEN")
-    return "This check can't be reported any more; check the page again first.";
-  return "The report didn't go through. Please try again later.";
 }
 
 type DoneState = Extract<TabState, { status: "done" }>;
@@ -333,24 +267,8 @@ function updateDone(tabId: number, result: DoneState["result"], change: Partial<
   setState(tabId, { ...now, ...change });
 }
 
-/** Send the finished check's request back as a report (the user consented in the popup, for this check only). */
-async function report(tabId: number, reason: ReportReason): Promise<void> {
-  const state = await stateOf(tabId);
-  if (state.status !== "done" || !state.body || !state.result.report_token) return;
-  if (state.report?.status === "sending" || state.report?.status === "sent") return;
-  const { apiBase, session } = await loadSettings();
-  if (!session) return;
-  updateDone(tabId, state.result, { report: { status: "sending" } });
-  try {
-    const sent = await new UnfretApi(apiBase, session.token).report(state.body, state.result, reason);
-    updateDone(tabId, state.result, { report: { status: "sent", outcome: sent.status } });
-  } catch (error) {
-    updateDone(tabId, state.result, { report: { status: "error", message: reportError(error) } });
-  }
-}
-
 // ── "Share this result" ──────────────────────────────────────────────────────
-// Anonymous: the client is made without the session, and it never sends Authorization for a share anyway. Each step
+// Anonymous: the client never sends Authorization. Each step
 // reads the state, checks it and marks it in one synchronous run after its last await, so a double click can't send
 // twice.
 
@@ -406,7 +324,6 @@ chrome.runtime.onConnect.addListener((port) => {
     void stateOf(message.tabId).then((state) => {
       port.postMessage({ type: "state", tabId: message.tabId, state } satisfies BackgroundUpdate);
       if (message.type === "analyze") void analyse(message.tabId, message.tier);
-      if (message.type === "report") void report(message.tabId, message.reason);
       if (message.type === "share-preview") void sharePreview(message.tabId);
       if (message.type === "share") void share(message.tabId);
       if (message.type === "share-cancel") void shareCancel(message.tabId);
@@ -417,40 +334,14 @@ chrome.runtime.onConnect.addListener((port) => {
   });
 });
 
-// ── Dev API origin: relay content script registered at runtime ─────────────
+// ── Install, update and start-up ───────────────────────────────────────────
 
-async function syncDevRelay(): Promise<void> {
-  const { apiBase } = await loadSettings();
-  // Registrations persist across updates, and releases before the rename used another ID: match the suffix.
-  const ids = (await chrome.scripting.getRegisteredContentScripts())
-    .map((script) => script.id)
-    .filter((id) => id.endsWith("-connect-dev") || id.endsWith("-key-dev"));
-  if (ids.length > 0) await chrome.scripting.unregisterContentScripts({ ids });
-  if (!isDevBase(apiBase)) return;
-  // Match patterns can't carry a port; the relay itself checks the exact origin.
-  const { protocol, hostname } = new URL(apiBase);
-  if (!(await chrome.permissions.contains({ origins: [`${protocol}//${hostname}/*`] }))) return;
-  await chrome.scripting.registerContentScripts(
-    DEV_RELAYS.map(({ id, path, js }) => ({
-      id,
-      matches: [`${protocol}//${hostname}${path}`],
-      js: [js],
-      runAt: "document_start" as const,
-    })),
-  );
-}
-
-chrome.runtime.onInstalled.addListener((details) => {
-  void welcomeOnInstall(details);
-  void passEndedOnUpdate(details);
-  void syncDevRelay();
+chrome.runtime.onInstalled.addListener(() => {
+  // Versions before free checks kept a pass or a wallet sign-in: it is deleted, never sent again.
+  void forgetOldAccount();
   void registerMarketplaceHint();
 });
 chrome.runtime.onStartup.addListener(() => {
-  void syncDevRelay();
+  void forgetOldAccount();
   void registerMarketplaceHint();
 });
-chrome.storage.onChanged.addListener((changes) => {
-  if ("apiBase" in changes) void syncDevRelay();
-});
-chrome.permissions.onAdded.addListener(() => void syncDevRelay());

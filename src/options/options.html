@@ -14,80 +14,23 @@
       </h1>
     </header>
     <main>
-      <section class="card" aria-labelledby="account-heading">
-        <h2 id="account-heading">Account</h2>
-        <p id="account-status"></p>
-        <div class="buttons">
-          <a id="buy" class="button primary" target="_blank" rel="noopener" hidden>Buy checks</a>
-          <button id="sign-out" type="button" class="quiet" hidden>Sign out</button>
-        </div>
-        <p id="have-code-row" hidden>
-          <a id="have-code" class="button primary" target="_blank" rel="noopener">Have a code?</a>
-          <span class="muted small"
-            >The website gives you a pass with its checks and signs Unfret in with it.</span
-          >
+      <section class="card" aria-labelledby="free-heading">
+        <h2 id="free-heading">Free, with no account</h2>
+        <p>
+          Quick and deep checks are free for shoppers. There is no account, no sign-in and no pass: no check
+          is tied to you. Free checks run on donations.
         </p>
-        <div id="invite" class="invite" hidden>
-          <h3>Have a gift code?</h3>
-          <p class="muted small">
-            A gift code from a friend adds 5 checks to the pass or wallet you use: one a month, and not a code
-            from your own pack.
-          </p>
-          <label for="invite-input">Gift code</label>
-          <input
-            id="invite-input"
-            type="text"
-            spellcheck="false"
-            autocomplete="off"
-            placeholder="ufi_…"
-            aria-describedby="invite-status"
-          />
-          <div class="buttons">
-            <button id="invite-use" type="button">Use code</button>
-          </div>
-          <p id="invite-status" class="status" role="status"></p>
-        </div>
-        <details id="backup" class="small" hidden>
-          <summary>Backup code of this pass</summary>
-          <p class="muted">
-            Unfret made this pass for you when you installed it. If you add checks to it, save this backup
-            code somewhere safe: it gets you a new pass with the same checks if this browser ever loses it.
-          </p>
-          <p><code id="backup-code"></code></p>
-        </details>
-      </section>
-
-      <section class="card" aria-labelledby="key-heading">
-        <h2 id="key-heading">Use an Unfret pass instead</h2>
-        <p class="muted small">
-          An Unfret pass is an alternative to a wallet: buy checks for it with a card, SOL or USDC on the
-          checkout page and paste it here. It is kept only in this browser.
-        </p>
-        <label for="api-key">Your pass</label>
-        <input
-          id="api-key"
-          type="password"
-          spellcheck="false"
-          autocomplete="off"
-          placeholder="Paste your pass"
-          aria-describedby="key-status"
-        />
-        <p id="key-status" class="status" role="status"></p>
-        <div class="buttons">
-          <button id="key-use" type="button">Use this pass</button>
-          <a id="key-get" target="_blank" rel="noopener">Get a pass or add checks</a>
-        </div>
+        <p><a id="support-link" target="_blank" rel="noopener">Support Unfret</a></p>
       </section>
 
       <section class="card" aria-labelledby="privacy-heading">
         <h2 id="privacy-heading">Privacy</h2>
         <p>
-          Unfret reads a page only when you click "Check this page". It then sends the product facts and the
-          page's visible product text (without account menus, your addresses or forms) to the Unfret server.
-          It stores only your sign-in session or Unfret pass, your consent and these settings in your browser,
-          and no analysis history. A page is shared for review only when you report a result as wrong and
-          agree. A result becomes a public link only when you share it and confirm what the preview shows;
-          that link names no account.
+          Unfret reads a page only when you click "Check this page" or "Quick check (free)". It then sends the
+          product facts and the page's visible product text (without account menus, your addresses or forms)
+          to the Unfret server, with nothing that says who you are. It stores only your consent and these
+          settings in your browser, and no analysis history. A result becomes a public link only when you
+          share it and confirm what the preview shows; that link names no one.
         </p>
         <p>
           <a id="privacy-link" target="_blank" rel="noopener">Read the privacy statement</a>

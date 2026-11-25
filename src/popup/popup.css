@@ -58,7 +58,7 @@ body {
 }
 
 /* Whatever is happening on this page first (a running check, its result or what went wrong), then the button, then
-   the account. Signed out, getting started is the step, so the account comes before the (unusable) button. */
+   the pause note and the footer. */
 #consent {
   order: 0;
 }
@@ -74,19 +74,11 @@ body {
 #check {
   order: 4;
 }
-#account {
+#paused {
   order: 5;
 }
-#key,
-#phone {
+.foot {
   order: 6;
-}
-body:not([data-auth="in"]) #account {
-  order: 2;
-}
-body:not([data-auth="in"]) #key,
-body:not([data-auth="in"]) #phone {
-  order: 3;
 }
 
 /* Before the first check is agreed to, the consent screen is the whole popup. */
@@ -119,136 +111,24 @@ body[data-phase="done"] #analyse:not(:disabled) {
   margin-top: 0.75rem;
 }
 
-/* ── Account ─────────────────────────────────────────────────────────────────────────────────────────────────── */
+/* ── Free deep checks paused (the spend ceiling) ────────────────────────────────────────────────────────── */
 
-#account {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-#account p {
-  margin: 0;
-}
-
-.account-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.15rem 0.75rem;
-}
-
-#account-status {
-  color: var(--ink-2);
-}
-
-.checks {
-  font-weight: 700;
-  color: var(--brand-ink);
-  white-space: nowrap;
-}
-
-/* After an expired sign-in: a notice, with the ways back in right under it. */
-body[data-auth="expired"] #account-status {
-  padding: 0.55rem 0.75rem;
-  border-left: 4px solid var(--note);
-  border-radius: var(--radius-sm);
+.pause {
+  border-color: var(--note);
   background: var(--note-soft);
-  color: var(--ink);
 }
 
-.choices {
-  display: grid;
-  gap: 0.45rem;
+.pause p {
+  margin: 0 0 0.4rem;
 }
 
-.choices button {
-  justify-content: flex-start;
-  width: 100%;
-  text-align: left;
-}
+/* ── The footer: a quiet "Support Unfret" ───────────────────────────────────────────────────────────────── */
 
-.choices-label {
-  font-weight: 600;
-  color: var(--ink-2);
-}
-
-#have-code-row .muted {
-  display: block;
-}
-
-/* The server no longer knew the pass (Unfret's new free start): a calm note, not an error. */
-.pass-ended {
-  margin: 0 0 0.6rem;
-  padding: 0.55rem 0.75rem;
-  border-radius: 10px;
-  background: var(--surface-2);
-  color: var(--ink-2);
-}
-
-/* "Have an invite?" under the account. */
-.invite {
-  border-top: 1px solid var(--line);
-}
-
-.invite summary {
-  color: var(--accent);
-}
-
-.invite label {
-  display: block;
-  margin: 0.35rem 0 0.25rem;
-}
-
-.invite .buttons {
-  margin-top: 0.5rem;
-}
-
-/* ── Sign-in panels (a pass, a wallet on the phone) ──────────────────────────────────────────────────────────── */
-
-#key label {
-  display: block;
-  margin-bottom: 0.25rem;
-}
-
-/* A text action on its own line, so it can be a full-size target. */
-.key-code button,
-.key-code span {
-  display: flex;
-}
-
-#key .buttons,
-#phone .buttons {
-  margin: 0.5rem 0;
-}
-
-/* The QR code stays black on white in both themes so phones can read it. */
-.qr {
-  width: 200px;
-  margin: 0.5rem auto;
-  padding: 6px;
-  border-radius: 12px;
-  background: #ffffff;
-}
-
-.qr:empty {
-  display: none;
-}
-
-.qr svg {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
-.code {
-  margin: 0.25rem 0 0.5rem;
+.foot {
+  margin: 0;
   text-align: center;
-  font-family: var(--mono);
-  font-size: 1.85rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+  font-size: 0.85rem;
+  color: var(--muted);
 }
 
 /* ── This page: the main button ─────────────────────────────────────────────────────────────────────────────── */
@@ -889,9 +769,4 @@ body[data-auth="expired"] #account-status {
   background: var(--stop);
   -webkit-mask: var(--i-info) center / contain no-repeat;
   mask: var(--i-info) center / contain no-repeat;
-}
-
-#error-refunded {
-  margin: 0.3rem 0 0 1.75rem;
-  color: var(--ink-2);
 }

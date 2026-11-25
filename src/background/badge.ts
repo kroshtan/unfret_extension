@@ -24,12 +24,13 @@ export function light(result: Pick<AnalysisResult, "score" | "verdict">): "green
 }
 
 /**
- * The badge for a state. Red is only ever a low result: account, credit and network problems clear the badge
+ * The badge for a state. Red is only ever a low result: network and server problems clear the badge
  * (the popup explains them), so a red badge never means "something went wrong on our side".
  */
 export function badgeFor(state: TabState): { text: string; color: string } | null {
   switch (state.status) {
     case "extracting":
+    case "preparing":
     case "analysing":
       return { text: "…", color: GREY };
     case "done": {

@@ -1,40 +1,8 @@
 /** Presentation for the popup: the result view and the progress checklist (pure DOM, tested in jsdom). */
 
-import type {
-  AnalysisResult,
-  Band,
-  Flag,
-  Pricing,
-  ResultCard,
-  ShareBand,
-  SharePreview,
-} from "../api/client.js";
+import type { AnalysisResult, Band, Flag, ResultCard, ShareBand, SharePreview } from "../api/client.js";
 import { BAND_SYMBOL, bandOf } from "../shared/bands.js";
-import { NO_CHECK_USED, QUICK_NOTE } from "../shared/text.js";
-
-export { checksText } from "../shared/text.js";
-
-// ── "Wrong result?" ───────────────────────────────────────────────────────────
-
-/** The reward line without numbers: no price list yet, or a server that doesn't say them. */
-export const REPORT_REWARD_FALLBACK = "If the result was wrong, you may get free checks.";
-
-/**
- * The report's reward line, with the rewards the server pays (`/v1/pricing` → `reports`), worded as the site's
- * report dialog. Empty when the server says it pays none; the fallback when it doesn't say.
- */
-export function reportRewardLine(reports: Pricing["reports"]): string {
-  const count = (n: unknown): number | undefined =>
-    typeof n === "number" && Number.isInteger(n) && n >= 0 ? n : undefined;
-  const big = count(reports?.reward_checks);
-  if (big === undefined) return REPORT_REWARD_FALLBACK;
-  if (big === 0) return "";
-  const small = count(reports?.small_reward_checks);
-  const checks = (n: number): string => `${n} free check${n === 1 ? "" : "s"}`;
-  return small
-    ? `If Unfret was clearly wrong, you get ${checks(big)}; if it was somewhat off, ${checks(small)}.`
-    : `If Unfret was clearly wrong, you get ${checks(big)}.`;
-}
+import { QUICK_NOTE } from "../shared/text.js";
 
 // ── Progress ──────────────────────────────────────────────────────────────────
 // A fixed, friendly checklist instead of skill names: each item ticks off when one of its checks finishes.
@@ -195,17 +163,11 @@ export function checklistHeading(
   return { title: "What we checked", count: ` · ${countOf(checks, "check", "checks")}` };
 }
 
-/**
- * What the check cost, as one sentence (as on the website): the server's `charge_note`, with the checks left, or the
- * same words without the count from an older server's fields.
- */
+/** What the check cost, as one sentence: the server's `charge_note` ("Deep checks are free."), else nothing. */
 export function chargeNoteOf(result: AnalysisResult): string | null {
   if (result.charge_note) return result.charge_note;
   if (result.tier === "quick") return "Quick checks are free.";
-  if (result.score < 0) return "This page couldn't be assessed, so no check was used.";
-  if (result.charged === false) return "You checked this page recently, so no new check was used.";
-  if (result.free_check) return "This check used one of your free checks.";
-  return result.charged ? "This check used one of your checks." : null;
+  return null;
 }
 
 function sameProductNode(
@@ -381,7 +343,8 @@ function verdictNodes(view: VerdictView, apiOrigin: string | undefined): { nodes
 export interface DeepHint {
   text: string;
   cost: string;
-  action: "run_deep" | "get_checks";
+  /** null: no button (an action this version doesn't know, or none). */
+  action: "run_deep" | "donate" | null;
   label: string;
   quiet: boolean;
 }
@@ -389,29 +352,34 @@ export interface DeepHint {
 export function deepHintOf(result: AnalysisResult): DeepHint | null {
   const offer = result.verdict?.deep_check;
   if (result.tier !== "quick" || offer?.suggested !== true || !offer.text) return null;
-  const action = offer.action === "run_deep" ? "run_deep" : "get_checks";
+  const action = offer.action === "run_deep" || offer.action === "donate" ? offer.action : null;
   return {
     text: offer.text,
     cost: offer.cost ?? "",
     action,
-    label: offer.action_label || (action === "run_deep" ? "Run a deep check" : "Get checks"),
+    label: offer.action_label || (action === "donate" ? "Support Unfret" : "Run a deep check"),
     quiet: offer.quiet === true,
   };
 }
 
 /** The suggestion, once, under the quick result: the server's words and one real button. */
-function deepHintNode(hint: DeepHint, onAction: (action: DeepHint["action"]) => void): HTMLElement {
+function deepHintNode(
+  hint: DeepHint,
+  onAction: (action: NonNullable<DeepHint["action"]>) => void,
+): HTMLElement {
   const box = element("section", hint.quiet ? "deep-hint quiet" : "deep-hint");
   const text = element("p", "deep-hint-text", hint.text);
   text.id = "deep-hint-text";
   box.setAttribute("aria-labelledby", text.id);
   box.append(text);
   if (hint.cost) box.append(element("p", "cost", hint.cost));
+  const action = hint.action;
+  if (action === null) return box;
   const button = element("button", undefined, hint.label);
   button.type = "button";
   button.id = "deep-hint-action";
   button.addEventListener("click", () => {
-    onAction(hint.action);
+    onAction(action);
   });
   box.append(button);
   return box;
@@ -427,7 +395,7 @@ export function renderResult(
   root: HTMLElement,
   result: AnalysisResult,
   apiOrigin?: string,
-  onDeepHint?: (action: DeepHint["action"]) => void,
+  onDeepHint?: (action: NonNullable<DeepHint["action"]>) => void,
 ): void {
   const band = bandOf(result);
   const verdict = result.verdict;
@@ -447,14 +415,12 @@ export function renderResult(
     },
     apiOrigin,
   );
-  // What the check cost, as a sentence. Right under the headline when no check was used (good news, and easy to miss
-  // under the reasons; a quick check also says what it is); at the end when one was.
+  // A quick check says what it is, right under the headline; a deep check's "Deep checks are free." comes last.
   const charge = chargeNoteOf(result);
-  if (result.tier === "quick" || result.score < 0 || result.charged === false) {
-    const text = result.tier === "quick" ? `${QUICK_NOTE} ${charge ?? ""}`.trim() : (charge ?? NO_CHECK_USED);
-    nodes.splice(2, 0, element("p", "charge-note", text));
+  if (result.tier === "quick") {
+    nodes.splice(2, 0, element("p", "charge-note", `${QUICK_NOTE} ${charge ?? ""}`.trim()));
   } else if (charge) {
-    nodes.push(element("p", "charge-note paid", charge));
+    nodes.push(element("p", "charge-note", charge));
   }
   const hint = onDeepHint ? deepHintOf(result) : null;
   if (hint && onDeepHint) nodes.push(deepHintNode(hint, onDeepHint));

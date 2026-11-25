@@ -22,23 +22,8 @@ describe("manifest permissions", () => {
     expect(m.permissions).toEqual(["activeTab", "storage", "scripting", "declarativeContent"]);
     expect(m).not.toHaveProperty("host_permissions");
     expect(m.optional_host_permissions).toEqual(["http://localhost/*", "http://127.0.0.1/*"]);
-    expect(m.content_scripts).toEqual([
-      {
-        matches: ["https://unfret.net/connect*"],
-        js: ["connect-relay.js"],
-        run_at: "document_start",
-      },
-      {
-        matches: ["https://unfret.net/checkout*"],
-        js: ["key-relay.js"],
-        run_at: "document_start",
-      },
-      {
-        matches: ["https://unfret.net/welcome*"],
-        js: ["ref-relay.js"],
-        run_at: "document_start",
-      },
-    ]);
+    // No content scripts (0.14.0): with no account, no Unfret page hands the extension anything.
+    expect(m).not.toHaveProperty("content_scripts");
   });
 
   it("firefox: no declarativeContent, no host permissions", () => {
@@ -65,7 +50,6 @@ describe("manifest permissions", () => {
   it("Unfret Dev is its own extension, on the dev deployment only", () => {
     const m = manifest("chrome-dev", { ...options, publicKey: "DEVKEY" }) as Record<string, unknown> & {
       action: { default_title: string };
-      content_scripts: { matches: string[] }[];
       content_security_policy: { extension_pages: string };
       permissions: string[];
     };
@@ -73,8 +57,7 @@ describe("manifest permissions", () => {
     expect(m.action.default_title).toBe("Unfret Dev");
     expect(m.key).toBe("DEVKEY");
     expect(m.update_url).toBe("https://dev.unfret.net/extension/updates-dev.xml");
-    expect(m.content_scripts[0]?.matches).toEqual(["https://dev.unfret.net/connect*"]);
-    expect(m.content_scripts[1]?.matches).toEqual(["https://dev.unfret.net/checkout*"]);
+    expect(m).not.toHaveProperty("content_scripts");
     expect(m.content_security_policy.extension_pages).toContain("connect-src https://dev.unfret.net ");
     expect(m.content_security_policy.extension_pages).not.toContain("https://unfret.net");
     expect(m.permissions).toEqual(manifest("chrome-selfhosted", options).permissions);

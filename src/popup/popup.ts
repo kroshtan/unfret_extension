@@ -1,55 +1,32 @@
-/** The popup: account and credits, the "Analyse this page" button, live progress and the result. */
+/**
+ * The popup: the "Check this page" button (a free deep check) and the free quick check, live progress and the result.
+ * No account: nothing here names the user.
+ */
 
-import { ApiError, type Pairing, type ReportReason, UnfretApi } from "../api/client.js";
+import { type Pause, UnfretApi } from "../api/client.js";
 import {
   ANALYSIS_PORT,
   type BackgroundUpdate,
   type PopupRequest,
   type TabState,
 } from "../shared/messages.js";
-import { waitForPairing } from "../shared/pairing.js";
-import { encodeQr, qrSvg } from "../shared/qr.js";
 import { shareRequest } from "../shared/share.js";
 import {
-  accountLabel,
-  checkoutPath,
-  clearSession,
-  expireSession,
-  isKeySession,
-  loadSettings,
   consentGiven,
+  forgetOldAccount,
   giveConsent,
+  loadSettings,
   PRIVACY_URL,
-  saveSession,
-  type Session,
 } from "../shared/settings.js";
-import { CODE_CHECKOUT, inviteAdded, redeemInvite } from "../shared/invites.js";
-import { KEY_FAILURE, signInWithKey } from "../shared/key-sign-in.js";
-import { OPEN_MESSAGE } from "../shared/handoff.js";
 import { isAnalysable } from "../shared/sites.js";
-import {
-  endPass,
-  freeChecksUsed,
-  makeFreePass,
-  WELCOME_RENEWED_PATH,
-  WELCOME_SETUP_PATH,
-} from "../shared/new-pass.js";
 import { withoutSecrets } from "../shared/urls.js";
-import {
-  CONSENT_HINT,
-  FREE_PAUSED,
-  OFFLINE,
-  PASS_ENDED,
-  PASS_ENDED_PAID,
-  SESSION_EXPIRED,
-} from "../shared/text.js";
+import { CONSENT_HINT, DONATE_PATH, FREE_PAUSED, SUPPORT_PATH } from "../shared/text.js";
 import {
   buildChecklist,
   checklistDone,
-  checksText,
+  type DeepHint,
   renderResult,
   renderSharePreview,
-  reportRewardLine,
   updateChecklist,
 } from "./view.js";
 
@@ -70,19 +47,6 @@ function show(id: string, visible: boolean): void {
 }
 
 let apiBase = "";
-let session: Session | undefined;
-let expired = false;
-/**
- * The server no longer knew the pass in use (Unfret's new free start): the calm note above the account, for as long as
- * this popup is open, and the free pass as the next step (its note in storage goes once a new pass is made).
- */
-let passEnded = false;
-let checks: number | undefined;
-/** Of `checks`, the free ones; and whether today's free deep checks are all used (then only quick checks are free). */
-let freeLeft = 0;
-let freePaused = false;
-/** From the server: false once the account has had credit, when "Have an invite?" can no longer work. */
-let inviteEligible: boolean | undefined;
 let tabId: number | undefined;
 let analysable = false;
 let busy = false;
@@ -90,8 +54,8 @@ let busy = false;
 let resultShown = false;
 let port: chrome.runtime.Port | undefined;
 let consented = false;
-/** Not signed in: the sign-in choices are behind "Sign in with an Unfret pass or wallet" until asked for. */
-let signInOpen = false;
+/** Free deep checks are paused this month (the server's price list or the last check said so). */
+let paused: Pause | undefined;
 
 /** The consent screen: shown until accepted, and from "About & privacy" any time after. */
 function showConsent(visible: boolean): void {
@@ -103,217 +67,22 @@ function showConsent(visible: boolean): void {
   show("consent-close", consented);
 }
 
-/**
- * Open a page of the Unfret site. The background opens it, so the tab gets its ticket (a first pass from it needs
- * no further click) even though this popup closes as the tab takes the focus.
- */
-function openTab(path: string): void {
-  void chrome.runtime
-    .sendMessage<{ type: string; path: string }, { ok?: boolean } | undefined>({ type: OPEN_MESSAGE, path })
-    .then((reply) => {
-      if (!reply?.ok) throw new Error("not opened");
-    })
-    .catch(() => chrome.tabs.create({ url: withoutSecrets(`${apiBase}${path}`) }))
-    .finally(() => {
-      window.close();
-    });
-}
-
-/**
- * The server refused the session (a 401). `ended`: it said the pass is unknown (`INVALID_API_KEY`), so the pass is
- * forgotten and the free pass offered again (Unfret's new free start); otherwise an expired or revoked sign-in.
- */
-async function sessionRejected(ended = false): Promise<void> {
-  if (ended && isKeySession(session)) {
-    if (session) await endPass(session); // the background may have done so already: the same either way
-    passEnded = true;
-    expired = false;
-  } else if (ended) {
-    passEnded = true; // the background forgot the pass already
-  } else {
-    await expireSession();
-    expired = true;
-  }
-  session = undefined;
-  checks = undefined;
-  freeLeft = 0;
-  inviteEligible = undefined;
-  renderAccount();
-  if (passEnded) {
-    // As after installing: the empty pass at once in a profile that had its free checks, else the free checks' number.
-    void retryFreePass();
-    if (!freeUsed) void loadFreePerPass();
-  }
-}
-
-async function refreshCredits(): Promise<void> {
-  if (!session) return;
-  try {
-    const credits = await new UnfretApi(apiBase, session.token).credits();
-    checks = credits.checks_remaining;
-    freeLeft = credits.free_checks_remaining ?? 0;
-    freePaused = credits.free_checks_paused === true;
-    inviteEligible = credits.invite_eligible;
-    renderAccount();
-  } catch (error) {
-    if (error instanceof ApiError && error.needsSignIn) await sessionRejected(error.passEnded);
-  }
-}
-
-// ── Sign in with phone ─────────────────────────────────────────────────────────
-// The pending pairing is kept in session storage (memory, cleared when the browser closes) so closing and reopening
-// the popup while the phone signs in resumes the same pairing instead of starting over.
-
-const PAIRING_KEY = "pendingPairing";
-let pairingAbort: AbortController | undefined;
-
-async function storedPairing(): Promise<Pairing | undefined> {
-  try {
-    const stored = await chrome.storage.session.get<{ pendingPairing?: Pairing }>(PAIRING_KEY);
-    const pairing = stored.pendingPairing;
-    return pairing && Date.parse(pairing.expires_at) > Date.now() ? pairing : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-async function forgetPairing(): Promise<void> {
-  try {
-    await chrome.storage.session.remove(PAIRING_KEY);
-  } catch {
-    // session storage unavailable: nothing was kept
-  }
-}
-
-function phoneStatus(text: string, retry = false): void {
-  el("phone-status").textContent = text;
-  show("phone-retry", retry);
-}
-
-function stopPairing(): void {
-  pairingAbort?.abort();
-  pairingAbort = undefined;
-}
-
-async function showPairing(pairing: Pairing): Promise<void> {
-  stopPairing();
-  show("phone", true);
-  el("phone-qr").replaceChildren(qrSvg(encodeQr(pairing.connect_url), "QR code to sign in on your phone"));
-  el("phone-code").textContent = pairing.confirm_code;
-  phoneStatus("Waiting for your phone…");
-  const abort = new AbortController();
-  pairingAbort = abort;
-  const outcome = await waitForPairing(new UnfretApi(apiBase), pairing.pair_id, {
-    expiresAt: pairing.expires_at,
-    signal: abort.signal,
+/** Open a page of the Unfret site in a new tab, and close the popup. */
+function openPage(path: string): void {
+  void chrome.tabs.create({ url: withoutSecrets(`${apiBase}${path}`) }).finally(() => {
+    window.close();
   });
-  if (pairingAbort !== abort) return; // superseded by a retry or cancel
-  pairingAbort = undefined;
-  await forgetPairing();
-  if (outcome.kind === "signed-in") {
-    await saveSession(outcome.session);
-    session = outcome.session;
-    expired = false;
-    passEnded = false;
-    show("phone", false);
-    renderAccount();
-    void refreshCredits();
-  } else if (outcome.kind === "expired") {
-    el("phone-qr").replaceChildren();
-    phoneStatus("This sign-in request expired.", true);
-  } else if (outcome.kind === "failed") {
-    el("phone-qr").replaceChildren();
-    phoneStatus(outcome.message, true);
-  }
-}
-
-async function startPhoneSignIn(): Promise<void> {
-  stopPairing();
-  show("phone", true);
-  el("phone-qr").replaceChildren();
-  el("phone-code").textContent = "";
-  phoneStatus("Preparing…");
-  try {
-    const pairing = await new UnfretApi(apiBase).startPairing();
-    try {
-      await chrome.storage.session.set({ [PAIRING_KEY]: pairing });
-    } catch {
-      // without session storage, closing the popup simply ends this attempt
-    }
-    await showPairing(pairing);
-  } catch (error) {
-    const message =
-      error instanceof ApiError && error.serviceOff
-        ? "Sign-in isn't available yet."
-        : error instanceof ApiError && error.status === 429
-          ? "Too many attempts; wait a few minutes."
-          : error instanceof ApiError
-            ? error.message
-            : OFFLINE;
-    phoneStatus(message, true);
-  }
 }
 
 // ── Rendering ────────────────────────────────────────────────────────────────
 
-function untilText(expiresAt: string): string {
-  const date = new Date(expiresAt);
-  return `Signed in until ${date.toLocaleDateString("en", { day: "numeric", month: "long" })}`;
-}
-
-function renderAccount(): void {
-  const usingKey = isKeySession(session);
-  el("pass-ended").textContent = freeUsed ? `${PASS_ENDED} ${PASS_ENDED_PAID}` : PASS_ENDED;
-  show("pass-ended", passEnded);
-  el("account-status").textContent = session
-    ? `${usingKey ? "Using Unfret pass" : "Signed in as"} ${accountLabel(session)}`
-    : expired
-      ? SESSION_EXPIRED
-      : freeUsed
-        ? "This browser has had its free checks. Buy checks to start, or sign in with the pass or wallet you have."
-        : "Get a few free checks to start: no account, no e-mail.";
-  el("account-until").textContent = session && !usingKey ? untilText(session.expiresAt) : "";
-  show("account-until", Boolean(session) && !usingKey);
-  // Not signed in: one next step (the free checks, or buying checks once this browser had them), the sign-in choices
-  // one click away. After an expired sign-in, signing in again is the next step.
-  const choosing = !session && (signInOpen || expired);
-  show("get-free-row", !session && !expired);
-  const getFree = button("get-free");
-  getFree.textContent = freeUsed
-    ? "Buy checks"
-    : gettingPass
-      ? "Getting your free checks…"
-      : passEnded
-        ? `Get your ${freePerPass ?? 5} free deep checks`
-        : freePerPass
-          ? `Get your ${freePerPass} free checks`
-          : "Get your free checks";
-  getFree.disabled = gettingPass;
-  show("sign-in-more-row", !session && !choosing);
-  show("sign-in-choices", choosing);
-  show("sign-in", choosing);
-  show("sign-in-phone", choosing);
-  show("sign-in-key", choosing);
-  document.body.dataset.auth = session ? "in" : expired ? "expired" : "out";
-  show("have-code-row", !session);
-  if (session) show("key", false);
-  show("sign-out", Boolean(session));
-  show("account-actions", Boolean(session));
-  show("invite", Boolean(session) && inviteEligible !== false);
-  el("credits").textContent = checks === undefined ? "" : checksText(checks, freeLeft);
-  show("credits", Boolean(session) && checks !== undefined);
-
-  // Out of checks, or only free ones while they're paused for the day: the button runs a free quick check, and
-  // "Buy checks" is next to it (a pass's own top-up). Shown at once: whether checks can be bought is the checkout
-  // page's to say (card and crypto each switch off on their own there).
-  const quickOnly = quickChecksOnly();
-  show("buy", Boolean(session));
+function renderCheck(): void {
   const analyse = button("analyse");
-  analyse.textContent = busy ? "Checking…" : quickOnly ? "Quick check (free)" : "Check this page";
-  analyse.disabled = busy || !consented || !session || !analysable;
-  // The free quick check, under the main button before a check, with a pass or without one (the server runs it for
-  // anyone). Once only quick checks can run, the main button is the quick check, so it isn't offered twice.
-  show("quick-row", consented && analysable && !busy && !resultShown && !quickOnly);
+  // Paused, the main button runs the quick check (free deep checks are back next month).
+  analyse.textContent = busy ? "Checking…" : paused ? "Quick check (free)" : "Check this page";
+  analyse.disabled = busy || !consented || !analysable;
+  // The free quick check, under the main button before a check. Paused, the main button is the quick check.
+  show("quick-row", consented && analysable && !busy && !resultShown && !paused);
   button("quick").disabled = busy || !consented || !analysable;
   el("hint").textContent = !consented
     ? CONSENT_HINT
@@ -321,71 +90,22 @@ function renderAccount(): void {
       ? "You can close this popup: the check carries on, and its result waits here."
       : !analysable
         ? "This page can't be checked."
-        : !session
-          ? gettingPass
-            ? "Getting your free checks…"
-            : freeUsed
-              ? "Buy checks or sign in for a deep check."
-              : "Get your free checks or sign in for a deep check."
-          : checks === 0
-            ? "You have no checks left. Quick checks are free: they read this page only."
-            : quickOnly
-              ? FREE_PAUSED
-              : "A deep check uses one check. Nothing is sent until you click.";
+        : paused
+          ? ""
+          : "Deep checks are free. Nothing is sent until you click.";
+  el("paused-text").textContent = FREE_PAUSED;
+  show("paused", consented && paused !== undefined);
 }
 
-/** No checks left, or only free ones while today's are all used: only a quick check can run. */
-function quickChecksOnly(): boolean {
-  if (!session || checks === undefined) return false;
-  return checks === 0 || (freePaused && freeLeft === checks);
-}
-
-let gettingPass = false;
-/** Signed out: whether this browser profile already had its free checks, and how many a new pass gets (server's). */
-let freeUsed = false;
-let freePerPass: number | undefined;
-
-/** Signed out, before the free checks: the number for the button, from the price list (it never holds anything up). */
-async function loadFreePerPass(): Promise<void> {
+/** Whether free deep checks are paused, from the price list (no identity; it never holds anything up). */
+async function loadPause(): Promise<void> {
   try {
-    const n = (await new UnfretApi(apiBase).pricing()).free?.checks_per_pass;
-    freePerPass = typeof n === "number" && n > 0 ? n : undefined;
-    renderAccount();
+    const free = (await new UnfretApi(apiBase).pricing()).free;
+    paused = free?.paused === true ? (free.pause ?? {}) : undefined;
+    renderCheck();
   } catch {
-    // offline or an older server: "Get your free checks"
+    // offline or an older server: a deep check finds out itself
   }
-}
-
-/**
- * "Get your free checks", signed out: the welcome page makes the extension's free pass, as after installing (it says
- * whether this browser had its free checks, which the extension's own note can't after a reinstall without sync).
- * Once this browser had them, the button buys checks instead.
- */
-function getFreeChecks(): void {
-  if (session) return;
-  openTab(freeUsed ? checkoutPath(undefined) : passEnded ? WELCOME_RENEWED_PATH : WELCOME_SETUP_PATH);
-}
-
-/**
- * The free pass the install didn't make (offline, or the welcome page closed first), when this profile's own note
- * says it had its free checks: a pass without them needs nothing from the welcome page, so it is made when the popup
- * opens. Otherwise "Get your free checks" leads to the welcome page, which makes it.
- */
-async function retryFreePass(): Promise<void> {
-  const pending = await chrome.storage.local.get<{ passPending?: boolean }>("passPending");
-  if (session || pending.passPending !== true || !freeUsed) return;
-  gettingPass = true;
-  renderAccount();
-  const made = await makeFreePass(apiBase);
-  gettingPass = false;
-  if (made.ok) {
-    session = made.session;
-    expired = false;
-    checks = made.freeChecks;
-    freeLeft = made.freeChecks;
-    void refreshCredits();
-  }
-  renderAccount();
 }
 
 /** The origin of the API in use (thumbnails are only loaded from there). */
@@ -407,13 +127,13 @@ function announce(text: string): void {
 }
 
 /**
- * Start a check of this tab: a deep one (charged, a free deep check first), or the free quick one. Never two at once:
- * `busy` is set synchronously, so the buttons are disabled before any message round trip.
+ * Start a check of this tab: a free deep one, or the free quick one. Never two at once: `busy` is set synchronously,
+ * so the buttons are disabled before any message round trip.
  */
 function startCheck(quick: boolean): void {
   if (busy || !consented || tabId === undefined) return;
   busy = true;
-  renderAccount();
+  renderCheck();
   port?.postMessage(
     (quick ? { type: "analyze", tabId, tier: "quick" } : { type: "analyze", tabId }) satisfies PopupRequest,
   );
@@ -429,36 +149,30 @@ function refocus(): void {
   if (next instanceof HTMLButtonElement && !next.disabled) next.focus();
 }
 
-/**
- * The button under a quick result: a deep check of the same page (charged as any), or the checkout. Without a pass
- * (a quick check needs none), getting checks is the popup's own next step: the free checks, or buying checks.
- */
-function deepHintAction(action: "run_deep" | "get_checks"): void {
-  if (action === "get_checks") {
-    // The account's own "Buy checks" (this pass's top-up); without a pass, "Get your free checks" (or "Buy checks").
-    if (session) button("buy").click();
-    else getFreeChecks();
-    return;
-  }
-  startCheck(false);
+/** The button under a quick result: a deep check of the same page, or (paused) "Support Unfret". */
+function deepHintAction(action: NonNullable<DeepHint["action"]>): void {
+  if (action === "donate") openPage(DONATE_PATH);
+  else startCheck(false);
 }
+
+const PROGRESS: Partial<Record<TabState["status"], string>> = {
+  extracting: "Reading the page…",
+  preparing: "Getting a free deep check ready…",
+  analysing: "Checking… this usually takes 10–30 seconds.",
+};
 
 function render(state: TabState): void {
   const wasBusy = busy;
-  busy = state.status === "extracting" || state.status === "analysing";
+  busy = state.status === "extracting" || state.status === "preparing" || state.status === "analysing";
   resultShown = state.status === "done";
   document.body.dataset.phase = busy ? "busy" : state.status;
   show("progress", busy);
   show("result", state.status === "done");
-  // Signed out or out of checks, the account and the main button already offer the way on (and say why): no second
-  // card repeats it; screen readers hear the message.
-  const ownCard = state.status === "error" && !state.needsSignIn && !state.needsCredits;
-  show("error", ownCard);
-  if (state.status === "error" && state.needsCredits) checks = 0;
-  renderAccount();
+  show("error", state.status === "error");
+  if (state.status === "done" && state.pause) paused = state.pause;
+  renderCheck();
   if (busy) {
-    el("progress-status").textContent =
-      state.status === "extracting" ? "Reading the page…" : "Checking… this usually takes 10–30 seconds.";
+    el("progress-status").textContent = PROGRESS[state.status] ?? "";
     const steps = el("steps");
     buildChecklist(steps);
     updateChecklist(steps, checklistDone(state.status === "analysing" ? (state.steps ?? []) : [], false));
@@ -469,60 +183,16 @@ function render(state: TabState): void {
     show("result-note", state.note !== undefined);
     renderResult(el("result-body"), state.result, apiOrigin(), deepHintAction);
     announce(`Result: ${el("result-body").querySelector(".verdict .label")?.textContent ?? ""}`);
-    renderReport(state);
     renderShare(state);
     if (wasBusy) refocus();
-    if (state.result.balance_lamports !== undefined) void refreshCredits();
   } else if (state.status === "error") {
     el("error-message").textContent = state.message;
-    show("error-refunded", state.refunded === true);
-    if (!ownCard) announce(state.message);
-    if (state.needsSignIn) void sessionRejected(state.passEnded === true);
   }
-}
-
-// ── "Wrong result?" ─────────────────────────────────────────────────────────
-
-const REPORT_OUTCOME = {
-  queued: "Thanks! We'll review this page. If we got it wrong, you get free checks.",
-  already_reported: "Thanks! Someone reported this page first; your report counts as confirmation.",
-  already_known: "Thanks! We reviewed this page recently.",
-} as const;
-
-let rewardLoading = false;
-/** The reward line from the price list, once per popup, when there is something to report (it holds nothing up). */
-async function loadReportReward(): Promise<void> {
-  if (rewardLoading) return;
-  rewardLoading = true;
-  try {
-    el("report-reward").textContent = reportRewardLine((await new UnfretApi(apiBase).pricing()).reports);
-  } catch {
-    // offline: the line without numbers stays
-  }
-}
-
-function renderReport(state: Extract<TabState, { status: "done" }>): void {
-  const report = state.report;
-  const reportable = Boolean(state.body && state.result.report_token && session);
-  if (reportable && report === undefined) void loadReportReward();
-  show("report-open-row", reportable && report === undefined && el("report").hidden === true);
-  if (report !== undefined) show("report", false);
-  const status = el("report-status");
-  status.hidden = report === undefined;
-  status.dataset.kind = report?.status === "sent" ? "ok" : report?.status === "error" ? "error" : "";
-  if (report?.status === "sending") status.textContent = "Sending…";
-  else if (report?.status === "sent") status.textContent = REPORT_OUTCOME[report.outcome];
-  else if (report?.status === "error") status.textContent = report.message;
-}
-
-function reportReason(): ReportReason | undefined {
-  const picked = document.querySelector<HTMLInputElement>('#report input[name="reason"]:checked');
-  return (picked?.value as ReportReason | undefined) ?? undefined;
 }
 
 // ── "Share this result" ─────────────────────────────────────────────────────
-// The background asks for the preview and makes the share (without the sign-in); the popup shows each step. The link
-// and the delete code stay with the tab's result until the tab moves on, so closing the popup doesn't lose them.
+// The background asks for the preview and makes the share (anonymously); the popup shows each step. The link and the
+// delete code stay with the tab's result until the tab moves on, so closing the popup doesn't lose them.
 
 /** The preview on screen, so a state update that doesn't change it doesn't rebuild it (an open "Show details"). */
 let shownPreview = "";
@@ -587,33 +257,10 @@ async function copy(text: string, target: HTMLButtonElement, done: string): Prom
   }
 }
 
-// ── "Have an invite?" ─────────────────────────────────────────────────────
-
-async function useInvite(): Promise<void> {
-  if (!session) return;
-  const field = el("invite-input") as HTMLInputElement;
-  const status = el("invite-status");
-  button("invite-use").disabled = true;
-  try {
-    const outcome = await redeemInvite(apiBase, session.token, field.value);
-    if (outcome.ok) {
-      field.value = "";
-      status.textContent = inviteAdded(outcome.checksAdded);
-      status.dataset.kind = "ok";
-      checks = outcome.checks;
-      renderAccount();
-    } else {
-      status.textContent = outcome.message;
-      status.dataset.kind = "error";
-      if (outcome.signedOut) await sessionRejected(outcome.passEnded === true);
-    }
-  } finally {
-    button("invite-use").disabled = false;
-  }
-}
-
 async function init(): Promise<void> {
-  ({ apiBase, session, expired, passEnded } = await loadSettings());
+  // Versions before free checks kept a pass or a wallet sign-in; it is never used, and deleted here too.
+  void forgetOldAccount();
+  ({ apiBase } = await loadSettings());
   consented = await consentGiven();
   showConsent(!consented);
   el("about").addEventListener("click", (event) => {
@@ -630,14 +277,23 @@ async function init(): Promise<void> {
     void giveConsent().then(() => {
       consented = true;
       showConsent(false);
-      renderAccount();
-      // The next step gets the focus: checking this page, or getting started.
+      renderCheck();
+      void loadPause();
       if (!button("analyse").disabled) button("analyse").focus();
-      else if (!el("get-free-row").hidden) button("get-free").focus();
     });
   });
   el("consent-close").addEventListener("click", () => {
     showConsent(false);
+  });
+  el("options").addEventListener("click", (event) => {
+    event.preventDefault();
+    void chrome.runtime.openOptionsPage();
+  });
+  el("support").addEventListener("click", () => {
+    openPage(SUPPORT_PATH);
+  });
+  el("paused-donate").addEventListener("click", () => {
+    openPage(DONATE_PATH);
   });
   // `?tab=<id>` shows a given tab's analysis (the popup opened as a page, e.g. in tests); else the active tab.
   const forced = Number(new URLSearchParams(location.search).get("tab"));
@@ -647,98 +303,8 @@ async function init(): Promise<void> {
       : await chrome.tabs.query({ active: true, currentWindow: true });
   tabId = tab?.id;
   analysable = tabId !== undefined && isAnalysable(tab?.url, apiBase);
-  freeUsed = await freeChecksUsed();
-  renderAccount();
-  void refreshCredits();
-  void retryFreePass();
-  if (!session && !freeUsed) void loadFreePerPass();
-
-  el("options").addEventListener("click", (event) => {
-    event.preventDefault();
-    void chrome.runtime.openOptionsPage();
-  });
-  el("sign-in").addEventListener("click", () => {
-    openTab("/connect");
-  });
-  el("buy").addEventListener("click", () => {
-    openTab(checkoutPath(session));
-  });
-  el("get-free").addEventListener("click", getFreeChecks);
-  el("sign-in-more").addEventListener("click", (event) => {
-    event.preventDefault();
-    signInOpen = true;
-    renderAccount();
-    button("sign-in-key").focus();
-  });
-  el("sign-out").addEventListener("click", () => {
-    void clearSession().then(() => {
-      session = undefined;
-      expired = false;
-      checks = undefined;
-      inviteEligible = undefined;
-      renderAccount();
-    });
-  });
-  el("sign-in-phone").addEventListener("click", () => {
-    void startPhoneSignIn();
-  });
-  el("sign-in-key").addEventListener("click", () => {
-    show("key", true);
-    el("key-status").textContent = "";
-    el("key-input").removeAttribute("aria-invalid");
-    el("key-input").focus();
-  });
-  el("key-cancel").addEventListener("click", () => {
-    show("key", false);
-  });
-  el("key-get").addEventListener("click", (event) => {
-    event.preventDefault();
-    openTab("/checkout?for=key");
-  });
-  // "Have a code?": the website makes a new API key and redeems the gift code onto it, in one step.
-  for (const id of ["have-code", "key-code"]) {
-    el(id).addEventListener("click", (event) => {
-      event.preventDefault();
-      openTab(CODE_CHECKOUT);
-    });
-  }
-  const useKey = async (): Promise<void> => {
-    const field = el("key-input") as HTMLInputElement;
-    const result = await signInWithKey(apiBase, field.value);
-    if (!result.ok) {
-      el("key-status").textContent = KEY_FAILURE[result.reason];
-      el("key-status").dataset.kind = "error";
-      field.setAttribute("aria-invalid", "true");
-      return;
-    }
-    field.value = "";
-    session = result.session;
-    expired = false;
-    passEnded = false;
-    checks = result.checks;
-    inviteEligible = result.inviteEligible;
-    renderAccount();
-  };
-  el("key-use").addEventListener("click", () => void useKey());
-  el("invite-use").addEventListener("click", () => void useInvite());
-  el("invite-input").addEventListener("keydown", (event) => {
-    if (event.key === "Enter") void useInvite();
-  });
-  el("key-input").addEventListener("keydown", (event) => {
-    if (event.key === "Enter") void useKey();
-  });
-  el("phone-retry").addEventListener("click", () => {
-    void startPhoneSignIn();
-  });
-  el("phone-cancel").addEventListener("click", () => {
-    stopPairing();
-    void forgetPairing();
-    show("phone", false);
-  });
-  if (!session) {
-    const pending = await storedPairing();
-    if (pending) void showPairing(pending);
-  }
+  renderCheck();
+  if (consented) void loadPause();
 
   if (tabId === undefined) return;
   port = chrome.runtime.connect({ name: ANALYSIS_PORT });
@@ -747,25 +313,8 @@ async function init(): Promise<void> {
   });
   port.postMessage({ type: "watch", tabId } satisfies PopupRequest);
   el("objection-open").addEventListener("click", () => {
-    // The shop owner's page on the Unfret site: nothing to sign in to, so a plain tab (no hand-off ticket).
-    if (!apiBase) return;
-    void chrome.tabs.create({ url: `${apiBase}/objection` }).then(() => {
-      window.close();
-    });
-  });
-  el("report-open").addEventListener("click", (event) => {
-    event.preventDefault();
-    show("report-open-row", false);
-    show("report", true);
-    el("report-legend").focus();
-  });
-  el("report-cancel").addEventListener("click", () => {
-    show("report", false);
-    show("report-open-row", true);
-    button("report-open").focus();
-  });
-  el("report").addEventListener("change", () => {
-    button("report-send").disabled = reportReason() === undefined;
+    // The shop owner's page on the Unfret site.
+    if (apiBase) openPage("/objection");
   });
   el("share-open").addEventListener("click", () => {
     if (tabId !== undefined) port?.postMessage({ type: "share-preview", tabId } satisfies PopupRequest);
@@ -784,16 +333,9 @@ async function init(): Promise<void> {
   el("share-code-copy").addEventListener("click", () => {
     void copy(el("share-code").textContent, button("share-code-copy"), "Delete code copied");
   });
-  el("report").addEventListener("submit", (event) => {
-    event.preventDefault();
-    const reason = reportReason();
-    if (!reason || tabId === undefined) return;
-    button("report-send").disabled = true;
-    port?.postMessage({ type: "report", tabId, reason } satisfies PopupRequest);
-  });
-  // A second click before the first one's state arrives must not charge twice: startCheck checks `busy`.
+  // A second click before the first one's state arrives must not start two checks: startCheck checks `busy`.
   el("analyse").addEventListener("click", () => {
-    startCheck(quickChecksOnly());
+    startCheck(paused !== undefined);
   });
   el("quick").addEventListener("click", () => {
     startCheck(true);

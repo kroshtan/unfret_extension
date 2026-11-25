@@ -1,24 +1,11 @@
 // @vitest-environment node
-/** 0.9.0: "Have an invite?" and "Share this result", against the mock API. */
+/** "Share this result", against the mock API (0.9.0; gift codes went in 0.14.0). */
 
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { type AnalysisResult, ApiError, UnfretApi } from "../src/api/client.js";
-import { INVITE_RE, monthlyLimitMessage, normaliseInvite, redeemInvite } from "../src/shared/invites.js";
 import { createShare, previewShare, shareError, shareRequest } from "../src/shared/share.js";
-import {
-  INVITE_MONTHLY_BARE_CODE,
-  INVITE_MONTHLY_CODE,
-  INVITE_OK,
-  INVITE_OWN_CODE,
-  INVITE_UNKNOWN_CODE,
-  INVITE_USED_CODE,
-  type MockApi,
-  SHARE_DELETE_CODE,
-  SHARE_ID,
-  SHARE_PREVIEW,
-  startMockApi,
-} from "./mock-server.js";
+import { type MockApi, SHARE_DELETE_CODE, SHARE_ID, SHARE_PREVIEW, startMockApi } from "./mock-server.js";
 
 let api: MockApi;
 
@@ -36,92 +23,17 @@ const RESULT: AnalysisResult = {
   explanation: "Generic product, inflated discount.",
   assessment: { risk_score: 0.82, confidence: 0.64, model_version: "v1-test", flags: [] },
   verdict: { band: "junk_or_scam", label: "Serious concerns", headline: "x", reasons: [], positives: [] },
-  balance_lamports: 6_000_000,
-  charged: true,
-  report_token: "report-token.mac",
+  charged: false,
+  label_token: "label-deep.mac",
   share_token: "share-token.mac",
 };
-const KEY = `ufk_abcdefghij_${"a".repeat(52)}`;
-
-describe("invites", () => {
-  it("recognises a code as typed (case, spaces) and nothing else", () => {
-    expect(normaliseInvite(`  ${INVITE_OK.toUpperCase()} `)).toBe(INVITE_OK);
-    expect(normaliseInvite("ufi_short")).toBeNull();
-    expect(normaliseInvite(KEY)).toBeNull();
-    expect(INVITE_RE.test(INVITE_OK)).toBe(true);
-  });
-
-  it("refuses something that isn't a gift code without asking the server, a former intro code too", async () => {
-    const before = api.requests.length;
-    for (const typed of ["not a code", "FRIENDS", " friends ", "DEV"]) {
-      expect(normaliseInvite(typed)).toBeNull();
-      expect(await redeemInvite(api.url, KEY, typed)).toEqual({
-        ok: false,
-        message: "That doesn't look like a gift code: they start with ufi_. Check it and try again.",
-        signedOut: false,
-      });
-    }
-    expect(api.requests).toHaveLength(before);
-  });
-
-  it("redeems a code for the signed-in account, with its own sign-in", async () => {
-    const outcome = await redeemInvite(api.url, KEY, ` ${INVITE_OK.toUpperCase()}`);
-    expect(outcome).toEqual({ ok: true, checksAdded: 3, checks: 3 });
-    const sent = api.requests.at(-1);
-    expect(sent).toMatchObject({
-      path: "/v1/invites/redeem",
-      auth: `Bearer ${KEY}`,
-      body: { code: INVITE_OK },
-    });
-  });
-
-  it.each([
-    [INVITE_USED_CODE, "This gift code has already been used."],
-    [INVITE_UNKNOWN_CODE, "Unknown gift code."],
-    [INVITE_OWN_CODE, "This gift code came with your own pack: give it to a friend."],
-  ])("shows the server's reason for a refused code (%s)", async (code, message) => {
-    expect(await redeemInvite(api.url, KEY, code)).toEqual({ ok: false, message, signedOut: false });
-  });
-
-  it("one gift code a month: says when this one works again, or to give it away (429 INVITE_MONTHLY_LIMIT)", async () => {
-    expect(await redeemInvite(api.url, KEY, INVITE_MONTHLY_CODE)).toEqual({
-      ok: false,
-      message:
-        "You've already used a gift code this month; this one still works from December, or give it to someone else.",
-      signedOut: false,
-    });
-    expect(await redeemInvite(api.url, KEY, INVITE_MONTHLY_BARE_CODE)).toEqual({
-      ok: false,
-      message:
-        "You've already used a gift code this month; this one still works next month, or give it to someone else.",
-      signedOut: false,
-    });
-    expect(monthlyLimitMessage({ next_month: "2027-01-01" })).toContain("from January");
-    for (const odd of [undefined, null, {}, { next_month: "soon" }, { next_month: "2027-13-01" }]) {
-      expect(monthlyLimitMessage(odd)).toContain("still works next month");
-    }
-  });
-
-  it("says so when the sign-in expired, and when the server can't be reached", async () => {
-    const expired = await redeemInvite(api.url, "expired", INVITE_OK);
-    expect(expired).toMatchObject({ ok: false, signedOut: true });
-    expect(!expired.ok && expired.message).toMatch(/sign-in expired/u);
-    const off = await redeemInvite(api.url, "off", INVITE_OK);
-    expect(off).toMatchObject({
-      ok: false,
-      message: "Gift codes aren't available right now. Please try again later.",
-    });
-    const offline = await redeemInvite("http://127.0.0.1:9", KEY, INVITE_OK);
-    expect(offline).toMatchObject({ ok: false, message: "Couldn't reach Unfret. Check your connection." });
-  });
-});
 
 describe("sharing a result", () => {
   it("is offered only for a result with a share token and the analysed request", () => {
     expect(shareRequest(BODY, RESULT)).toEqual({
       share_token: "share-token.mac",
       url: BODY.url,
-      // Exactly the fields the token covers, as they came back: no balance, charge or report token.
+      // Exactly the fields the token covers, as they came back: no charge or label token.
       result: {
         score: 18,
         explanation: RESULT.explanation,
@@ -135,11 +47,10 @@ describe("sharing a result", () => {
     expect(shareRequest(undefined, RESULT)).toBeNull();
   });
 
-  it("previews, then shares, both without the sign-in", async () => {
+  it("previews, then shares, both without Authorization", async () => {
     const request = shareRequest(BODY, RESULT);
     if (!request) throw new Error("not shareable");
-    // Even a client made with a session token sends none for a share.
-    const client = new UnfretApi(api.url, KEY);
+    const client = new UnfretApi(api.url);
     const preview = await previewShare(client, request);
     expect(preview).toEqual({ status: "preview", preview: SHARE_PREVIEW });
     expect(api.requests.at(-1)).toMatchObject({ path: "/v1/shares/preview", auth: "", body: request });
@@ -186,7 +97,7 @@ describe("sharing a result", () => {
 
   it("refuses a shared link that isn't a page on the API's own site", async () => {
     const fake = (link: string): UnfretApi =>
-      new UnfretApi("https://unfret.net", undefined, () =>
+      new UnfretApi("https://unfret.net", () =>
         Promise.resolve(
           new Response(
             JSON.stringify({ id: "x", link, delete_code: "c", expires_at: "2027-01-01T00:00:00Z" }),

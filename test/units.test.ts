@@ -2,20 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import { SseParser } from "../src/api/sse.js";
 import { badgeFor, light } from "../src/background/badge.js";
-import { acceptSessionMessage } from "../src/content/relay.js";
 import { extractFacts } from "../src/extract/generic.js";
 import { parseCount, parseDate, parseNumber, parsePrice, parseRating } from "../src/extract/parse.js";
 import { pyJsonLength } from "../src/extract/pyjson.js";
-import { checksText } from "../src/popup/view.js";
-import {
-  accountLabel,
-  DEFAULT_API_BASE,
-  isDevBase,
-  isKeySession,
-  keySession,
-  normaliseApiBase,
-  parseSession,
-} from "../src/shared/settings.js";
+import { DEFAULT_API_BASE, isDevBase, normaliseApiBase } from "../src/shared/settings.js";
 import { isAnalysable, isMarketplaceProduct } from "../src/shared/sites.js";
 
 describe("parsing (the backend's test cases)", () => {
@@ -73,85 +63,6 @@ describe("server-sent events", () => {
   });
 });
 
-describe("session relay origin check", () => {
-  const page = {};
-  const session = {
-    type: "veridex-session",
-    token: "t".repeat(40),
-    address: "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin",
-    expires_at: "2999-01-01T00:00:00Z",
-  };
-  const origin = "https://unfret.net";
-
-  it("accepts the page's own message on the configured origin", () => {
-    expect(
-      acceptSessionMessage({ origin, source: page, data: session }, page, origin, DEFAULT_API_BASE),
-    ).toEqual({
-      token: session.token,
-      address: session.address,
-      expiresAt: "2999-01-01T00:00:00.000Z",
-    });
-  });
-
-  it("accepts the renamed message too (unfret-session), for when the site switches to it", () => {
-    const renamed = { ...session, type: "unfret-session" };
-    expect(
-      acceptSessionMessage({ origin, source: page, data: renamed }, page, origin, DEFAULT_API_BASE),
-    ).toEqual({
-      token: session.token,
-      address: session.address,
-      expiresAt: "2999-01-01T00:00:00.000Z",
-    });
-  });
-
-  it.each([
-    ["another window", { origin, source: {}, data: session }, origin, DEFAULT_API_BASE],
-    [
-      "another origin",
-      { origin: "https://evil.example", source: page, data: session },
-      origin,
-      DEFAULT_API_BASE,
-    ],
-    [
-      "a page that isn't the API site",
-      { origin: "https://evil.example", source: page, data: session },
-      "https://evil.example",
-      DEFAULT_API_BASE,
-    ],
-    [
-      "a different message type",
-      { origin, source: page, data: { ...session, type: "other" } },
-      origin,
-      DEFAULT_API_BASE,
-    ],
-    [
-      "an expired session",
-      { origin, source: page, data: { ...session, expires_at: "2000-01-01T00:00:00Z" } },
-      origin,
-      DEFAULT_API_BASE,
-    ],
-    [
-      "a malformed address",
-      { origin, source: page, data: { ...session, address: "not-base58!" } },
-      origin,
-      DEFAULT_API_BASE,
-    ],
-    [
-      "a dev page while production is configured",
-      { origin: "http://localhost:8080", source: page, data: session },
-      "http://localhost:8080",
-      DEFAULT_API_BASE,
-    ],
-  ])("rejects %s", (_, event, pageOrigin, apiBase) => {
-    expect(acceptSessionMessage(event, page, pageOrigin, apiBase)).toBeNull();
-  });
-
-  it("accepts the dev origin when it is the configured API", () => {
-    const dev = "http://localhost:8080";
-    expect(acceptSessionMessage({ origin: dev, source: page, data: session }, page, dev, dev)).not.toBeNull();
-  });
-});
-
 describe("settings", () => {
   it("only allows this build's API or a local dev origin", () => {
     expect(normaliseApiBase("https://unfret.net/v1/")).toBe(DEFAULT_API_BASE);
@@ -162,40 +73,6 @@ describe("settings", () => {
     expect(normaliseApiBase("http://evil.example")).toBe(DEFAULT_API_BASE);
     expect(normaliseApiBase("not a url")).toBe(DEFAULT_API_BASE);
     expect(isDevBase("http://127.0.0.1:9000")).toBe(true);
-  });
-
-  it("validates sessions", () => {
-    const now = new Date("2026-11-08T12:00:00Z");
-    const ok = {
-      token: "x".repeat(20),
-      address: "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin",
-      expires_at: "2026-12-08T12:00:00Z",
-    };
-    expect(parseSession(ok, now)).not.toBeNull();
-    expect(parseSession({ ...ok, token: "short" }, now)).toBeNull();
-    expect(parseSession({ ...ok, expires_at: "garbage" }, now)).toBeNull();
-    expect(parseSession(null, now)).toBeNull();
-  });
-
-  it("turns an API key into a session that never expires", () => {
-    const key = `ufk_abcdefghij_${"a".repeat(52)}`;
-    const session = keySession(` ${key} `);
-    expect(session).toMatchObject({ token: key, address: "key:abcdefghij", kind: "key" });
-    expect(session && isKeySession(session)).toBe(true);
-    expect(session && accountLabel(session)).toBe("ABCDE-FGHIJ"); // shown as the website shows a pass ID
-    expect(Date.parse(session?.expiresAt ?? "")).toBeGreaterThan(Date.parse("2100-01-01"));
-    for (const bad of [
-      "ufr_abcdefghij_" + "a".repeat(52),
-      "ufk_ABCDEFGHIJ_" + "a".repeat(52),
-      "ufk_short",
-      "",
-    ]) {
-      expect(keySession(bad)).toBeNull();
-    }
-    // A key can't be smuggled in through the connect page's session relay.
-    expect(
-      parseSession({ token: key, address: "key:abcdefghij", expires_at: "2099-01-01T00:00:00Z" }),
-    ).toBeNull();
   });
 });
 
@@ -288,11 +165,6 @@ describe("sites", () => {
 });
 
 describe("presentation", () => {
-  it("counts checks", () => {
-    expect(checksText(1)).toBe("1 check left");
-    expect(checksText(4)).toBe("4 checks left");
-  });
-
   it("colours the badge like a traffic light, red only for low results", () => {
     const at = (score: number): ReturnType<typeof light> => light({ score });
     expect([at(85), at(60), at(30), at(10), at(-1)]).toEqual(["green", "amber", "red", "red", "none"]);
@@ -311,18 +183,8 @@ describe("presentation", () => {
       badgeFor({ status: "done", findings: [], result: { score, explanation: "" } })?.text;
     expect([badge(85), badge(60), badge(30), badge(10), badge(-1)]).toEqual(["✓", "!", "⚠", "✕", "–"]);
     expect(badgeFor({ status: "idle" })).toBeNull();
-    // Account, credit and network problems aren't a red "!": the badge clears and the popup explains.
-    const error = { status: "error", message: "x", needsSignIn: true, needsCredits: false } as const;
-    expect(badgeFor(error)).toEqual({ text: "", color: "#5f6368" });
-  });
-});
-
-describe("signing in with an API key", () => {
-  it("refuses something that isn't a key without asking the server", async () => {
-    const { signInWithKey } = await import("../src/shared/key-sign-in.js");
-    expect(await signInWithKey("https://unfret.net", "not-a-key")).toEqual({
-      ok: false,
-      reason: "invalid",
-    });
+    // Network and server problems aren't a red "!": the badge clears and the popup explains.
+    expect(badgeFor({ status: "error", message: "x" })).toEqual({ text: "", color: "#5f6368" });
+    expect(badgeFor({ status: "preparing" })).toEqual({ text: "…", color: "#5f6368" });
   });
 });

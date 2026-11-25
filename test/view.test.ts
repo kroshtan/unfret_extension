@@ -12,8 +12,6 @@ import {
   deepHintOf,
   renderResult,
   renderSharePreview,
-  REPORT_REWARD_FALLBACK,
-  reportRewardLine,
   shownThumbnails,
   updateChecklist,
 } from "../src/popup/view.js";
@@ -119,13 +117,12 @@ describe("result view", () => {
     ]);
   });
 
-  it("puts what looks good first for a reliable result, and says when no check was used", () => {
+  it("puts what looks good first for a reliable result", () => {
     const root = rendered(RELIABLE);
     expect([...root.querySelectorAll("h2")].map((h) => h.textContent)).toEqual([
       "What looks good",
       "What we noticed",
     ]);
-    expect(root.textContent).toContain("You checked this page recently, so no new check was used.");
   });
 
   it("keeps details behind a disclosure, with server labels and neutral context", () => {
@@ -137,10 +134,10 @@ describe("result view", () => {
     expect(details?.textContent).not.toMatch(/content\.|listing\.|=\s*\d/u); // no feature names or raw values
   });
 
-  it("explains an unassessable page and a refund", () => {
+  it("explains an unassessable page", () => {
     const root = rendered({ score: -1, explanation: "There's no product on this page", charged: false });
     expect(root.querySelector(".verdict .label")?.textContent).toBe("Not assessed");
-    expect(root.textContent).toContain("This page couldn't be assessed, so no check was used.");
+    expect(root.querySelector(".headline")?.textContent).toBe("There's no product on this page");
     expect(root.querySelector("details")).toBeNull();
   });
 
@@ -403,29 +400,19 @@ describe("result card", () => {
     expect(root.querySelector(".incomplete")).toBeNull();
   });
 
-  it("says what the check cost as a sentence, with the server's count", () => {
-    const cases: [Partial<AnalysisResult>, string][] = [
-      [
-        {
-          charged: true,
-          free_check: true,
-          charge_note: "This check used one of your free checks; 4 are left.",
-        },
-        "This check used one of your free checks; 4 are left.",
-      ],
-      [
-        { charged: true, charge_note: "This check used one of your checks; 23 are left." },
-        "This check used one of your checks; 23 are left.",
-      ],
-      [{ charged: true, free_check: true }, "This check used one of your free checks."], // an older server
-      [{ charged: true }, "This check used one of your checks."],
-      [{ charged: false }, "You checked this page recently, so no new check was used."],
-    ];
-    for (const [fields, sentence] of cases) {
-      const root = document.createElement("div");
-      renderResult(root, { ...CARD, ...fields }, API);
-      expect([...root.querySelectorAll(".charge-note")].map((n) => n.textContent)).toEqual([sentence]);
-    }
+  it("says that a deep check was free, in the server's words, last", () => {
+    const root = document.createElement("div");
+    renderResult(
+      root,
+      { ...CARD, charged: false, free_check: true, charge_note: "Deep checks are free." },
+      API,
+    );
+    expect([...root.querySelectorAll(".charge-note")].map((n) => n.textContent)).toEqual([
+      "Deep checks are free.",
+    ]);
+    const plain = document.createElement("div");
+    renderResult(plain, { ...CARD, charged: false }, API);
+    expect(plain.querySelector(".charge-note")).toBeNull(); // nothing about money without the server's sentence
     const quick = document.createElement("div");
     renderResult(
       quick,
@@ -465,9 +452,9 @@ describe("deep-check suggestion under a quick result", () => {
       { key: "photo_elsewhere", area: "product", label: "whether its product photo appears on other shops" },
     ],
     text: "A deep check also looks at how old this shop is and whether its product photo appears on other shops.",
-    cost: "Deep checks come in packs, from $6.50 for 25.",
-    action: "get_checks",
-    action_label: "Get checks",
+    cost: "Free deep checks are paused until next month.",
+    action: "donate",
+    action_label: "Support Unfret",
   };
   const VERDICT: NonNullable<AnalysisResult["verdict"]> = {
     band: "concerns",
@@ -503,20 +490,20 @@ describe("deep-check suggestion under a quick result", () => {
     expect(hint.querySelector(".cost")?.textContent).toBe(OFFER.cost);
     const button = hint.querySelector("button");
     expect(button?.type).toBe("button");
-    expect(button?.textContent).toBe("Get checks");
+    expect(button?.textContent).toBe("Support Unfret");
     button?.click();
-    expect(actions).toEqual(["get_checks"]);
+    expect(actions).toEqual(["donate"]);
     expect(hint.classList.contains("quiet")).toBe(false);
   });
 
-  it("is quiet for a result that looks fine, and runs a deep check when the caller has checks", () => {
+  it("is quiet for a result that looks fine, and runs a deep check", () => {
     const actions: string[] = [];
     const offer = {
       ...OFFER,
       quiet: true,
       action: "run_deep" as const,
       action_label: null,
-      cost: "Uses 1 of your 3 free deep checks.",
+      cost: "Deep checks are free.",
     };
     const root = withHint({ ...QUICK, verdict: { ...VERDICT, deep_check: offer } }, actions);
     expect(root.querySelector(".deep-hint.quiet button")?.textContent).toBe("Run a deep check");
@@ -535,6 +522,14 @@ describe("deep-check suggestion under a quick result", () => {
       expect(withHint(result).querySelector(".deep-hint")).toBeNull();
     }
     expect(rendered(QUICK).querySelector(".deep-hint")).toBeNull(); // no action to run: nothing to offer
+  });
+
+  it("an action this version doesn't know (an older pack offer, or none while paused): the words, no button", () => {
+    for (const action of ["get_checks", null] as const) {
+      const root = withHint({ ...QUICK, verdict: { ...VERDICT, deep_check: { ...OFFER, action } } });
+      expect(root.querySelector(".deep-hint #deep-hint-text")?.textContent).toBe(OFFER.text);
+      expect(root.querySelector(".deep-hint button")).toBeNull();
+    }
   });
 });
 
@@ -602,44 +597,5 @@ describe("English only", () => {
       expect(html, page).not.toMatch(/data-i18n|__MSG_/u);
       expect(html, page).toContain('<html lang="en">');
     }
-  });
-});
-
-describe("the report's reward line", () => {
-  it("says both rewards from the price list, worded as the site's report dialog", () => {
-    expect(
-      reportRewardLine({
-        per_month: 15,
-        reward_checks: 5,
-        reward_gap: 30,
-        small_reward_checks: 1,
-        small_reward_gap: 10,
-      }),
-    ).toBe("If Unfret was clearly wrong, you get 5 free checks; if it was somewhat off, 1 free check.");
-    expect(reportRewardLine({ reward_checks: 1, small_reward_checks: 2 })).toBe(
-      "If Unfret was clearly wrong, you get 1 free check; if it was somewhat off, 2 free checks.",
-    );
-  });
-
-  it("an older server with one reward: only that one", () => {
-    expect(reportRewardLine({ per_month: 5, reward_checks: 3 })).toBe(
-      "If Unfret was clearly wrong, you get 3 free checks.",
-    );
-    expect(reportRewardLine({ reward_checks: 5, small_reward_checks: 0 })).toBe(
-      "If Unfret was clearly wrong, you get 5 free checks.",
-    );
-  });
-
-  it("without the numbers (an older server, or none sent): the line without numbers", () => {
-    expect(REPORT_REWARD_FALLBACK).toBe("If the result was wrong, you may get free checks.");
-    expect(reportRewardLine(undefined)).toBe(REPORT_REWARD_FALLBACK);
-    expect(reportRewardLine({})).toBe(REPORT_REWARD_FALLBACK);
-    expect(reportRewardLine({ per_month: 15 })).toBe(REPORT_REWARD_FALLBACK);
-    expect(reportRewardLine({ reward_checks: "5" as unknown as number })).toBe(REPORT_REWARD_FALLBACK);
-    expect(reportRewardLine({ reward_checks: -1 })).toBe(REPORT_REWARD_FALLBACK);
-  });
-
-  it("a server that pays no reward: no reward line", () => {
-    expect(reportRewardLine({ reward_checks: 0, small_reward_checks: 0 })).toBe("");
   });
 });
