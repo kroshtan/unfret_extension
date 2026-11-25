@@ -1,43 +1,24 @@
 # Chrome Web Store: test instructions for the reviewer
 
-Paste the block below into the dashboard's "Test instructions" field, with a real test key filled in. Microsoft Edge
-Add-ons takes the same block as its "Notes for certification" ([EDGE.md](EDGE.md)).
-
-## Creating the reviewer's test key (operator, once per review)
-
-Production (https://unfret.net) must run the current backend release (the admin grant endpoint and the
-pack prices) before this works.
-
-1. Open https://unfret.net/checkout?for=key, choose **Create a key**, and save the key (`ufk_…`) and its
-   recovery code. Don't pay.
-2. Give it about 20 checks of credit (at most $10 per call):
-
-   ```sh
-   curl -fsS -X POST https://unfret.net/v1/admin/keys/<key id>/grant \
-     -H "Authorization: Bearer $(cat ~/kroshtan_secrets/unfret-prod-admin-token)" \
-     -H "Content-Type: application/json" -d '{"usd_micros": 4000000}'
-   ```
-
-   `<key id>` is the part between `ufk_` and the next `_`. The answer shows the new balance.
-
-3. After the review, recover the key on the checkout page (this revokes the one the reviewer had) or leave it to run
-   out.
+Paste the block below into the dashboard's "Test instructions" field. Microsoft Edge Add-ons takes the same block as
+its "Notes for certification" ([EDGE.md](EDGE.md)). Since 0.14.0 checks are free with no account, so no test key is
+needed.
 
 ## Test instructions (paste)
 
 ```
-Unfret checks a product page when you click its toolbar button. No account or wallet is needed for this review.
+Unfret checks a product page when you click its toolbar button. Checks are free; there is no account, sign-in or
+key, so nothing needs to be set up for this review.
 
-1. Install the extension and pin it to the toolbar. A welcome page on unfret.net opens once: leave it open a few
-   seconds while it gives the extension its free Unfret pass, then it says "You have 5 free checks".
+1. Install the extension and pin it to the toolbar.
 2. Click the Unfret icon and read the first-run screen, then click "I agree".
 3. Open a product page, for example the Unfret test shop https://unfret.net/test-shop (a made-up shop with the
    tricks Unfret catches) or a product on https://www.amazon.com, click the Unfret icon, then "Check this page".
-   The result appears in 10–30 seconds: a verdict in plain words with its reasons.
-4. If the popup says there are no free checks (today's are all given out), open the extension's options, paste this
-   test key under "Use an Unfret pass instead" and click "Use this pass"; it holds about 20 checks:
-   ufk_<REPLACE WITH THE TEST KEY>
-5. Optional: under a result, "Wrong result?" lets you report a wrong result (it asks for consent first).
+   The extension first does a few seconds of computing (a proof of work that keeps bots from using up the free
+   checks), then the result appears in 10-30 seconds: a risk level from 0 to 4 in plain words, with its reasons.
+4. "Quick check (free)" under the main button gives a faster result from the page alone.
+5. Optional: under a result, "Wrong result?" lets you pick the level you think is right and mark reasons as wrong
+   or missing, then send a report.
 
 Nothing is read or sent until "Check this page" or "Quick check (free)" is clicked.
 Privacy statement: https://unfret.net/privacy
