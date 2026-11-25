@@ -86,7 +86,7 @@ function openPage(path: string): void {
 
 function renderCheck(): void {
   const analyse = button("analyse");
-  // Paused, the main button runs the quick check (free deep checks are back next month).
+  // Paused, the main button runs the quick check (free deep checks are back tomorrow).
   analyse.textContent = busy ? "Checking…" : paused ? "Quick check (free)" : "Check this page";
   analyse.disabled = busy || !consented || !analysable;
   // The free quick check, under the main button before a check. Paused, the main button is the quick check.

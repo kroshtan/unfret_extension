@@ -24,7 +24,7 @@ export class ApiError extends Error {
     return this.code === "PROOF_OF_WORK_REQUIRED" || this.code === "BAD_CHALLENGE";
   }
 
-  /** This month's free deep checks are paused (the spend ceiling): quick checks still work. */
+  /** Today's free deep checks are paused (the spend ceiling): quick checks still work. */
   get freePaused(): boolean {
     return this.code === "FREE_CHECKS_PAUSED";
   }
@@ -42,7 +42,7 @@ export class ApiError extends Error {
 }
 
 /**
- * Why free deep checks are paused (the monthly spend ceiling): `FREE_CHECKS_PAUSED`'s metadata, the challenge's
+ * Why free deep checks are paused (the spend ceiling, paced per day): `FREE_CHECKS_PAUSED`'s metadata, the challenge's
  * `pause` and `/v1/pricing`'s `free.pause`. The extension shows its own words for `message_key`.
  */
 export interface Pause {

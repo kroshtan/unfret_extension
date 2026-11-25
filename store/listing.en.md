@@ -43,7 +43,7 @@ Unfret also checks ads on second-hand marketplaces and the websites of tradespeo
 Free for shoppers
 • Quick checks and deep checks are free. No account, no sign-in, no e-mail, no pass.
 • A quick check reads the page itself, by Unfret's rules. A deep check also looks the seller, the shop and the product up elsewhere.
-• Free checks run on donations. If this month's donations run out, quick checks keep working and deep checks are back next month. Support Unfret: https://unfret.net/support
+• Free checks run on donations. If the day's share runs out, quick checks keep working and deep checks are back tomorrow. Support Unfret: https://unfret.net/support
 
 Wrong result?
 Tell Unfret which risk level you think is right and which reasons are wrong or missing. Your report keeps the page it's about, with personal details removed, so a person can review it. It never keeps who sent it. If you like, turn on "Count my reports" to see how many of your reports agreed with the final answer, and pick a nickname for the leaderboard.

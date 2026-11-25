@@ -69,7 +69,7 @@ toolbar click ─► popup ─► background ─► inject extract.js into the t
   the background gets a challenge (`GET /v1/analyze/challenge`), solves its proof of work (a few seconds of SHA-256 in
   the service worker, never in the popup; `src/shared/pow.ts`, the same puzzle as the website's) and sends the check
   with it. The quick check under it reads only the page, by Unfret's rules. When free deep checks are paused (the
-  monthly spend ceiling: the challenge, `/v1/pricing` or `FREE_CHECKS_PAUSED` says so), nothing is solved, the popup
+  spend ceiling, paced per day: the challenge, `/v1/pricing` or `FREE_CHECKS_PAUSED` says so), nothing is solved, the popup
   says free checks run on donations, with a "Support Unfret" link to `/donate`, and the main button is the quick
   check; a deep check that can't be offered right now (503) becomes a quick check too, saying why. The extension
   has no standing access to any website: it reads a page only through `activeTab`, which the browser grants for that

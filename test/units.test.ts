@@ -188,3 +188,13 @@ describe("presentation", () => {
     expect(badgeFor({ status: "preparing" })).toEqual({ text: "…", color: "#5f6368" });
   });
 });
+
+describe("the pause's words (the spend ceiling, paced per day)", () => {
+  it("always says deep checks are back tomorrow, never next month", async () => {
+    const { FREE_PAUSED, FREE_PAUSED_QUICK } = await import("../src/shared/text.js");
+    expect(FREE_PAUSED).toBe(
+      "Free checks run on donations, and today's are used up. Quick checks still work; deep checks are back tomorrow.",
+    );
+    expect(FREE_PAUSED_QUICK).toBe("Free deep checks are paused until tomorrow, so this is a quick check.");
+  });
+});

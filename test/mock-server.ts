@@ -71,7 +71,7 @@ export const VERDICT = {
 
 export const PAUSE = {
   reason: "spend_ceiling",
-  retry_after_s: 86_400,
+  retry_after_s: 36_000,
   quick_checks: true,
   message_key: "free_checks_run_on_donations",
   donate_url: "https://unfret.net/donate",
@@ -290,7 +290,7 @@ export async function startMockApi(): Promise<MockApi> {
         if (!quick) {
           if (paused) {
             json(res, 429, {
-              detail: "Free deep checks are paused until next month. Quick checks still work.",
+              detail: "Free deep checks are paused until tomorrow. Quick checks still work.",
               error_code: "FREE_CHECKS_PAUSED",
               metadata: PAUSE,
             });
@@ -345,7 +345,7 @@ export async function startMockApi(): Promise<MockApi> {
                         suggested: true,
                         reason: "paused",
                         text: "A deep check also looks the shop up elsewhere.",
-                        cost: "Free deep checks are paused until next month.",
+                        cost: "Free deep checks are paused until tomorrow.",
                         action: "donate",
                         action_label: "Support Unfret",
                       }

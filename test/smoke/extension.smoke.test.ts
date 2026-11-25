@@ -486,7 +486,7 @@ describe("the free quick check, and the pause", () => {
       await popup.goto(`chrome-extension://${extensionId}/popup/popup.html?tab=${tabId}`);
       await popup.waitForSelector("#paused:not([hidden])");
       expect(await popup.textContent("#paused-text")).toMatch(
-        /run on donations.*Quick checks still work.*next month/u,
+        /run on donations.*Quick checks still work.*back tomorrow/u,
       );
       expect(await popup.textContent("#analyse")).toBe("Quick check (free)");
       expect(await popup.isVisible("#quick-row")).toBe(false);
@@ -498,7 +498,7 @@ describe("the free quick check, and the pause", () => {
       expect(state.status).toBe("done");
       if (state.status === "done") {
         expect(state.result.tier).toBe("quick");
-        expect(state.note).toMatch(/paused until next month/u);
+        expect(state.note).toMatch(/paused until tomorrow/u);
         expect(state.pause?.message_key).toBe("free_checks_run_on_donations");
       }
       expect(
