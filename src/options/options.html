@@ -23,6 +23,46 @@
         <p><a id="support-link" target="_blank" rel="noopener">Support Unfret</a></p>
       </section>
 
+      <section class="card" aria-labelledby="reports-heading">
+        <h2 id="reports-heading">Your reports</h2>
+        <p>
+          "Wrong result?" under a result sends a report: the risk level you think is right and which reasons
+          are wrong or missing. A report keeps the page it's about, with personal details removed, and never
+          who sent it.
+        </p>
+        <label class="check"><input id="contributor-on" type="checkbox" /> Count my reports</label>
+        <p class="muted small">
+          This makes a random contributor key in this browser. It's sent only with your reports, never with a
+          check, so Unfret can weigh your reports and show you how many agreed with the final answer, without
+          knowing who you are. Turning it off deletes your profile and the key.
+        </p>
+        <div id="contributor" hidden>
+          <p id="contributor-stats"></p>
+          <label for="handle">Nickname for the leaderboard (optional)</label>
+          <input
+            id="handle"
+            type="text"
+            maxlength="24"
+            spellcheck="false"
+            autocomplete="off"
+            placeholder="3–24 letters, digits, - or _"
+          />
+          <label class="check"><input id="handle-public" type="checkbox" /> Show me on the leaderboard</label>
+          <div class="buttons">
+            <button id="handle-save" type="button">Save</button>
+          </div>
+        </div>
+        <p id="contributor-status" class="status" role="status"></p>
+        <details id="leaderboard-box">
+          <summary>Leaderboard</summary>
+          <p class="muted small">
+            Contributors who chose to show a nickname, by reports that agreed with the final answer.
+          </p>
+          <ol id="leaderboard"></ol>
+          <p id="leaderboard-status" class="muted small"></p>
+        </details>
+      </section>
+
       <section class="card" aria-labelledby="privacy-heading">
         <h2 id="privacy-heading">Privacy</h2>
         <p>

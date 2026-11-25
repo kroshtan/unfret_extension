@@ -10,6 +10,14 @@ import {
   type PopupRequest,
   type TabState,
 } from "../shared/messages.js";
+import { contributorKey } from "../shared/contributor.js";
+import {
+  LEVEL_CHOICES,
+  missingChoices,
+  REPORT_OUTCOME,
+  reportable,
+  shownFindings,
+} from "../shared/report.js";
 import { shareRequest } from "../shared/share.js";
 import {
   consentGiven,
@@ -183,11 +191,86 @@ function render(state: TabState): void {
     show("result-note", state.note !== undefined);
     renderResult(el("result-body"), state.result, apiOrigin(), deepHintAction);
     announce(`Result: ${el("result-body").querySelector(".verdict .label")?.textContent ?? ""}`);
+    renderReport(state);
     renderShare(state);
     if (wasBusy) refocus();
   } else if (state.status === "error") {
     el("error-message").textContent = state.message;
   }
+}
+
+// ── "Wrong result?" ─────────────────────────────────────────────────────────
+// One flow: the level the shopper thinks is right, the shown findings that are wrong, findings that are missing. The
+// background sends it (with the contributor key only when it is on); the popup shows each step.
+
+/** The finished check on screen, for building the report form when it opens. */
+let shownDone: Extract<TabState, { status: "done" }> | undefined;
+
+function renderReport(state: Extract<TabState, { status: "done" }>): void {
+  shownDone = state;
+  const report = state.report;
+  const can = reportable(state.result, state.body !== undefined);
+  show("report-open-row", can && report === undefined && el("report").hidden === true);
+  if (report !== undefined) show("report", false);
+  const status = el("report-status");
+  status.hidden = report === undefined;
+  status.dataset.kind = report?.status === "sent" ? "ok" : report?.status === "error" ? "error" : "";
+  if (report?.status === "sending") status.textContent = "Sending…";
+  else if (report?.status === "sent")
+    status.textContent = `${REPORT_OUTCOME[report.outcome]}${report.updated ? " It replaces your earlier report on this page." : ""}`;
+  else if (report?.status === "error") status.textContent = report.message;
+}
+
+function choice(type: "radio" | "checkbox", name: string, value: string, text: string): HTMLLabelElement {
+  const label = document.createElement("label");
+  const input = document.createElement("input");
+  input.type = type;
+  input.name = name;
+  input.value = value;
+  label.append(input, document.createTextNode(` ${text}`));
+  return label;
+}
+
+/** Fill the form for the result on screen: the levels (ours marked), its findings, what could be missing. */
+async function buildReportForm(): Promise<void> {
+  const result = shownDone?.result;
+  if (!result) return;
+  const ours = result.verdict?.risk?.level;
+  const legend = el("report-legend");
+  el("report-level").replaceChildren(
+    legend,
+    ...LEVEL_CHOICES.map((c) =>
+      choice(
+        "radio",
+        "level",
+        String(c.level),
+        `${String(c.level)} · ${c.label}${c.level === ours ? " (our answer)" : ""}`,
+      ),
+    ),
+  );
+  const shown = shownFindings(result);
+  el("report-wrong").replaceChildren(...shown.map((f) => choice("checkbox", "wrong", f.type, f.title)));
+  show("report-wrong-set", shown.length > 0);
+  el("report-missing").replaceChildren(
+    ...missingChoices(result).map((c) => choice("checkbox", "missing", c.type, c.title)),
+  );
+  el("report-as").textContent = (await contributorKey())
+    ? "It counts toward your contributor profile (Settings)."
+    : "It is sent anonymously.";
+  button("report-send").disabled = true;
+}
+
+function reportPicked(): { level?: number; wrong: string[]; missing: string[] } {
+  const picked = (name: string): string[] =>
+    [...document.querySelectorAll<HTMLInputElement>(`#report input[name="${name}"]:checked`)].map(
+      (i) => i.value,
+    );
+  const [level] = picked("level");
+  return {
+    ...(level !== undefined ? { level: Number(level) } : {}),
+    wrong: picked("wrong"),
+    missing: picked("missing"),
+  };
 }
 
 // ── "Share this result" ─────────────────────────────────────────────────────
@@ -315,6 +398,30 @@ async function init(): Promise<void> {
   el("objection-open").addEventListener("click", () => {
     // The shop owner's page on the Unfret site.
     if (apiBase) openPage("/objection");
+  });
+  el("report-open").addEventListener("click", (event) => {
+    event.preventDefault();
+    void buildReportForm().then(() => {
+      show("report-open-row", false);
+      show("report", true);
+      el("report-legend").focus();
+    });
+  });
+  el("report-cancel").addEventListener("click", () => {
+    show("report", false);
+    show("report-open-row", true);
+    button("report-open").focus();
+  });
+  el("report").addEventListener("change", () => {
+    const picked = reportPicked();
+    button("report-send").disabled =
+      picked.level === undefined && picked.wrong.length === 0 && picked.missing.length === 0;
+  });
+  el("report").addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (tabId === undefined) return;
+    button("report-send").disabled = true;
+    port?.postMessage({ type: "report", tabId, label: reportPicked() } satisfies PopupRequest);
   });
   el("share-open").addEventListener("click", () => {
     if (tabId !== undefined) port?.postMessage({ type: "share-preview", tabId } satisfies PopupRequest);

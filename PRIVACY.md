@@ -1,6 +1,6 @@
 # Unfret privacy policy (browser extension)
 
-_Last updated: 25 November 2026 (version 0.14.0: free for shoppers, with no pass, no sign-in and no account; a deep check sends a proof of work instead; a pass or wallet sign-in an older version stored is deleted; no welcome page, no content scripts on Unfret's pages, no gift or affiliate codes. Earlier: the free quick check, the page address sent without what in it is about you, photo lookup, service providers and private sellers' ads). Draft for the store listings; to be reviewed before publication._
+_Last updated: 25 November 2026 (version 0.14.0: free for shoppers, with no pass, no sign-in and no account; a deep check sends a proof of work instead; one "Wrong result?" report that keeps the page and never who sent it, and an optional contributor key; a pass or wallet sign-in an older version stored is deleted; no welcome page, no content scripts on Unfret's pages, no gift or affiliate codes. Earlier: the free quick check, the page address sent without what in it is about you, photo lookup, service providers and private sellers' ads). Draft for the store listings; to be reviewed before publication._
 
 Unfret is made by Kroshtan (Floris van Beers, the Netherlands).
 
@@ -65,6 +65,19 @@ More requests go to the same API, each only when you ask for it:
   nothing is stored until you click **Share**. The page is then public at `unfret.net/r/…` for anyone with
   the link, for 90 days, and never says who checked. You get a delete code, shown once, to remove it sooner.
 
+- **Wrong result?** (reporting a result): the level you think is right and the reasons you marked as wrong or
+  missing, with that one check's request exactly as it was analysed (the page address, product facts and page text),
+  its result, and the result's report token, only after you click **Send report**. The report keeps that page (with
+  personal details removed) so a person can review it; it never keeps who sent it: no account, IP address or time of
+  day. An AI model hosted in the EU may read the stored report once to suggest an answer; a person decides. Reports
+  never change a result; reviewed reports that agree become training data.
+- **Count my reports** (off unless you turn it on in the settings): a random **contributor key** made in your browser
+  (32 random bytes) goes with your reports, and with the calls that read or change your contributor profile, never
+  with a check. It lets Unfret weigh your reports and show you how many agreed with the final answer, without knowing
+  who you are. You can add a nickname and choose to show it on the public leaderboard. Turning it off deletes the
+  profile on `unfret.net` and the key in your browser; reports already sent stay, no longer linked to it. The
+  leaderboard in the settings is loaded from `unfret.net` when you open it.
+
 When the popup opens (after you agreed to the consent screen), it asks the API for its price list, without anything
 about you, to know whether free deep checks are paused this month. The pictures in a result (matching photos on other
 shops) are loaded from Unfret's own server only. The extension makes no other network requests: no analytics, no
@@ -72,17 +85,19 @@ trackers, no third parties.
 
 ## What is stored
 
-In your browser (`storage.local`): your consent and your settings. Nothing about an account: versions before 0.14.0
+In your browser (`storage.local`): your consent, your settings and, only if you turned on **Count my reports**, your
+contributor key. Nothing about an account: versions before 0.14.0
 kept an Unfret pass (with its backup code) or a wallet sign-in, and a note in `storage.sync` that this browser had its
 free checks; the extension deletes all of that when it updates, starts or opens, and never sends it again.
 
 Only in memory (the browser's session storage, cleared when you close the browser, never written to disk): the
-results of your checks, each with the request it was made from and, if you shared it, its link and delete code,
-cleared when you leave the page.
+results of your checks, each with the request it was made from (for "Wrong result?") and, if you shared or reported
+it, its link and delete code or the report's outcome, cleared when you leave the page.
 
 The extension is in English and asks Unfret for English results; it sends nothing about your browser's language.
 
-On the server: nothing about you. The server does not keep the addresses or contents of the pages you check, and
+On the server: nothing about you. With **Count my reports** on, a keyed one-way hash of your contributor key, your
+nickname if you chose one, whether to show it, and how many of your reports agreed. The server does not keep the addresses or contents of the pages you check, and
 has nothing to link them to. For product pages with a public product
 number (an Amazon ASIN, a bol.com ID or a barcode) it keeps an anonymous price observation for 90 days: a one-way
 hash of the shop's domain and that number, the day, the price and the claimed "was" price, with no address, wallet,

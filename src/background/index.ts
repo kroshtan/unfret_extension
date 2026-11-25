@@ -11,7 +11,8 @@
  * when the browser closes) so they survive the service worker sleeping. Nothing about pages is written to disk.
  */
 
-import { type AnalyzeBody, ApiError, type Pause, UnfretApi } from "../api/client.js";
+import { type AnalyzeBody, ApiError, type Label, type Pause, UnfretApi } from "../api/client.js";
+import { contributorKey } from "../shared/contributor.js";
 import {
   ANALYSIS_PORT,
   type BackgroundUpdate,
@@ -20,6 +21,7 @@ import {
 } from "../shared/messages.js";
 import { PowAborted, solve } from "../shared/pow.js";
 import { consentGiven, forgetOldAccount, loadSettings } from "../shared/settings.js";
+import { cleanLabel, reportable, reportError } from "../shared/report.js";
 import { createShare, previewShare, shareRequest } from "../shared/share.js";
 import { isAnalysable } from "../shared/sites.js";
 import { CONSENT_HINT, DEEP_UNAVAILABLE, FREE_PAUSED_QUICK } from "../shared/text.js";
@@ -267,6 +269,37 @@ function updateDone(tabId: number, result: DoneState["result"], change: Partial<
   setState(tabId, { ...now, ...change });
 }
 
+// ── "Wrong result?" ────────────────────────────────────────────────────────
+
+/**
+ * Send the finished check's request back as a report: the level the user picked and the findings they marked, with
+ * the contributor key only when they turned it on in the settings. One report per check.
+ */
+async function report(tabId: number, label: Label): Promise<void> {
+  const { apiBase } = await loadSettings();
+  await stateOf(tabId);
+  const state = doneNow(tabId);
+  if (!state?.body || !reportable(state.result, true)) return;
+  if (state.report?.status === "sending" || state.report?.status === "sent") return;
+  const clean = cleanLabel(state.result, label);
+  if (!clean) return;
+  updateDone(tabId, state.result, { report: { status: "sending" } });
+  try {
+    const key = await contributorKey();
+    const sent = await new UnfretApi(apiBase).label(state.body, state.result, clean, key);
+    updateDone(tabId, state.result, {
+      report: {
+        status: "sent",
+        outcome: sent.status,
+        updated: sent.updated === true,
+        anonymous: sent.anonymous !== false,
+      },
+    });
+  } catch (error) {
+    updateDone(tabId, state.result, { report: { status: "error", message: reportError(error) } });
+  }
+}
+
 // ── "Share this result" ──────────────────────────────────────────────────────
 // Anonymous: the client never sends Authorization. Each step
 // reads the state, checks it and marks it in one synchronous run after its last await, so a double click can't send
@@ -324,6 +357,7 @@ chrome.runtime.onConnect.addListener((port) => {
     void stateOf(message.tabId).then((state) => {
       port.postMessage({ type: "state", tabId: message.tabId, state } satisfies BackgroundUpdate);
       if (message.type === "analyze") void analyse(message.tabId, message.tier);
+      if (message.type === "report") void report(message.tabId, message.label);
       if (message.type === "share-preview") void sharePreview(message.tabId);
       if (message.type === "share") void share(message.tabId);
       if (message.type === "share-cancel") void shareCancel(message.tabId);
