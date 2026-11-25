@@ -24,7 +24,7 @@ import { consentGiven, forgetOldAccount, loadSettings } from "../shared/settings
 import { cleanLabel, reportable, reportError } from "../shared/report.js";
 import { createShare, previewShare, shareRequest } from "../shared/share.js";
 import { isAnalysable } from "../shared/sites.js";
-import { CONSENT_HINT, DEEP_UNAVAILABLE, FREE_PAUSED_QUICK } from "../shared/text.js";
+import { CONSENT_HINT, DEEP_UNAVAILABLE, freePausedQuick } from "../shared/text.js";
 import { checkedUrl } from "../shared/urls.js";
 import { badgeFor } from "./badge.js";
 import { checkFailed } from "./failure.js";
@@ -131,7 +131,10 @@ function pauseOf(value: unknown): Pause {
 /** Why a deep check can't run now, when a quick check is offered instead; null for any other failure. */
 function quickBecause(error: unknown): Fallback | null {
   if (!(error instanceof ApiError)) return null;
-  if (error.freePaused) return { note: FREE_PAUSED_QUICK, pause: pauseOf(error.metadata) };
+  if (error.freePaused) {
+    const pause = pauseOf(error.metadata);
+    return { note: freePausedQuick(pause), pause };
+  }
   if (error.serviceOff) return { note: DEEP_UNAVAILABLE };
   return null;
 }
@@ -153,7 +156,10 @@ type Proof = NonNullable<AnalyzeBody["proof_of_work"]>;
 
 async function proofOfWork(api: UnfretApi): Promise<Proof | Fallback> {
   const challenge = await api.challenge();
-  if (challenge.paused) return { note: FREE_PAUSED_QUICK, pause: pauseOf(challenge.pause) };
+  if (challenge.paused) {
+    const pause = pauseOf(challenge.pause);
+    return { note: freePausedQuick(pause), pause };
+  }
   const solution = await solve(challenge.challenge, challenge.bits, { onSlice: keepAlive });
   return { challenge: challenge.challenge, solution };
 }

@@ -28,7 +28,7 @@ import {
 } from "../shared/settings.js";
 import { isAnalysable } from "../shared/sites.js";
 import { withoutSecrets } from "../shared/urls.js";
-import { CONSENT_HINT, DONATE_PATH, FREE_PAUSED, SUPPORT_PATH } from "../shared/text.js";
+import { CONSENT_HINT, DONATE_PATH, freePausedText, SUPPORT_PATH } from "../shared/text.js";
 import {
   buildChecklist,
   checklistDone,
@@ -101,7 +101,7 @@ function renderCheck(): void {
         : paused
           ? ""
           : "Deep checks are free. Nothing is sent until you click.";
-  el("paused-text").textContent = FREE_PAUSED;
+  el("paused-text").textContent = freePausedText(paused);
   show("paused", consented && paused !== undefined);
 }
 

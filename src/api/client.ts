@@ -47,6 +47,8 @@ export class ApiError extends Error {
  */
 export interface Pause {
   reason?: string;
+  /** "day": today's share of the monthly budget is used (back tomorrow); "month": the month's (back next month). */
+  scope?: string;
   retry_after_s?: number;
   quick_checks?: boolean;
   message_key?: string;

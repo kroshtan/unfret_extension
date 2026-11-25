@@ -5,6 +5,9 @@ backend's changelog, which lists each one published at `/extension`.)
 
 ## 0.14.0 (unreleased)
 
+- **A paused day or a paused month** (backend: daily pacing of the spend ceiling). The pause's `scope` says which:
+  "day" → "today's are used up … deep checks are back tomorrow", "month" → "this month's … back next month". Without
+  a scope, `retry_after_s` under 24 hours means tomorrow.
 - **Store texts for free checks** (`store/`): the listing, the privacy-practices answers, the reviewer notes, AMO's
   summary and notes and Edge's say free for shoppers, no account or pass, one risk level, and what a "Wrong result?"
   report keeps (the page, never who sent it). No test key for reviewers; AMO's "requires payment" is unticked. The
