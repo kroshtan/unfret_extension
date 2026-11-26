@@ -1,0 +1,154 @@
+{
+  "url": "https://restwell-home.example/products/ergonomic-office-chair",
+  "made_up": true,
+  "result": {
+    "score": 61,
+    "explanation": "This chair looks like generic goods under a new name, so you may pay more than it's worth.",
+    "page_type": "storefront",
+    "assessment": {
+      "risk_score": 0.39,
+      "confidence": 0.81,
+      "flags": [],
+      "model_version": "store-screenshots"
+    },
+    "charged": false,
+    "tier": "deep",
+    "free_check": true,
+    "charge_note": "Deep checks are free.",
+    "label_token": "store-screenshots",
+    "verdict": {
+      "band": "concerns",
+      "label": "Worth a look",
+      "risk": {
+        "level": 2,
+        "key": "overpaying",
+        "label": "May cost more than it's worth",
+        "because": [
+          {
+            "type": "rebranded_photo",
+            "level": 2,
+            "title": "Same photo under other brand names",
+            "source": "Unfret's image index"
+          },
+          {
+            "type": "generic_product",
+            "level": 2,
+            "title": "Generic product",
+            "source": "Unfret's read of the page"
+          },
+          {
+            "type": "dropshipping_tools",
+            "level": 2,
+            "title": "Dropshipping",
+            "source": "The page's code"
+          },
+          {
+            "type": "long_delivery",
+            "level": 2,
+            "title": "Long delivery time",
+            "source": "The shop's terms and legal pages"
+          },
+          {
+            "type": "implausible_discount",
+            "level": 1,
+            "title": "Unbelievable discount",
+            "source": "The page"
+          }
+        ],
+        "combined": null,
+        "modifier": null,
+        "explanation": "Level 2 because: Same photo under other brand names + Generic product + Dropshipping + Long delivery time.",
+        "source": "classifier",
+        "confidence": 0.84
+      },
+      "headline": "This chair looks like generic goods under a new name, so you may pay more than it's worth.",
+      "reasons": [
+        {
+          "type": "rebranded_photo",
+          "title": "Same photo under other brand names",
+          "detail": "The main product photo is the same photo as on other listings that sell it under 3 other brand names: Halvory, Kentrop and Sitwise. The same product under several brand names is usually generic goods, relabelled.",
+          "severity": "high",
+          "level": 2,
+          "thumbnails": [],
+          "source": "Unfret's image index",
+          "links": []
+        },
+        {
+          "type": "generic_product",
+          "title": "Generic product",
+          "detail": "This looks like a generic product that's also sold elsewhere under other names, often for less.",
+          "severity": "medium",
+          "level": 2,
+          "thumbnails": [],
+          "source": "Unfret's read of the page",
+          "links": []
+        },
+        {
+          "type": "implausible_discount",
+          "title": "Unbelievable discount",
+          "detail": "70% off: discounts this deep are almost always measured against a price nobody paid.",
+          "severity": "medium",
+          "level": 1,
+          "thumbnails": [],
+          "source": "The page",
+          "links": []
+        }
+      ],
+      "positives": [
+        {
+          "type": "trust_info_present",
+          "title": "Shop details present",
+          "detail": "Return policy and company details are on the page.",
+          "source": "The shop's terms and legal pages"
+        }
+      ],
+      "language": "en",
+      "checklist": [
+        {
+          "key": "who",
+          "label": "Who's behind the shop",
+          "status": "checked",
+          "checks": 5
+        },
+        {
+          "key": "product",
+          "label": "The product and the brand",
+          "status": "concern",
+          "checks": 5,
+          "note": "Same photo under other brand names"
+        },
+        {
+          "key": "reviews",
+          "label": "Reviews",
+          "status": "checked",
+          "checks": 2
+        },
+        {
+          "key": "prices",
+          "label": "Prices, delivery and returns",
+          "status": "concern",
+          "checks": 3,
+          "note": "Long delivery time"
+        },
+        {
+          "key": "tricks",
+          "label": "Hidden tricks",
+          "status": "concern",
+          "checks": 2,
+          "note": "Unbelievable discount"
+        }
+      ],
+      "checks_run": 17,
+      "next_step": {
+        "type": "compare_elsewhere",
+        "text": "Search for the product under other names: the same item is often sold elsewhere, for less."
+      },
+      "deep_check": {
+        "suggested": false,
+        "quiet": false,
+        "adds": [],
+        "text": ""
+      }
+    }
+  }
+}

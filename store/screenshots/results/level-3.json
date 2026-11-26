@@ -1,0 +1,147 @@
+{
+  "url": "https://zentrova-audio.example/products/x3-wireless-earbuds",
+  "made_up": true,
+  "result": {
+    "score": 38,
+    "explanation": "The page promises more than these earbuds can do: its own specs say otherwise.",
+    "page_type": "storefront",
+    "assessment": {
+      "risk_score": 0.62,
+      "confidence": 0.81,
+      "flags": [],
+      "model_version": "store-screenshots"
+    },
+    "charged": false,
+    "tier": "deep",
+    "free_check": true,
+    "charge_note": "Deep checks are free.",
+    "label_token": "store-screenshots",
+    "verdict": {
+      "band": "careful",
+      "label": "Think twice",
+      "risk": {
+        "level": 3,
+        "key": "doesnt_work",
+        "label": "May not work as described",
+        "because": [
+          {
+            "type": "claim_contradicted",
+            "level": 3,
+            "title": "A claim that doesn't add up",
+            "source": "Unfret's read of the page"
+          },
+          {
+            "type": "implausible_claims",
+            "level": 3,
+            "title": "Hard-to-believe claims",
+            "source": "Unfret's read of the page"
+          },
+          {
+            "type": "generic_brand",
+            "level": 2,
+            "title": "Unknown brand",
+            "source": "Wikidata and the brand's own website"
+          },
+          {
+            "type": "long_delivery",
+            "level": 2,
+            "title": "Long delivery time",
+            "source": "The shop's terms and legal pages"
+          }
+        ],
+        "combined": null,
+        "modifier": null,
+        "explanation": "Level 3 because: A claim that doesn't add up + Hard-to-believe claims + Unknown brand + Long delivery time.",
+        "source": "classifier",
+        "confidence": 0.84
+      },
+      "headline": "The page promises more than these earbuds can do: its own specs say otherwise.",
+      "reasons": [
+        {
+          "type": "claim_contradicted",
+          "title": "A claim that doesn't add up",
+          "detail": "The page says the earbuds are waterproof for swimming. Its own specs list IPX4, which is splash-proof only.",
+          "severity": "high",
+          "level": 3,
+          "thumbnails": [],
+          "source": "Unfret's read of the page",
+          "links": []
+        },
+        {
+          "type": "implausible_claims",
+          "title": "Hard-to-believe claims",
+          "detail": "The page makes claims that are hard to believe for this product: 120 hours of music on one charge.",
+          "severity": "high",
+          "level": 3,
+          "thumbnails": [],
+          "source": "Unfret's read of the page",
+          "links": []
+        },
+        {
+          "type": "generic_brand",
+          "title": "Unknown brand",
+          "detail": "Zentrova isn't a recognizable brand: usually a sign of generic factory goods sold under a made-up name.",
+          "severity": "medium",
+          "level": 2,
+          "thumbnails": [],
+          "source": "Wikidata and the brand's own website",
+          "links": []
+        }
+      ],
+      "positives": [
+        {
+          "type": "established_domain",
+          "title": "Established shop",
+          "detail": "This web shop's address has existed for 4 years.",
+          "source": "Domain registry (RDAP)"
+        }
+      ],
+      "language": "en",
+      "checklist": [
+        {
+          "key": "who",
+          "label": "Who's behind the shop",
+          "status": "checked",
+          "checks": 5
+        },
+        {
+          "key": "product",
+          "label": "The product and the brand",
+          "status": "concern",
+          "checks": 6,
+          "note": "A claim that doesn't add up"
+        },
+        {
+          "key": "reviews",
+          "label": "Reviews",
+          "status": "checked",
+          "checks": 2
+        },
+        {
+          "key": "prices",
+          "label": "Prices, delivery and returns",
+          "status": "concern",
+          "checks": 3,
+          "note": "Long delivery time"
+        },
+        {
+          "key": "tricks",
+          "label": "Hidden tricks",
+          "status": "checked",
+          "checks": 2
+        }
+      ],
+      "checks_run": 18,
+      "next_step": {
+        "type": "careful",
+        "text": "Only buy if you can pay with buyer protection (a credit card or PayPal), or buy it from a shop you know."
+      },
+      "deep_check": {
+        "suggested": false,
+        "quiet": false,
+        "adds": [],
+        "text": ""
+      }
+    }
+  }
+}

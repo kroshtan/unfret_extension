@@ -1,12 +1,14 @@
-// Store screenshots (1280x800, English, for the Chrome Web Store and addons.mozilla.org): the real popup of
-// dist/chrome, opened as a page in headless Chromium, showing real results, framed with a caption.
+// Store screenshots (1280x800, US English, for the Chrome Web Store, addons.mozilla.org and Edge Add-ons): the real
+// popup of dist/chrome, opened as a page in headless Chromium, showing a result, framed with a caption.
 //
-// The results are real checks, made on the dev deployment by `make screenshots-capture`
-// (scripts/screenshots-capture.mjs) and kept in store/screenshots/results/*.json: the Unfret test shop (Unfret's own
-// made-up shop, every trick on it fake on purpose, a banner on every view) and a well-known shop's product page for a
-// clean result, shown only inside the popup. They are put into the extension's session storage the way the
-// background keeps a finished check; the account is answered by routes (no real pass). The test shop page behind the
-// first screenshot and the result's photo thumbnails are loaded from https://dev.unfret.net.
+// Checks are free and there is no account, so nothing about a pass is staged. The results are in
+// store/screenshots/results/*.json: test-shop.json is a real free deep check of the Unfret test shop (Unfret's own
+// made-up shop, every trick on it fake on purpose, a banner on every view), made on the dev deployment by
+// `make screenshots-capture` (scripts/screenshots-capture.mjs); level-0, level-2 and level-3.json are
+// made up by hand for made-up shops on .example addresses, so no real shop, brand or product appears. They are put
+// into the extension's session storage the way the background keeps a finished check. The price list (whether free
+// deep checks are paused) and the "Wrong result?" catalogue (catalogue.json, dev's) are answered by routes. The test
+// shop page behind the first screenshot and the result's photo thumbnails are loaded from https://dev.unfret.net.
 //
 // Run `make build` first; needs `npx playwright install chromium`. Usage:
 //   node scripts/screenshots.mjs [--dark] [--out dir]   (default: light, into store/screenshots)
@@ -27,63 +29,67 @@ const TEST_SHOP = `${DEV}/test-shop`;
 const TAB = "https://shop.example/products/star-projector";
 // The popup's own width (its body's, padding included).
 const POPUP_WIDTH = 360;
-const ADDRESS = "key:k7m2q9xw4t";
 const MARK = `data:image/svg+xml;base64,${readFileSync(join(root, "brand", "unfret.svg")).toString("base64")}`;
 const FONT = "system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', 'DejaVu Sans', Arial, sans-serif";
 
-/** A captured result (scripts/screenshots-capture.mjs). */
+/** A result to show (store/screenshots/results). */
 const result = (name) =>
   JSON.parse(readFileSync(join(root, "store", "screenshots", "results", `${name}.json`), "utf8"));
 const testShop = result("test-shop");
-const clean = result("clean");
+const catalogue = result("catalogue");
 
-// The verdict heads alone, in the popup's own style, for "four answers" (no reasons: just the names).
-const BANDS = [
-  ["reliable", "Looks fine"],
-  ["concerns", "Worth a look"],
-  ["careful", "Think twice"],
-  ["junk_or_scam", "Serious concerns"],
-];
-
+// The pause as the server sends it (contract: "the pause"), for the price list and a paused check.
+const PAUSE = {
+  reason: "spend_ceiling",
+  scope: "day",
+  retry_after_s: 20_000,
+  quick_checks: true,
+  message_key: "free_checks_run_on_donations",
+  donate_url: `${API}/donate`,
+};
 const TEST_SHOP_NOTE = "Shown: the Unfret test shop, a made-up shop where every trick is fake on purpose.";
+const MADE_UP_NOTE = "Shown: made-up example shops, products and brands.";
 
 const SHOTS = [
   {
-    file: "1-fake-sellers.png",
-    title: "Is this shop legit? Know before you pay.",
-    line: "Fake sellers on big marketplaces, fake shops everywhere else: one click checks the seller, the shop and the deal.",
+    file: "1-risk-level.png",
+    title: "How risky is this page? Know before you pay.",
+    line: "One risk level from 0 to 4, with every finding behind it and where it comes from. Fake shops, fake deals and fake reviews.",
     note: TEST_SHOP_NOTE,
-    popup: { result: testShop, height: 560 },
+    popup: { result: testShop, height: 600 },
     page: TEST_SHOP,
   },
   {
-    file: "2-same-product.png",
-    title: "The same product, sold elsewhere for less",
-    line: "Spots dropshipped goods, fake countdowns and “was” prices nobody paid. Every finding says where it comes from.",
-    note: TEST_SHOP_NOTE,
-    popup: { result: testShop, height: 720 },
-  },
-  {
-    file: "3-what-we-checked.png",
-    title: "What we checked, and what you can do",
-    line: "Every area Unfret looked at, what stood out in each, and a clear next step before you pay.",
-    note: TEST_SHOP_NOTE,
-    popup: { result: testShop, height: 600, scrollTo: ".next-step" },
-  },
-  {
-    file: "4-four-answers.png",
-    title: "Four plain answers, not a score",
-    line: "When the seller and the shop check out, Unfret says so too, and shows why.",
-    popup: { result: clean, height: 720 },
-    bands: true,
-  },
-  {
-    file: "5-free-checks.png",
-    title: "Free to start. No account.",
-    line: "5 free deep checks when you install, then unlimited free quick checks. No e-mail, no tracking, and nothing is read until you click.",
+    file: "2-levels.png",
+    title: "Not only fake shops",
+    line: "Claims the specs contradict, generic goods at a brand price: Unfret says what the risk is, and why.",
+    note: MADE_UP_NOTE,
     popups: [
-      { credits: { checks: 5, free: 5 }, label: "When you install" },
-      { credits: { checks: 0, free: 0 }, label: "Out of deep checks" },
+      { result: result("level-3"), height: 640, label: "3 · May not work as described" },
+      { result: result("level-2"), height: 640, label: "2 · May cost more than it's worth" },
+    ],
+  },
+  {
+    file: "3-no-concerns.png",
+    title: "When nothing's wrong, it says so",
+    line: "No score to decode: “No concerns found”, what looks good, and what Unfret checked.",
+    note: MADE_UP_NOTE,
+    popup: { result: result("level-0"), height: 600 },
+  },
+  {
+    file: "4-wrong-result.png",
+    title: "Wrong result? Tell us",
+    line: "Pick the level you think is right and mark what's wrong or missing. Your report keeps the page, never who sent it.",
+    note: MADE_UP_NOTE,
+    popup: { result: result("level-3"), height: 600, report: true },
+  },
+  {
+    file: "5-free.png",
+    title: "Free. No account, no pass.",
+    line: "Quick and deep checks are free, and nothing is read until you click. On a busy day deep checks pause until tomorrow; quick checks keep working.",
+    popups: [
+      { label: "Before a check", height: 400 },
+      { paused: true, height: 400, label: "When today's free deep checks are used up" },
     ],
   },
 ];
@@ -143,11 +149,6 @@ function frame(shot, images) {
         <img src="${png(images.popups[0])}" style="position:absolute;top:46px;right:44px;width:330px;${popupStyle}">
       </div></div>`);
   }
-  const bands = shot.bands
-    ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:34px;max-width:560px">${images.bands
-        .map((b) => `<img src="${png(b)}" style="width:100%;border-radius:12px">`)
-        .join("")}</div>`
-    : "";
   const labels = (shot.popups ?? []).map((p) => p.label);
   const popups = images.popups
     .map(
@@ -158,8 +159,8 @@ function frame(shot, images) {
     )
     .join("");
   return body(`<div style="display:flex;align-items:center;gap:56px;height:100%;padding:0 88px;box-sizing:border-box">
-      ${caption(shot, bands)}
-      <div style="display:flex;gap:24px;align-items:center">${popups}</div></div>`);
+      ${caption(shot)}
+      <div style="display:flex;gap:24px;align-items:flex-start">${popups}</div></div>`);
 }
 
 // A copy of the store build that may read the shop tab's address (what a toolbar click grants with activeTab), so the
@@ -180,27 +181,29 @@ const context = await chromium.launchPersistentContext(userData, {
   colorScheme: dark ? "dark" : "light",
   args: [`--disable-extensions-except=${extension}`, `--load-extension=${extension}`, "--lang=en-US"],
 });
-let credits = { checks: 23, free: 0 };
+/** Whether the price list says free deep checks are paused (set per screenshot). */
+let paused = false;
 try {
-  await context.route(`${API}/v1/credits`, (route) =>
+  await context.route(`${API}/v1/pricing**`, (route) =>
     route.fulfill({
       json: {
-        address: ADDRESS,
-        balance_lamports: 0,
-        checks_remaining: credits.checks,
-        free_checks_remaining: credits.free,
-        invite_eligible: false,
+        free: {
+          quick_checks: true,
+          deep_checks: true,
+          paused,
+          back_at: "00:00 UTC",
+          ...(paused ? { pause: PAUSE } : {}),
+          donate_url: `${API}/donate`,
+        },
       },
     }),
   );
+  await context.route(`${API}/v1/catalogue/findings`, (route) => route.fulfill({ json: catalogue }));
   await context.route("https://shop.example/**", (route) =>
     route.fulfill({
       contentType: "text/html",
-      body: "<!doctype html><title>Star projector</title><h1>Star projector</h1>",
+      body: "<!doctype html><title>Example product</title><h1>Example product</h1>",
     }),
-  );
-  await context.route(`${API}/v1/pricing**`, (route) =>
-    route.fulfill({ json: { network: "solana-mainnet" } }),
   );
   // The result's thumbnails, as production will serve them, from the dev deployment the check ran on.
   await context.route(`${API}/v1/images/**`, async (route) => {
@@ -213,19 +216,7 @@ try {
   });
   const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent("serviceworker"));
   const id = new URL(worker.url()).host;
-  await worker.evaluate(
-    async (address) =>
-      chrome.storage.local.set({
-        session: {
-          token: `ufk_${"x".repeat(40)}`,
-          address,
-          expiresAt: "9999-12-31T00:00:00.000Z",
-          kind: "key",
-        },
-        consent: { version: 2 }, // CONSENT_VERSION (src/shared/settings.ts)
-      }),
-    ADDRESS,
-  );
+  await worker.evaluate(async () => chrome.storage.local.set({ consent: { version: 2 } })); // CONSENT_VERSION
   const shop = await context.newPage();
   await shop.setViewportSize({ width: 1180, height: 1000 });
   await shop.goto(TEST_SHOP, { waitUntil: "load" });
@@ -244,14 +235,15 @@ try {
       async ({ tabId, captured }) => {
         const key = `tab:${String(tabId)}`;
         if (!captured) return chrome.storage.session.remove(key);
-        // With a share token, as a real check has, so "Share this result" shows.
+        // With a share and a label token and the request, as a real check has, so "Share this result" and
+        // "Wrong result?" show.
         await chrome.storage.session.set({
           [key]: {
             status: "done",
             findings: [],
             steps: [],
             body: { url: captured.url },
-            result: { share_token: "t.mac", ...captured.result },
+            result: { share_token: "t.mac", label_token: "store-screenshots", ...captured.result },
           },
         });
       },
@@ -269,23 +261,37 @@ try {
     return popup;
   }
 
-  /** The popup on the shop's tab: a result (cropped to the result card), or the account before a check. */
-  async function popupShot({ result: captured, height = 600, scrollTo, credits: given }) {
-    credits = given ?? { checks: 23, free: 0 };
+  /**
+   * The popup on the shop's tab: a result (the check button hidden, as after a check), the "Wrong result?" form
+   * opened on it, or the popup before a check (`paused`: free deep checks paused until tomorrow).
+   */
+  async function popupShot({ result: captured, height = 600, report, paused: pausedCheck = false }) {
+    paused = pausedCheck;
     await stage(captured);
     const popup = await openPopup(
       height,
-      captured ? "#result:not([hidden]) .verdict" : "#credits:not([hidden])",
+      captured
+        ? "#result:not([hidden]) .verdict"
+        : pausedCheck
+          ? "#paused:not([hidden])"
+          : "#analyse:not([disabled])",
     );
+    // After a check the screenshot is about the result: the check button hidden.
+    const hidden = captured ? ["#check"] : [];
     await popup.addStyleTag({
-      content: `html { scrollbar-width: none; } ${captured ? "#check, #account" : "#invite"} { display: none !important; }`,
+      content: `html { scrollbar-width: none; } ${hidden.length ? `${hidden.join(", ")} { display: none !important; }` : ""}`,
     });
-    if (scrollTo) {
-      // Scrolled down, as the popup (at most 600 px high) shows a long result.
-      await popup.evaluate((selector) => {
-        const top = document.querySelector(selector)?.getBoundingClientRect().top ?? 0;
-        window.scrollTo(0, top + window.scrollY - 56);
-      }, scrollTo);
+    if (report) {
+      // "Wrong result?" opened, a level picked and one finding marked wrong, as a shopper would.
+      await popup.click("#report-open");
+      await popup.waitForSelector("#report:not([hidden]) #report-wrong input");
+      await popup.check('#report input[name="level"][value="2"]');
+      await popup.locator('#report input[name="wrong"]').nth(1).check();
+      await popup.evaluate(() => {
+        const top = document.querySelector("#report")?.getBoundingClientRect().top ?? 0;
+        window.scrollTo(0, top + window.scrollY - 16);
+        if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+      });
     } else {
       const bottom = await popup.evaluate(() =>
         Math.ceil(Math.max(...[...document.body.children].map((e) => e.getBoundingClientRect().bottom)) + 12),
@@ -298,26 +304,9 @@ try {
     return image;
   }
 
-  /** A verdict head alone, as the popup shows it. */
-  async function bandShot([band, label]) {
-    await stage({
-      url: TEST_SHOP,
-      result: { score: 50, explanation: "", verdict: { band, label, headline: "" } },
-    });
-    const popup = await openPopup(400, "#result:not([hidden]) .verdict");
-    const head = await popup.locator("#result-body .verdict").screenshot();
-    await popup.close();
-    return head;
-  }
-
   for (const shot of SHOTS) {
-    const images = {
-      popups: [],
-      bands: [],
-      page: undefined,
-    };
+    const images = { popups: [], page: undefined };
     for (const p of shot.popups ?? [shot.popup]) images.popups.push(await popupShot(p));
-    if (shot.bands) for (const band of BANDS) images.bands.push(await bandShot(band));
     if (shot.page) images.page = await shop.screenshot({ clip: { x: 0, y: 0, width: 1180, height: 930 } });
     const canvas = await context.newPage();
     await canvas.setViewportSize({ width: 1280, height: 800 });

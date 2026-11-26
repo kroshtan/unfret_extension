@@ -1,10 +1,10 @@
 {
   "url": "https://unfret.net/test-shop",
-  "checked": "2026-11-18",
+  "checked": "2026-11-26",
   "result": {
     "assessment": {
-      "confidence": 0.3,
-      "degraded": true,
+      "confidence": 0.6894,
+      "degraded": false,
       "flags": [
         {
           "evidence": "Price 39.99 against a 'was' price of 189.99 (79% off).",
@@ -23,117 +23,294 @@
           "weight": 2.164
         },
         {
+          "evidence": "helps you fall asleep 87% faster",
+          "kind": "signal",
+          "label": "Hard-to-believe claims",
+          "severity": "high",
+          "type": "content.implausible_claims",
+          "weight": 1.738
+        },
+        {
           "evidence": "Fake 'someone just bought' pop-ups",
           "kind": "signal",
           "label": "Urgency tool",
           "severity": "high",
           "type": "html_source_signals.timer_app",
           "weight": 1.194
+        },
+        {
+          "evidence": "",
+          "kind": "signal",
+          "label": "Pushy sales talk",
+          "severity": "medium",
+          "type": "content.scam_copy",
+          "weight": 0.918
+        },
+        {
+          "evidence": "",
+          "kind": "signal",
+          "label": "Title full of search terms",
+          "severity": "medium",
+          "type": "content.title_word_soup",
+          "weight": 0.705
         }
       ],
       "model_version": "v1-20261118-113117-C",
       "risk_score": 1
     },
-    "charged": true,
-    "explanation": "This deal seems too good to be true, so be careful before buying.",
+    "charge_note": "Deep checks are free.",
+    "charged": false,
+    "explanation": "This new web shop hides text and uses fake countdowns to trick shoppers.",
     "free_check": true,
     "page_type": "storefront",
     "score": 0,
     "tier": "deep",
     "verdict": {
-      "band": "careful",
+      "band": "junk_or_scam",
       "checklist": [
         {
+          "checks": 6,
           "key": "who",
           "label": "Who's behind the shop",
           "note": "Brand-new web shop",
           "status": "concern"
         },
         {
+          "checks": 6,
           "key": "product",
           "label": "The product and the brand",
           "note": "Same photo under other brand names",
           "status": "concern"
         },
         {
+          "checks": 1,
           "key": "reviews",
           "label": "Reviews",
           "note": "Unnatural rating pattern",
           "status": "concern"
         },
         {
+          "checks": 3,
           "key": "prices",
           "label": "Prices, delivery and returns",
           "note": "Paid extra already ticked",
           "status": "concern"
         },
         {
+          "checks": 2,
           "key": "tricks",
           "label": "Hidden tricks",
-          "note": "Fake countdown",
+          "note": "Hidden text to fool checks",
           "status": "concern"
         }
       ],
-      "checks_run": 15,
+      "checks_run": 18,
       "deep_check": {
-        "adds": [
-          {
-            "area": "prices",
-            "key": "price_history",
-            "label": "whether its 'was' price was ever really charged"
-          }
-        ],
+        "adds": [],
         "quiet": false,
-        "reason": "on_the_fence",
-        "suggested": true,
-        "text": "A deep check also looks at whether its 'was' price was ever really charged."
+        "reason": "serious_concerns",
+        "suggested": false,
+        "text": ""
       },
-      "headline": "This deal seems too good to be true, so be careful before buying.",
-      "label": "Think twice",
+      "headline": "This new web shop hides text and uses fake countdowns to trick shoppers.",
+      "label": "Serious concerns",
       "language": "en",
       "next_step": {
-        "text": "Ignore the pressure: take your time and compare the offer elsewhere.",
-        "type": "take_time"
+        "text": "Better to buy this from a shop you know.",
+        "type": "junk_or_scam"
       },
       "positives": [],
       "reasons": [
         {
+          "detail": "This web shop's address was registered only 2 weeks ago.",
+          "level": 4,
+          "links": [],
+          "severity": "high",
+          "source": "Domain registry (RDAP)",
+          "thumbnails": [],
+          "title": "Brand-new web shop",
+          "type": "new_domain"
+        },
+        {
+          "detail": "The page hides text aimed at AI tools, to influence checks like this one.",
+          "level": 4,
+          "links": [],
+          "severity": "high",
+          "source": "The page's code",
+          "thumbnails": [],
+          "title": "Hidden text to fool checks",
+          "type": "hidden_ai_text"
+        },
+        {
           "detail": "This countdown restarts when you reload the page: the deadline isn't real.",
+          "level": 1,
+          "links": [],
           "severity": "high",
           "source": "The page",
           "thumbnails": [],
           "title": "Fake countdown",
           "type": "timer_resets"
-        },
-        {
-          "detail": "A paid extra is ticked for you in advance (“Add Worry-Free Delivery Protection (+$4.99)”). That's not allowed in the EU: untick it if you don't want it.",
-          "severity": "high",
-          "source": "The page",
-          "thumbnails": [],
-          "title": "Paid extra already ticked",
-          "type": "preticked_addon"
-        },
-        {
-          "detail": "79% off: discounts this deep are almost always measured against a price nobody paid.",
-          "severity": "high",
-          "source": "The page",
-          "thumbnails": [],
-          "title": "Unbelievable discount",
-          "type": "implausible_discount"
         }
       ],
+      "risk": {
+        "because": [
+          {
+            "level": 4,
+            "source": "Domain registry (RDAP)",
+            "title": "Brand-new web shop",
+            "type": "new_domain"
+          },
+          {
+            "level": 4,
+            "source": "The page's code",
+            "title": "Hidden text to fool checks",
+            "type": "hidden_ai_text"
+          },
+          {
+            "level": 4,
+            "source": "Domain registry (RDAP)",
+            "title": "New, short registration",
+            "type": "short_registration"
+          },
+          {
+            "level": 3,
+            "source": "Unfret's read of the page",
+            "title": "Title full of search terms",
+            "type": "word_soup"
+          },
+          {
+            "level": 3,
+            "source": "Unfret's read of the page",
+            "title": "A claim that doesn't add up",
+            "type": "claim_contradicted"
+          },
+          {
+            "level": 3,
+            "source": "The shop's terms and legal pages",
+            "title": "'Made in USA' doubtful",
+            "type": "origin_doubt"
+          },
+          {
+            "level": 2,
+            "source": "Unfret's image index",
+            "title": "Same photo under other brand names",
+            "type": "rebranded_photo"
+          },
+          {
+            "level": 2,
+            "source": "Unfret's read of the page",
+            "title": "Unknown brand",
+            "type": "generic_brand"
+          },
+          {
+            "level": 2,
+            "source": "The page's code",
+            "title": "Dropshipping",
+            "type": "dropshipping_tools"
+          },
+          {
+            "level": 2,
+            "source": "The page's code",
+            "title": "Supplier traces",
+            "type": "supplier_links"
+          },
+          {
+            "level": 2,
+            "source": "The shop's terms and legal pages",
+            "title": "Returns go abroad",
+            "type": "returns_abroad"
+          },
+          {
+            "level": 2,
+            "source": "The shop's terms and legal pages",
+            "title": "Costly returns",
+            "type": "restocking_fee"
+          },
+          {
+            "level": 2,
+            "source": "The page",
+            "title": "Costs revealed later",
+            "type": "late_fees"
+          },
+          {
+            "level": 2,
+            "source": "The shop's terms and legal pages",
+            "title": "Long delivery time",
+            "type": "long_delivery"
+          },
+          {
+            "level": 1,
+            "source": "The page",
+            "title": "Fake countdown",
+            "type": "timer_resets"
+          },
+          {
+            "level": 1,
+            "source": "The page",
+            "title": "Paid extra already ticked",
+            "type": "preticked_addon"
+          },
+          {
+            "level": 1,
+            "source": "The page",
+            "title": "Unbelievable discount",
+            "type": "implausible_discount"
+          },
+          {
+            "level": 1,
+            "source": "The reviews on the page",
+            "title": "Unnatural rating pattern",
+            "type": "review_shape"
+          },
+          {
+            "level": 1,
+            "source": "The reviews on the page",
+            "title": "Copy-paste reviews",
+            "type": "duplicate_reviews"
+          },
+          {
+            "level": 1,
+            "source": "The page's code",
+            "title": "Imported reviews",
+            "type": "review_import_app"
+          },
+          {
+            "level": 1,
+            "source": "Unfret's read of the page",
+            "title": "Pushy sales talk",
+            "type": "pushy_copy"
+          },
+          {
+            "level": 1,
+            "source": "The page",
+            "title": "Discount on a 'recommended' price",
+            "type": "reference_anchor"
+          },
+          {
+            "level": 1,
+            "source": "The page",
+            "title": "Never-ending sale",
+            "type": "permanent_sale"
+          }
+        ],
+        "explanation": "Level 4 because: Brand-new web shop + Hidden text to fool checks + New, short registration + Title full of search terms.",
+        "key": "wont_arrive",
+        "label": "May not arrive, or may not be safe",
+        "level": 4,
+        "source": "band"
+      },
       "same_product": {
         "brands": [
           "VELUNOX"
         ],
         "currency": "USD",
-        "detail": "The main photo is the same photo as on unfret.net/test-shop/sister-shop, under another brand name (VELUNOX). Unfret saw it there for $17.99 on November 18, 2026.",
+        "detail": "The main photo is the same photo as on unfret.net/test-shop/sister-shop, under another brand name (VELUNOX). Unfret saw it there for $17.99 on November 26, 2026.",
         "domain": "unfret.net/test-shop/sister-shop",
         "image": "https://unfret.net/v1/images/test-shop/sister-hero.jpg",
         "others": 0,
         "own_image": "https://unfret.net/v1/images/test-shop/projector-hero.jpg",
         "price": 17.99,
-        "price_seen_on": "2026-11-18",
+        "price_seen_on": "2026-11-26",
         "price_text": "$17.99",
         "title": "Looks like the same product, sold elsewhere for $17.99",
         "where": "unfret.net/test-shop/sister-shop"

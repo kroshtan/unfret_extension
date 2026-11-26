@@ -2,9 +2,12 @@
 // production) checks the pages below the way a user would, and each result is written to
 // store/screenshots/results/<name>.json, which `make screenshots` then shows in the store build's popup.
 //
-// The extension gets its pass as on a real install (the welcome page on dev.unfret.net makes a free one), or uses
-// the Unfret pass in $UNFRET_DEV_PASS (a pass on dev, with checks). A network gets 2 free passes a day: a third comes
-// without checks, and then only the quick checks below can run.
+// Free checks (contract: "Free checks for shoppers"): no pass, no account; the extension solves each deep check's
+// proof of work itself, as for a user. While free deep checks are paused (the free pool), a deep check can't run: try
+// again after 00:00 UTC.
+//
+// Only the Unfret test shop is checked for real; the other results the screenshots show (store/screenshots/results)
+// are made up by hand, for made-up shops on .example addresses, so no real shop appears in a screenshot.
 //
 // Run `make build` first; needs `npx playwright install chromium`. Usage:
 //   node scripts/screenshots-capture.mjs [name ...]      (default: every page below)
@@ -18,14 +21,9 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const out = join(root, "store", "screenshots", "results");
 const DEV = "https://dev.unfret.net";
 
-/**
- * The pages, all public. The test shop is Unfret's own made-up shop (every trick on it is fake on purpose, and it says
- * so on every view); the clean result is a well-known shop's product page, shown only in the popup.
- */
-export const PAGES = [
-  { name: "test-shop", url: `${DEV}/test-shop` },
-  { name: "clean", url: "https://www.ikea.com/us/en/p/kallax-shelf-unit-white-20631663/" },
-];
+/** The pages, all public: the test shop is Unfret's own made-up shop (every trick on it is fake on purpose, and it
+ * says so on every view). */
+export const PAGES = [{ name: "test-shop", url: `${DEV}/test-shop` }];
 
 const wanted = process.argv.slice(2);
 const pages = wanted.length ? PAGES.filter((p) => wanted.includes(p.name)) : PAGES;
@@ -51,52 +49,6 @@ try {
   const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent("serviceworker"));
   const id = new URL(worker.url()).host;
   await worker.evaluate(async () => chrome.storage.local.set({ consent: { version: 2 } })); // CONSENT_VERSION
-  const pass = process.env.UNFRET_DEV_PASS?.trim();
-  if (pass) {
-    // The pass as the settings page would keep it after "Use this pass".
-    await worker.evaluate(async (key) => {
-      const res = await fetch("https://dev.unfret.net/v1/credits", {
-        headers: { Authorization: `Bearer ${key}` },
-      });
-      if (!res.ok) throw new Error(`the pass in UNFRET_DEV_PASS was refused (${String(res.status)})`);
-      const { address } = await res.json();
-      await chrome.storage.local.set({
-        session: { token: key, address, expiresAt: "9999-12-31T00:00:00.000Z", kind: "key" },
-      });
-    }, pass);
-  } else {
-    // The welcome page opened on install makes the free pass.
-    let session;
-    for (let i = 0; i < 60 && !session; i++) {
-      session = await worker.evaluate(async () => (await chrome.storage.local.get("session")).session);
-      if (!session) await new Promise((r) => setTimeout(r, 1000));
-    }
-    if (!session) {
-      // No free checks today for this network: a pass without them, which runs quick checks. The popup makes one by
-      // itself once this profile's own note says it had its free checks (retryFreePass in popup.ts).
-      console.warn("no free checks: only quick checks will run (UNFRET_DEV_PASS for deep ones)");
-      await worker.evaluate(async () => {
-        for (let i = 0; ; i++) {
-          try {
-            await chrome.storage.sync.set({ freeChecksUsed: true }); // FREE_FLAG (src/shared/new-pass.ts)
-            break;
-          } catch (error) {
-            if (i > 10) throw error; // a fresh profile's sync storage can refuse its first writes
-            await new Promise((r) => setTimeout(r, 1000));
-          }
-        }
-        await chrome.storage.local.set({ passPending: true });
-      });
-      const popup = await context.newPage();
-      await popup.goto(`chrome-extension://${id}/popup/popup.html`);
-      for (let i = 0; i < 120 && !session; i++) {
-        session = await worker.evaluate(async () => (await chrome.storage.local.get("session")).session);
-        if (!session) await new Promise((r) => setTimeout(r, 1000));
-      }
-      await popup.close();
-      if (!session) throw new Error("couldn't get a pass on dev.unfret.net");
-    }
-  }
   mkdirSync(out, { recursive: true });
 
   for (const page of pages) {
@@ -120,13 +72,21 @@ try {
       continue;
     }
     if (state.result.tier === "quick") {
-      // Out of checks, the extension runs a quick check instead: not the deep result this page is for.
-      console.error(`${page.name}: no checks left for a deep check; kept the earlier result`);
+      // Free deep checks paused (or busy): the extension ran a quick check instead, not the deep result wanted.
+      console.error(
+        `${page.name}: no deep check now (${state.note ?? "quick result"}); kept the earlier result`,
+      );
       process.exitCode = 1;
       continue;
     }
-    // Only what the popup shows: no tokens, no balance.
-    const dropped = new Set(["share_token", "report_token", "balance_usd_micros", "balance_lamports"]);
+    // Only what the popup shows: no tokens (the screenshots stage their own).
+    const dropped = new Set([
+      "share_token",
+      "report_token",
+      "label_token",
+      "balance_usd_micros",
+      "balance_lamports",
+    ]);
     const result = Object.fromEntries(Object.entries(state.result).filter(([key]) => !dropped.has(key)));
     const file = join(out, `${page.name}.json`);
     const kept = { url: page.url, checked: new Date().toISOString().slice(0, 10), result };

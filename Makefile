@@ -37,7 +37,7 @@ icons:  ## Render the icons, store promo images and Edge logo from brand/*.svg (
 screenshots: build  ## Render the store screenshots into store/screenshots from store/screenshots/results (needs `npx playwright install chromium`)
 	node scripts/screenshots.mjs
 
-screenshots-capture: build  ## Check the screenshots' pages again on dev.unfret.net with Unfret Dev, into store/screenshots/results (UNFRET_DEV_PASS=…)
+screenshots-capture: build  ## Check the test shop again on dev.unfret.net with Unfret Dev (a free deep check), into store/screenshots/results
 	node scripts/screenshots-capture.mjs
 
 crx-key:  ## Create a CRX signing key once (production; DEV=1 for Unfret Dev). Keys live in ~/kroshtan_secrets

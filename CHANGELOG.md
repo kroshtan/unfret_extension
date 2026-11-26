@@ -5,6 +5,11 @@ backend's changelog, which lists each one published at `/extension`.)
 
 ## 0.14.0 (unreleased)
 
+- **Store screenshots for free checks** (`make screenshots`, `store/SUBMIT.md`): the risk level at 4 (the test
+  shop), 3 and 2, and 0; the "Wrong result?" form; the popup before a check and while free deep checks are paused.
+  No pass, packs or balance. `make screenshots-capture` checks only the test shop now, as a free deep check with its
+  proof of work (no pass, no `UNFRET_DEV_PASS`); the other results are made up for `.example` shops, so no real shop
+  appears.
 - **"Wrong result?": the server's catalogue, a comment, every source** (backend: "the findings catalogue", "a
   report's comment; a source for every finding behind the level"). "Something missing?" lists
   `GET /v1/catalogue/findings` (public, cached a day), grouped by level, without payment modifiers (level null) or
