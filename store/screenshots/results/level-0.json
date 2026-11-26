@@ -1,0 +1,101 @@
+{
+  "url": "https://lumen-and-oak.example/products/walnut-desk-lamp",
+  "made_up": true,
+  "result": {
+    "score": 88,
+    "explanation": "Nothing worrying stood out on this page.",
+    "page_type": "storefront",
+    "assessment": {
+      "risk_score": 0.08,
+      "confidence": 0.81,
+      "flags": [],
+      "model_version": "store-screenshots"
+    },
+    "charged": false,
+    "tier": "deep",
+    "free_check": true,
+    "charge_note": "Deep checks are free.",
+    "label_token": "store-screenshots",
+    "verdict": {
+      "band": "reliable",
+      "label": "Looks fine",
+      "risk": {
+        "level": 0,
+        "key": "none",
+        "label": "No concerns found",
+        "because": [],
+        "combined": null,
+        "modifier": null,
+        "explanation": "No concerns found.",
+        "source": "classifier",
+        "confidence": 0.9
+      },
+      "headline": "Nothing worrying stood out on this page.",
+      "reasons": [],
+      "positives": [
+        {
+          "type": "established_domain",
+          "title": "Established shop",
+          "detail": "This web shop's address has existed for 12 years.",
+          "source": "Domain registry (RDAP)"
+        },
+        {
+          "type": "us_business",
+          "title": "Company details shown",
+          "detail": "The shop names its company (Lumen & Oak Goods LLC) and a US business address.",
+          "source": "The shop's terms and legal pages"
+        },
+        {
+          "type": "natural_reviews",
+          "title": "Natural-looking reviews",
+          "detail": "Ratings are mixed and spread over time, as you'd expect from real buyers.",
+          "source": "The reviews on the page"
+        }
+      ],
+      "language": "en",
+      "checklist": [
+        {
+          "key": "who",
+          "label": "Who's behind the shop",
+          "status": "checked",
+          "checks": 5
+        },
+        {
+          "key": "product",
+          "label": "The product and the brand",
+          "status": "checked",
+          "checks": 4
+        },
+        {
+          "key": "reviews",
+          "label": "Reviews",
+          "status": "checked",
+          "checks": 3
+        },
+        {
+          "key": "prices",
+          "label": "Prices, delivery and returns",
+          "status": "checked",
+          "checks": 3
+        },
+        {
+          "key": "tricks",
+          "label": "Hidden tricks",
+          "status": "checked",
+          "checks": 2
+        }
+      ],
+      "checks_run": 17,
+      "next_step": {
+        "type": "reliable",
+        "text": "As always, pay with a method that has buyer protection, such as a credit card or PayPal."
+      },
+      "deep_check": {
+        "suggested": false,
+        "quiet": false,
+        "adds": [],
+        "text": ""
+      }
+    }
+  }
+}

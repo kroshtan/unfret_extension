@@ -146,8 +146,8 @@ product reviews
   `brand/unfret.svg`, the store icon's proportions).
 - Small promotional tile (440×280): `store/assets/promo-small-440x280.png`.
 - Large promotional tile (1400×560): `store/assets/promo-marquee-1400x560.png`.
-- Screenshots (1280×800, at most 6): `store/screenshots/1-serious-concerns.png`, `2-looks-fine.png`,
-  `3-consent.png`.
+- Screenshots (1280×800, at most 6): the five `store/screenshots/*.png`, in the order of
+  [listing.en.md](listing.en.md).
 
 **Website**: https://unfret.net · **Support**: hello@unfret.net · **Privacy policy**: https://unfret.net/privacy
 

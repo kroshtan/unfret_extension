@@ -1,0 +1,694 @@
+{
+  "findings": [
+    {
+      "type": "address_elsewhere",
+      "title": "Address in another town",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "brand_photo_reused",
+      "title": "Photo of another, known brand",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "copied_photo",
+      "title": "Photo also on other sites",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "details_on_request",
+      "title": "Company details only on request",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "domain_repurposed",
+      "title": "Older address, new shop",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "doorway_pages",
+      "title": "Pages for many towns, no address",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "far_below_market",
+      "title": "Far below the usual price",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "few_platform_reviews",
+      "title": "Few reviews yet",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "founded_contradicted",
+      "title": "Says it's long-established, but the site is new",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "hidden_ai_text",
+      "title": "Hidden text to fool checks",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "invalid_vat",
+      "title": "Invalid VAT number",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "kvk_malformed",
+      "title": "KvK number looks wrong",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "kvk_missing",
+      "title": "No KvK number found",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "licence_no_number",
+      "title": "Says licensed, no licence number",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "linked_new_shops",
+      "title": "Linked to new shops",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "linked_sites",
+      "title": "Same company behind other sites",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "low_response_rate",
+      "title": "Often doesn't reply",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "mailbox_address",
+      "title": "Mailbox address only",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "missing_trust_info",
+      "title": "Little shop information",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "names_differ",
+      "title": "Two company names",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "national_number_only",
+      "title": "Only a national phone number",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "new_domain",
+      "title": "Brand-new web shop",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "new_on_platform",
+      "title": "New on the platform",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "new_site",
+      "title": "Brand-new website",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "no_imprint",
+      "title": "No company details",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "no_street_address",
+      "title": "No street address",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "not_local",
+      "title": "May not be a local business",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "origin_contradicted",
+      "title": "Not where it says it is",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "p2p_contact_outside",
+      "title": "Contact outside the platform",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "p2p_duplicate_text",
+      "title": "Same text in other ads",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "p2p_listing_burst",
+      "title": "Many ads on a new account",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "p2p_little_known",
+      "title": "Little to go on",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "p2p_llm_off_platform",
+      "title": "Deal moved off the platform",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "p2p_low_rating",
+      "title": "Low ratings",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "p2p_new_account",
+      "title": "New account",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "p2p_no_ratings",
+      "title": "No ratings yet",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "p2p_photo_in_other_ads",
+      "title": "Photo used in other ads",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "p2p_photo_on_shops",
+      "title": "Shop photo",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "p2p_price_far_below",
+      "title": "Price far below the usual",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "p2p_seller_abroad",
+      "title": "Seller says they're away",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "p2p_shared_contact",
+      "title": "Contact details in many ads",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "p2p_shipping_only",
+      "title": "No pickup",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "p2p_slow_responses",
+      "title": "Slow replies",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "safety_gate_alert",
+      "title": "On the EU list of dangerous products",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "seller_lookalike",
+      "title": "Seller named like the brand",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "service_little_known",
+      "title": "Little to go on",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "shared_address",
+      "title": "Address shared by many shops",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "shared_address_sites",
+      "title": "Address shared with other sites",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "short_registration",
+      "title": "New, short registration",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "store_without_address",
+      "title": "Mentions a store, gives no address",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "trade_town_name",
+      "title": "Named after a trade, not a company",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "unproven_profile",
+      "title": "New profile, no track record",
+      "level": 4,
+      "key": "wont_arrive"
+    },
+    {
+      "type": "ai_text",
+      "title": "Text aimed at AI",
+      "level": 3,
+      "key": "doesnt_work"
+    },
+    {
+      "type": "claim_contradicted",
+      "title": "A claim that doesn't add up",
+      "level": 3,
+      "key": "doesnt_work"
+    },
+    {
+      "type": "data_inconsistency",
+      "title": "Details on the page that don't match",
+      "level": 3,
+      "key": "doesnt_work"
+    },
+    {
+      "type": "implausible_claims",
+      "title": "Hard-to-believe claims",
+      "level": 3,
+      "key": "doesnt_work"
+    },
+    {
+      "type": "origin_doubt",
+      "title": "'Made in USA' doubtful",
+      "level": 3,
+      "key": "doesnt_work"
+    },
+    {
+      "type": "photo_count_mismatch",
+      "title": "Fewer pieces in the photo than the listing says",
+      "level": 3,
+      "key": "doesnt_work"
+    },
+    {
+      "type": "photo_size_mismatch",
+      "title": "Looks bigger in the photos than its stated size",
+      "level": 3,
+      "key": "doesnt_work"
+    },
+    {
+      "type": "variant_bait_price",
+      "title": "The price shown is for a different item",
+      "level": 3,
+      "key": "doesnt_work"
+    },
+    {
+      "type": "word_soup",
+      "title": "Title full of search terms",
+      "level": 3,
+      "key": "doesnt_work"
+    },
+    {
+      "type": "bait_callout",
+      "title": "Very low call-out fee",
+      "level": 2,
+      "key": "overpaying"
+    },
+    {
+      "type": "brand_no_presence",
+      "title": "A brand with no presence of its own",
+      "level": 2,
+      "key": "overpaying"
+    },
+    {
+      "type": "drip_pricing",
+      "title": "Price goes up at checkout",
+      "level": 2,
+      "key": "overpaying"
+    },
+    {
+      "type": "dropshipping_tools",
+      "title": "Dropshipping",
+      "level": 2,
+      "key": "overpaying"
+    },
+    {
+      "type": "generic_brand",
+      "title": "Unknown brand",
+      "level": 2,
+      "key": "overpaying"
+    },
+    {
+      "type": "generic_product",
+      "title": "Generic product",
+      "level": 2,
+      "key": "overpaying"
+    },
+    {
+      "type": "late_fees",
+      "title": "Costs revealed later",
+      "level": 2,
+      "key": "overpaying"
+    },
+    {
+      "type": "long_delivery",
+      "title": "Long delivery time",
+      "level": 2,
+      "key": "overpaying"
+    },
+    {
+      "type": "low_platform_rating",
+      "title": "Low rating on the platform",
+      "level": 2,
+      "key": "overpaying"
+    },
+    {
+      "type": "no_return_policy",
+      "title": "No return policy found",
+      "level": 2,
+      "key": "overpaying"
+    },
+    {
+      "type": "no_withdrawal",
+      "title": "No return policy found",
+      "level": 2,
+      "key": "overpaying"
+    },
+    {
+      "type": "photo_reused",
+      "title": "Same photo on other shops",
+      "level": 2,
+      "key": "overpaying"
+    },
+    {
+      "type": "premium_number",
+      "title": "Premium-rate phone number",
+      "level": 2,
+      "key": "overpaying"
+    },
+    {
+      "type": "quote_on_site",
+      "title": "Price only on the doorstep",
+      "level": 2,
+      "key": "overpaying"
+    },
+    {
+      "type": "rebranded_photo",
+      "title": "Same photo under other brand names",
+      "level": 2,
+      "key": "overpaying"
+    },
+    {
+      "type": "restocking_fee",
+      "title": "Costly returns",
+      "level": 2,
+      "key": "overpaying"
+    },
+    {
+      "type": "return_address_withheld",
+      "title": "No return address",
+      "level": 2,
+      "key": "overpaying"
+    },
+    {
+      "type": "returns_abroad",
+      "title": "Returns go abroad",
+      "level": 2,
+      "key": "overpaying"
+    },
+    {
+      "type": "seller_not_brand",
+      "title": "Sold by another company",
+      "level": 2,
+      "key": "overpaying"
+    },
+    {
+      "type": "ships_from_far",
+      "title": "Ships from far away",
+      "level": 2,
+      "key": "overpaying"
+    },
+    {
+      "type": "supplier_links",
+      "title": "Supplier traces",
+      "level": 2,
+      "key": "overpaying"
+    },
+    {
+      "type": "vague_pricing",
+      "title": "No prices given",
+      "level": 2,
+      "key": "overpaying"
+    },
+    {
+      "type": "all_five_testimonials",
+      "title": "Only 5-star testimonials",
+      "level": 1,
+      "key": "manipulation"
+    },
+    {
+      "type": "big_discount",
+      "title": "Too-good discount",
+      "level": 1,
+      "key": "manipulation"
+    },
+    {
+      "type": "brand_reference",
+      "title": "Discount on the brand's recommended price",
+      "level": 1,
+      "key": "manipulation"
+    },
+    {
+      "type": "copied_reviews_elsewhere",
+      "title": "Reviews copied from other shops",
+      "level": 1,
+      "key": "manipulation"
+    },
+    {
+      "type": "copied_testimonials",
+      "title": "Copy-paste testimonials",
+      "level": 1,
+      "key": "manipulation"
+    },
+    {
+      "type": "countdown",
+      "title": "Countdown timer",
+      "level": 1,
+      "key": "manipulation"
+    },
+    {
+      "type": "disclosed_reference",
+      "title": "Discount on a recommended price, below the 30-day low",
+      "level": 1,
+      "key": "manipulation"
+    },
+    {
+      "type": "duplicate_reviews",
+      "title": "Copy-paste reviews",
+      "level": 1,
+      "key": "manipulation"
+    },
+    {
+      "type": "emergency_pressure",
+      "title": "Emergency promises",
+      "level": 1,
+      "key": "manipulation"
+    },
+    {
+      "type": "fake_urgency_app",
+      "title": "Urgency tricks",
+      "level": 1,
+      "key": "manipulation"
+    },
+    {
+      "type": "implausible_discount",
+      "title": "Unbelievable discount",
+      "level": 1,
+      "key": "manipulation"
+    },
+    {
+      "type": "marketplace_reference",
+      "title": "Discount on the marketplace's reference price",
+      "level": 1,
+      "key": "manipulation"
+    },
+    {
+      "type": "off_topic_reviews",
+      "title": "Reviews about something else",
+      "level": 1,
+      "key": "manipulation"
+    },
+    {
+      "type": "permanent_sale",
+      "title": "Never-ending sale",
+      "level": 1,
+      "key": "manipulation"
+    },
+    {
+      "type": "placeholder_names",
+      "title": "Placeholder names on testimonials",
+      "level": 1,
+      "key": "manipulation"
+    },
+    {
+      "type": "preticked_addon",
+      "title": "Paid extra already ticked",
+      "level": 1,
+      "key": "manipulation"
+    },
+    {
+      "type": "pushy_copy",
+      "title": "Pushy sales talk",
+      "level": 1,
+      "key": "manipulation"
+    },
+    {
+      "type": "reference_anchor",
+      "title": "Discount on a 'recommended' price",
+      "level": 1,
+      "key": "manipulation"
+    },
+    {
+      "type": "review_import_app",
+      "title": "Imported reviews",
+      "level": 1,
+      "key": "manipulation"
+    },
+    {
+      "type": "review_shape",
+      "title": "Unnatural rating pattern",
+      "level": 1,
+      "key": "manipulation"
+    },
+    {
+      "type": "review_velocity",
+      "title": "Suspicious number of reviews",
+      "level": 1,
+      "key": "manipulation"
+    },
+    {
+      "type": "testimonial_dates",
+      "title": "Testimonials all from the same week",
+      "level": 1,
+      "key": "manipulation"
+    },
+    {
+      "type": "timer_resets",
+      "title": "Fake countdown",
+      "level": 1,
+      "key": "manipulation"
+    },
+    {
+      "type": "variants_grouped",
+      "title": "Different products under one listing",
+      "level": 1,
+      "key": "manipulation"
+    },
+    {
+      "type": "was_never_charged",
+      "title": "'Was' price not charged recently",
+      "level": 1,
+      "key": "manipulation"
+    },
+    {
+      "type": "cash_only",
+      "title": "Cash only",
+      "level": null,
+      "key": null
+    },
+    {
+      "type": "irreversible_payment_only",
+      "title": "Only payments you can't get back",
+      "level": null,
+      "key": null
+    },
+    {
+      "type": "p2p_advance_payment",
+      "title": "Payment up front",
+      "level": null,
+      "key": null
+    },
+    {
+      "type": "p2p_bank_transfer",
+      "title": "Bank transfer asked",
+      "level": null,
+      "key": null
+    },
+    {
+      "type": "p2p_protection_refused",
+      "title": "Refuses the platform's payment",
+      "level": null,
+      "key": null
+    },
+    {
+      "type": "p2p_untraceable_payment",
+      "title": "Payment you can't get back",
+      "level": null,
+      "key": null
+    },
+    {
+      "type": "upfront_payment",
+      "title": "Payment before the work",
+      "level": null,
+      "key": null
+    }
+  ]
+}

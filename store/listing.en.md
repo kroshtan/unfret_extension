@@ -70,9 +70,7 @@ Website: https://unfret.net
 ## Images
 
 - Store icon (128×128, 96×96 artwork with 16 px padding): `icons/icon-128.png`
-- Screenshots (1280×800), in this order: `store/screenshots/1-fake-sellers.png`, `2-same-product.png`,
-  `3-what-we-checked.png`, `4-four-answers.png`, `5-free-checks.png` (`make screenshots`; see `store/SUBMIT.md`).
-  **Out of date since 0.14.0**: they show the four answers, a pass and its free checks; to be captured again with
-  the risk level and free checks before the next listing update.
+- Screenshots (1280×800), in this order: `store/screenshots/1-risk-level.png`, `2-levels.png`,
+  `3-no-concerns.png`, `4-wrong-result.png`, `5-free.png` (`make screenshots`; see `store/SUBMIT.md`).
 - Small promo tile (440×280): `store/assets/promo-small-440x280.png`
 - Marquee (1400×560): `store/assets/promo-marquee-1400x560.png`
